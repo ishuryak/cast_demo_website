@@ -1,0 +1,19 @@
+# R intermediates (may contain per-patient simulated rows — keep out of git)
+output/
+logs/
+.Rhistory
+.RData
+.Rproj.user/
+
+# The exported web artifacts ARE aggregate and safe to publish:
+!docs/data/scenarios.json
+!docs/figs/
+
+# Internal editorial notes — not part of the published repo
+CAST_Trajectory_Covariance_Notes_*.docx
+CAST_Trajectory_Covariance_Notes_*.md
+CAST_Trajectory_Covariance_Notes_*.patch
+
+# OS / editor cruft
+.DS_Store
+*~

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CAST demo — causal survival trajectories on simulated oncology data</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<header>
+  <h1>From confounding to trajectories</h1>
+  <p class="sub">How a Causal Survival Forest (CSF) removes confounding, and how
+     CAST extends it to a full treatment-effect trajectory — on simulated
+     oncology data where the <em>true</em> effect is known.</p>
+</header>
+
+<main>
+  <section class="lead">
+    <p>Each patient cohort below is <strong>simulated</strong>, so we know the
+    true average treatment effect (ATE) at every horizon (the solid black
+    curve). The estimand is the <strong>RMST difference</strong> (extra
+    restricted mean survival months from treatment) at horizons 12–120 months,
+    in a synthetic cohort with control median survival near 55 months. Two
+    illustrative effect shapes are available: a <strong>plateau</strong> (benefit
+    that rises and levels off) and a <strong>reversal</strong> (a stylized
+    early-benefit, late-harm crossing, not an empirical curve). Move the
+    <strong>confounding</strong> slider and toggle methods to see which
+    estimators recover the truth.</p>
+  </section>
+
+  <section class="controls">
+    <div class="ctrl">
+      <label>Effect shape</label>
+      <div id="shape-buttons" class="seg"></div>
+    </div>
+    <div class="ctrl">
+      <label>Confounding strength: <span id="conf-label"></span></label>
+      <input type="range" id="conf-slider" min="0" step="1" value="0" />
+      <div class="slider-ends"><span>none (randomized)</span><span>strong</span></div>
+    </div>
+    <div class="ctrl">
+      <label>Show methods</label>
+      <div id="method-toggles" class="toggles"></div>
+    </div>
+  </section>
+
+  <section class="plot-row">
+    <div id="plot"></div>
+    <aside class="cards">
+      <div class="card" id="card-rmse">
+        <h3>Accuracy vs. truth (RMSE, months)</h3>
+        <div class="rmse-bars"></div>
+        <p class="hint">Lower is better. Watch Naive collapse as confounding rises while CSF stays accurate. CSF and CAST are scored in-sample (no train/test split), so their accuracy here is optimistic relative to real-world deployment.</p>
+      </div>
+      <div class="card" id="card-cox">
+        <h3>Cox baseline</h3>
+        <p class="big"><span id="cox-hr"></span></p>
+        <p class="hint" id="cox-ph"></p>
+        <p class="hint">A single time-constant hazard ratio, with no trajectory. The proportional-hazards test flags when a single hazard ratio cannot hold across all horizons.</p>
+      </div>
+      <div class="card" id="card-balance">
+        <h3>Confounder imbalance (SMD)</h3>
+        <p class="hint" id="smd-text"></p>
+        <p class="hint">Standardized mean difference of confounders between arms. |SMD|&gt;0.1 signals imbalance the naive comparison cannot fix.</p>
+      </div>
+      <div class="card" id="card-cast">
+        <h3>CAST trajectory</h3>
+        <p class="hint" id="cast-text"></p>
+        <p class="hint">A smooth quadratic effect trajectory. The fit uses GLS with the inverse shrunk covariance when that is reliable, and falls back to a weighted fit when near-collinear horizons would otherwise destabilize it.</p>
+        <p class="hint">The shaded 95% band is <em>conditional on the fitted forests</em>: it comes from the bootstrap cross-horizon covariance with the forests held fixed, so it may understate total uncertainty because it does not propagate the forests' own estimation error. Peak time and effect are model-based summaries of the horizon-specific causal estimates, not separately identified causal quantities.</p>
+      </div>
+      <div class="card" id="card-shrink">
+        <h3>Ledoit–Wolf shrinkage</h3>
+        <p class="hint" id="shrink-text"></p>
+        <p class="hint">Shrinkage intensity λ and the cross-horizon covariance condition number, before → after shrinkage, that makes the GLS inverse stable.</p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="story">
+    <div class="step">
+      <h2>1 · The confounding problem</h2>
+      <p>Healthier patients (younger, earlier-stage, better performance status)
+      are preferentially selected into treatment (confounding by indication). The
+      <strong>Naive</strong> unadjusted RMST difference then measures treatment
+      effect <em>plus</em> baseline prognosis, so it is biased <em>upward</em> and
+      overstates benefit. At zero confounding it matches the truth; turn
+      confounding up and it diverges.</p>
+    </div>
+    <div class="step">
+      <h2>2 · CSF adjusts for confounding</h2>
+      <p>The <strong>Causal Survival Forest</strong> orthogonalizes against a
+      propensity model and a censoring model (Neyman-orthogonal, like double
+      machine learning), recovering the true ATE at each horizon across
+      confounding levels. The <strong>RSF S-learner</strong> — a plain survival
+      forest with treatment as a feature — is shown as an ML baseline that is
+      <em>not</em> orthogonalized and carries regularization bias.</p>
+    </div>
+    <div class="step">
+      <h2>3 · Baselines fall short</h2>
+      <p><strong>Cox</strong> gives one hazard ratio for all time and assumes
+      proportional hazards; it cannot express a rising-then-plateauing or
+      reversing effect. <strong>RSF</strong> predicts survival but gives no
+      principled causal contrast.</p>
+    </div>
+    <div class="step">
+      <h2>4 · CAST extends CSF to a trajectory</h2>
+      <p>CSF gives correlated point estimates across horizons. <strong>CAST</strong>
+      bootstraps the cross-horizon covariance (patient-level), stabilizes it with
+      <strong>Ledoit–Wolf shrinkage</strong>, and fits a GLS quadratic in time:
+      <code>β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y</code>. The result is a smooth effect
+      trajectory whose clinical metrics (peak effect, time-to-peak) are
+      model-based summaries of the per-horizon causal estimates rather than
+      separately identified causal quantities.</p>
+    </div>
+  </section>
+
+  <section class="provenance">
+    <p><strong>Method provenance.</strong> The CSF fits use
+    <code>grf::causal_survival_forest</code> (RMST target). The CAST layer
+    (<code>ledoit_wolf_shrinkage</code>, bootstrap cross-horizon covariance, and
+    the GLS quadratic fit) is ported directly from the production glioma CAST
+    pipeline. All cohorts are simulated — no patient data.</p>
+    <p class="gen" id="gen-stamp"></p>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
