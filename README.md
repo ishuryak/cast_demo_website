@@ -77,7 +77,18 @@ DEMO_SUBSAMPLE=600 ./run_all.sh
 `Rscript` on `PATH`. Env vars cross the WSL→Windows boundary through `WSLENV`
 (already set in the script). Tunables: `DEMO_SUBSAMPLE` (cohort size; 0 = full),
 `DEMO_NUM_TREES`, `DEMO_BOOT`, `DEMO_SEED` (forest seed; default 101, so the
-exported `scenarios.json` is reproducible across runs).
+exported `scenarios.json` is reproducible across runs), and `DEMO_TUNE`
+(hyperparameter tuning; default `all` for a full run, `none` for the smoke test).
+
+**Hyperparameter tuning.** On a full run all forests are tuned, which is slower
+but more accurate. The propensity (`grf::regression_forest`) and CSF
+(`grf::causal_survival_forest`) use grf's built-in `tune.parameters = "all"`
+cross-validation over `sample.fraction`, `mtry`, `min.node.size`, the honesty
+fractions, `alpha`, and `imbalance.penalty`. The RSF (`grf::survival_forest`,
+which has no built-in tuner) is tuned with a small grid over `min.node.size`
+∈ {5, 15, 50}, `sample.fraction` ∈ {0.35, 0.5}, and `mtry`, selected by
+out-of-bag concordance at a mid-window horizon. Set `DEMO_TUNE=none` to skip
+tuning for a fast check.
 
 ## View the site locally
 
@@ -100,6 +111,155 @@ The site lives in `docs/`, which GitHub Pages can serve directly:
 
 Only aggregate artifacts ship — the per-patient simulated intermediates in
 `output/` are gitignored.
+
+## For collaborators
+
+### Pipeline (what each script produces)
+
+`run_all.sh` runs three R scripts in order:
+
+1. **`R/01_simulate.R`** → `output/sim.rds`. Simulates the confounded cohorts and
+   the *known* true ATE(t). One entry per scenario, each holding the per-patient
+   rows and the oracle effect curve.
+2. **`R/02_fit_methods.R`** → `output/fits.rds`. Fits Naive / Cox / RSF / CSF /
+   CAST on each cohort and scores every method against the truth.
+3. **`R/03_export.R`** → `docs/data/scenarios.json` + `docs/figs/*.png`. Writes
+   the aggregate results the website reads, plus the 600-DPI fallback figures.
+
+`R/cast_core.R` holds the shared CAST routines (Ledoit–Wolf shrinkage, bootstrap
+cross-horizon covariance, GLS quadratic fit, and the true/KM RMST helpers).
+
+### Data-generating model
+
+Everything is generated from a known model, so **no patient data are used
+anywhere**. Each scenario (one effect shape × one confounding level γ) simulates
+**n = 2000** independent patients. The covariates fall into three roles:
+
+- **Confounders** (affect both prognosis and treatment assignment): age, stage,
+  performance status, comorbidity count.
+- **Prognostic non-confounder** (affects survival only): smoking. It shortens
+  survival but does not affect who is treated and does not modify the effect.
+- **Negative controls** (affect nothing): sex and ethnicity. Included so the
+  methods can be seen to correctly ignore irrelevant covariates.
+
+Every formula below is exactly what `R/01_simulate.R` implements.
+
+**1. Covariate distributions** (drawn independently per patient):
+
+$$
+\text{age}\sim\mathcal N(60,10^2),\quad
+\text{stage}\sim\text{Cat}(\{1,2,3,4\};\,0.25,0.30,0.25,0.20),
+$$
+$$
+\text{ps}\sim\mathrm{clip}\!\big(\mathcal N(80,12^2),\,40,\,100\big),\quad
+\text{comorb}\sim\min\!\big(\mathrm{Pois}(1),\,4\big),
+$$
+$$
+\text{smoke}\sim\mathrm{Bern}(0.45),\quad
+\text{sex}\sim\mathrm{Bern}(0.5),\quad
+\text{eth}\sim\text{Cat}(\{A,B,C\};\,0.5,0.3,0.2).
+$$
+
+Confounders are standardized for use in the linear predictors:
+$z_{\text{age}}=(\text{age}-60)/10$, $z_{\text{stage}}=(\text{stage}-2.5)/1.1$,
+$z_{\text{ps}}=(\text{ps}-80)/12$, $z_{\text{com}}=(\text{comorb}-1)/1$.
+
+**2. Baseline (control) survival** is Weibull with shape $k=1.4$. The control
+log-scale predictor and Weibull scale are
+
+$$
+\eta^{\text{surv}}=-0.25\,z_{\text{age}}-0.45\,z_{\text{stage}}+0.30\,z_{\text{ps}}-0.30\,z_{\text{com}}-0.40\,\text{smoke},
+\qquad
+\lambda_0=\exp(4.3+\eta^{\text{surv}}),
+$$
+
+giving the per-patient baseline hazard
+$h_0(u)=\dfrac{k}{\lambda_0}\left(\dfrac{u}{\lambda_0}\right)^{k-1}$
+(control median survival ≈ 55 months). Smoking lowers $\eta^{\text{surv}}$, so
+smokers do worse; sex and ethnicity have zero coefficients.
+
+**3. Treatment effect** is a time-varying hazard ratio that depends on the shape
+and time only (never on covariates), with crossover $u^{*}=48$ months:
+
+$$
+\text{plateau:}\ \ \mathrm{HR}(u)=e^{-0.62}\approx0.54;\qquad
+\text{reversal:}\ \ \mathrm{HR}(u)=
+\begin{cases}e^{-0.95}\approx0.39 & u<48\\[2pt] e^{0.72}\approx2.05 & u\ge 48\end{cases}
+$$
+
+The treated hazard is $h_1(u)=h_0(u)\,\mathrm{HR}(u)$.
+
+**4. Potential-outcome survival curves** for arm $w\in\{0,1\}$ on a fine grid
+($u\in[0,210]$, step 0.5 months) are
+
+$$
+H_w(t)=\int_0^t h_w(u)\,du,\qquad S_w(t)=\exp\{-H_w(t)\}
+$$
+
+(the integral is the trapezoidal sum over the grid).
+
+**5. Treatment assignment** (the confounding knob, $\gamma=$ `conf_strength`
+$\in\{0,0.5,1,2\}$). Only the confounders enter the propensity:
+
+$$
+\eta^{\text{treat}}=\gamma\,(-0.5\,z_{\text{age}}-0.6\,z_{\text{stage}}+0.5\,z_{\text{ps}}-0.45\,z_{\text{com}}),
+\qquad
+\pi=\frac{1}{1+e^{-\eta^{\text{treat}}}},\qquad W\sim\mathrm{Bern}(\pi).
+$$
+
+At $\gamma=0$ assignment is random (a clean trial); as $\gamma$ rises, healthier
+patients (younger, earlier-stage, better performance status, fewer
+comorbidities) are preferentially treated, i.e. confounding by indication.
+Smoking, sex, and ethnicity do **not** enter $\pi$. Treatment is **binary**.
+
+**6. Observed data.** The latent event time is drawn by inverse-CDF from the
+*assigned* arm's curve, $T=S_W^{-1}(U)$ with $U\sim\mathrm{Unif}(0,1)$
+(implemented via $F_W=1-S_W$). Censoring is light random dropout plus
+administrative censoring at 180 months:
+
+$$
+C=\min\!\big(\mathrm{Unif}(36,260),\,180\big),\qquad
+Y=\min(T,C),\qquad D=\mathbf 1\{T\le C\}.
+$$
+
+**7. Estimand and oracle truth.** The target is the RMST difference at horizon
+$t$. With the known potential-outcome curves,
+
+$$
+\mathrm{RMST}_w(t)=\int_0^t S_w(u)\,du,\qquad
+\mathrm{ATE}(t)=\frac1n\sum_{i=1}^n\big[\mathrm{RMST}_{1}(t\mid i)-\mathrm{RMST}_{0}(t\mid i)\big],
+$$
+
+evaluated at $t\in\{12,24,\dots,120\}$ months. Because $S_0,S_1$ are known, this
+truth is exact. Sex and ethnicity (zero coefficients) and smoking (enters only
+$\eta^{\text{surv}}$, identically in both arms) never change the true ATE; it is
+driven by the confounders' effect on baseline survival and by $\mathrm{HR}(u)$.
+
+This produces **8 scenarios** (2 shapes × 4 confounding levels), each at 10
+horizons (12–120 months).
+
+### Data tiers
+
+- **Intermediates (gitignored, not in the repo):** `output/sim.rds`,
+  `output/fits.rds` hold the per-patient simulated rows (age, stage, performance
+  status, comorbidity, smoking, sex, ethnicity, treatment `W`, observed time `Y`,
+  event `D`), the true ATE curves, and the fitted results. Kept out of git on
+  principle (row-per-patient layout); regenerate them by running the pipeline.
+- **Published data (the only data in the repo):** `docs/data/scenarios.json`
+  (~14 KB) is fully **aggregate** — per scenario it stores cohort metadata
+  (shape, confounding strength, n, event rate, treated fraction, SMDs), the
+  truth / Naive / RSF ATE vectors, the CSF points with CIs, the CAST trajectory
+  with band and peak metrics, the Cox HR + PH-test p-value, the Ledoit–Wolf
+  shrinkage diagnostics, and each method's RMSE vs. truth. No patient-level rows.
+  Because the cohorts are synthetic, nothing sensitive exists even in the
+  gitignored intermediates.
+
+### Regenerate
+
+```bash
+./run_all.sh                       # full run, regenerates scenarios.json + figures
+DEMO_SUBSAMPLE=600 ./run_all.sh    # fast smoke test
+```
 
 ## Method provenance
 

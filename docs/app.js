@@ -168,8 +168,10 @@ function renderCards(s) {
 
   // Balance
   document.getElementById("smd-text").innerHTML =
-    `SMD age = <strong>${fmt(s.meta.smd_age)}</strong>, ` +
-    `SMD performance status = <strong>${fmt(s.meta.smd_ps)}</strong><br>` +
+    `Confounders — age = <strong>${fmt(s.meta.smd_age)}</strong>, ` +
+    `performance status = <strong>${fmt(s.meta.smd_ps)}</strong>, ` +
+    `comorbidity = <strong>${fmt(s.meta.smd_comorb)}</strong><br>` +
+    `Non-confounder — smoking = <strong>${fmt(s.meta.smd_smoke)}</strong> (stays ≈ 0)<br>` +
     `events ${(100*s.meta.event_rate).toFixed(0)}% · treated ${(100*s.meta.treated_frac).toFixed(0)}% · n = ${s.meta.n}`;
 
   // CAST trajectory metrics

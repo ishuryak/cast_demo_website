@@ -24,7 +24,12 @@
     in a synthetic cohort with control median survival near 55 months. Two
     illustrative effect shapes are available: a <strong>plateau</strong> (benefit
     that rises and levels off) and a <strong>reversal</strong> (a stylized
-    early-benefit, late-harm crossing, not an empirical curve). Move the
+    early-benefit, late-harm crossing, not an empirical curve). Each cohort
+    carries four <strong>confounders</strong> (age, stage, performance status,
+    comorbidity count) that drive both prognosis and treatment assignment, a
+    <strong>prognostic non-confounder</strong> (smoking, which worsens survival
+    but does not affect who is treated), and two <strong>negative-control</strong>
+    covariates (sex, ethnicity) that affect nothing. Move the
     <strong>confounding</strong> slider and toggle methods to see which
     estimators recover the truth.</p>
   </section>
@@ -62,7 +67,7 @@
       <div class="card" id="card-balance">
         <h3>Confounder imbalance (SMD)</h3>
         <p class="hint" id="smd-text"></p>
-        <p class="hint">Standardized mean difference of confounders between arms. |SMD|&gt;0.1 signals imbalance the naive comparison cannot fix.</p>
+        <p class="hint">Standardized mean difference between arms. |SMD|&gt;0.1 signals imbalance the naive comparison cannot fix. As confounding rises, the four confounders become imbalanced while smoking (a non-confounder) and the negative controls sex and ethnicity stay near zero.</p>
       </div>
       <div class="card" id="card-cast">
         <h3>CAST trajectory</h3>
@@ -81,8 +86,9 @@
   <section class="story">
     <div class="step">
       <h2>1 · The confounding problem</h2>
-      <p>Healthier patients (younger, earlier-stage, better performance status)
-      are preferentially selected into treatment (confounding by indication). The
+      <p>Healthier patients (younger, earlier-stage, better performance status,
+      fewer comorbidities) are preferentially selected into treatment (confounding
+      by indication). The
       <strong>Naive</strong> unadjusted RMST difference then measures treatment
       effect <em>plus</em> baseline prognosis, so it is biased <em>upward</em> and
       overstates benefit. At zero confounding it matches the truth; turn

@@ -22,6 +22,11 @@ NUM_TREES  <- as.integer(Sys.getenv("DEMO_NUM_TREES", if (SUB > 0) "300" else "1
 B_BOOT     <- as.integer(Sys.getenv("DEMO_BOOT", if (SUB > 0) "40" else "200"))
 # Fixed forest seed so the exported scenarios.json is reproducible across runs.
 FOREST_SEED <- as.integer(Sys.getenv("DEMO_SEED", "101"))
+# grf hyperparameter tuning. "all" cross-validates over grf's standard parameter
+# space (sample.fraction, mtry, min.node.size, honesty.fraction,
+# honesty.prune.leaves, alpha, imbalance.penalty); "none" uses defaults. Full
+# runs tune all forests; the subsample smoke test skips tuning for speed.
+TUNE <- Sys.getenv("DEMO_TUNE", if (SUB > 0) "none" else "all")
 
 sim <- readRDS("output/sim.rds")
 horizons <- sim$horizons
@@ -36,9 +41,49 @@ rmst_from_curve <- function(surv, times, tau) {
   sum(diff(tt) * head(ss, -1))
 }
 
+# Hyperparameter grid for the RSF survival forest. grf::survival_forest has no
+# built-in tuner, so we search a small grid over min.node.size, sample.fraction,
+# and mtry, score each candidate by out-of-bag concordance (Harrell's C) at a
+# mid-window horizon, and refit at full size with the best combination.
+# do_tune = FALSE returns a default-parameter forest (used by the smoke test).
+tune_survival_forest <- function(Xw, Y, D, num.trees, seed, tau = 60,
+                                 do_tune = TRUE) {
+  if (!do_tune)
+    return(survival_forest(Xw, Y, D, num.trees = num.trees, seed = seed))
+  p <- ncol(Xw)
+  grid <- expand.grid(min.node.size = c(5, 15, 50),
+                      sample.fraction = c(0.35, 0.5),
+                      mtry = unique(c(ceiling(sqrt(p)), p)))
+  oob_c <- function(prm) {
+    f <- survival_forest(Xw, Y, D, num.trees = max(250L, num.trees %/% 4L),
+                         min.node.size = prm$min.node.size,
+                         sample.fraction = prm$sample.fraction, mtry = prm$mtry,
+                         compute.oob.predictions = TRUE, seed = seed)
+    j        <- which.min(abs(f$failure.times - tau))
+    surv_tau <- f$predictions[, j]                  # OOB survival prob at tau
+    # survival::concordance scores higher predictor = longer survival, so the
+    # survival probability is the correctly-oriented score (C > 0.5 = better).
+    tryCatch(survival::concordance(Surv(Y, D) ~ surv_tau)$concordance,
+             error = function(e) NA_real_)
+  }
+  scores <- vapply(seq_len(nrow(grid)), function(i) oob_c(grid[i, ]), numeric(1))
+  best   <- grid[which.max(scores), ]
+  survival_forest(Xw, Y, D, num.trees = num.trees,
+                  min.node.size = best$min.node.size,
+                  sample.fraction = best$sample.fraction, mtry = best$mtry,
+                  seed = seed)
+}
+
 fit_scenario <- function(sc, label) {
   dat <- sc$data
-  X <- as.matrix(dat[, c("age", "stage", "ps")])
+  # Covariate matrix for the forests: confounders (age, stage, ps, comorb), the
+  # prognostic non-confounder (smoke), and the negative controls (sex, ethnicity
+  # one-hot encoded as eth_B / eth_C, reference = A).
+  X <- cbind(age = dat$age, stage = dat$stage, ps = dat$ps, comorb = dat$comorb,
+             smoke = dat$smoke, sex = dat$sex,
+             eth_B = as.integer(dat$ethnicity == "B"),
+             eth_C = as.integer(dat$ethnicity == "C"))
+  X <- as.matrix(X)
   Y <- dat$Y; D <- dat$D; W <- dat$W
   n <- nrow(X)
 
@@ -46,7 +91,8 @@ fit_scenario <- function(sc, label) {
   naive <- naive_rmst_ate(Y, D, W, horizons)
 
   ## ---- Cox: confounder-adjusted, single HR + PH test ----
-  cox <- coxph(Surv(Y, D) ~ W + age + stage + ps, data = dat)
+  cox <- coxph(Surv(Y, D) ~ W + age + stage + ps + comorb + smoke + sex +
+                 factor(ethnicity), data = dat)
   cox_hr  <- unname(exp(coef(cox)["W"]))
   cox_ci  <- exp(confint(cox)["W", ])
   ph      <- tryCatch(cox.zph(cox), error = function(e) NULL)
@@ -54,12 +100,14 @@ fit_scenario <- function(sc, label) {
 
   ## ---- propensity for CSF ----
   W_hat <- as.numeric(regression_forest(X, W, num.trees = NUM_TREES,
+                                        tune.parameters = TUNE,
                                         seed = FOREST_SEED)$predictions)
   W_hat <- pmin(pmax(W_hat, 0.01), 0.99)
 
   ## ---- RSF S-learner plug-in (ML baseline; W as a feature, no orthogonalization) ----
   Xw <- cbind(X, W = W)
-  rsf <- survival_forest(Xw, Y, D, num.trees = NUM_TREES, seed = FOREST_SEED)
+  rsf <- tune_survival_forest(Xw, Y, D, num.trees = NUM_TREES, seed = FOREST_SEED,
+                              do_tune = (TUNE != "none"))
   ftimes <- rsf$failure.times
   pred1 <- predict(rsf, cbind(X, W = 1))$predictions
   pred0 <- predict(rsf, cbind(X, W = 0))$predictions
@@ -76,6 +124,7 @@ fit_scenario <- function(sc, label) {
     f <- tryCatch(
       causal_survival_forest(X, Y, W, D, W.hat = W_hat, target = "RMST",
                              horizon = horizons[h], num.trees = NUM_TREES,
+                             tune.parameters = TUNE,
                              seed = FOREST_SEED + horizons[h]),
       error = function(e) { message("  CSF h=", horizons[h], ": ", e$message); NULL })
     forests[h] <- list(f)   # [h]<-list() preserves NULL slots; [[h]]<-NULL would delete
