@@ -19,15 +19,16 @@
   <section class="lead">
     <p>Each patient cohort below is <strong>simulated</strong>, so we know the
     true average treatment effect (ATE) at every horizon (the solid black
-    curve). The estimand is the <strong>RMST difference</strong> (extra
-    restricted mean survival months from treatment) at horizons 12–120 months,
-    in a synthetic cohort with control median survival near 55 months. Two
-    illustrative effect shapes are available: a <strong>plateau</strong>
-    (treatment is protective throughout, so the benefit accumulates and is
-    sustained) and a <strong>reversal</strong> (treatment helps early but harms
-    after about four years, so the survival curves cross and the benefit rises,
-    peaks, then declines). The reversal is a stylized teaching curve, not an
-    empirical one. Each cohort
+    curve). The estimand is the <strong>survival-probability difference</strong>
+    (the gap in the probability of surviving past each horizon, P(T&gt;t | treated)
+    − P(T&gt;t | control)) at horizons 12–108 months, in a synthetic cohort with
+    control median survival near 55 months. Two illustrative effect shapes are
+    available: a <strong>plateau</strong> (treatment is protective throughout, so
+    the survival gap rises, peaks, then slowly narrows as both arms approach low
+    survival) and a <strong>reversal</strong> (treatment helps early but harms
+    after about four years, so the survival curves cross and the survival-probability
+    difference rises, peaks, then turns negative). The reversal is a stylized
+    teaching curve, not an empirical one. Each cohort
     carries four <strong>confounders</strong> (age, stage, performance status,
     comorbidity count) that drive both prognosis and treatment assignment, a
     <strong>prognostic non-confounder</strong> (smoking, which worsens survival
@@ -57,7 +58,7 @@
     <div id="plot"></div>
     <aside class="cards">
       <div class="card" id="card-rmse">
-        <h3>Accuracy vs. truth (RMSE, months)</h3>
+        <h3>Accuracy vs. truth (RMSE, survival-probability)</h3>
         <div class="rmse-bars"></div>
         <p class="hint">Lower is better. Watch Naive collapse as confounding rises while CSF stays accurate. CSF and CAST are scored in-sample (no train/test split), so their accuracy here is optimistic relative to real-world deployment.</p>
       </div>
@@ -65,7 +66,7 @@
         <h3>Cox baseline</h3>
         <p class="big"><span id="cox-hr"></span></p>
         <p class="hint" id="cox-ph"></p>
-        <p class="hint">A single time-constant hazard ratio, with no trajectory. The proportional-hazards test flags when a single hazard ratio cannot hold across all horizons.</p>
+        <p class="hint">A single time-constant hazard ratio, with no trajectory. The proportional-hazards test flags when a single hazard ratio cannot hold across all horizons. The dotted purple <strong>Cox (marginal)</strong> curve on the plot standardizes the same model to the survival-probability scale; it is confounder-adjusted (so not biased by confounding) but, forced to be proportional, it tracks the truth on the plateau shape yet flatlines on the reversal, where it cannot bend to follow the crossing.</p>
       </div>
       <div class="card" id="card-balance">
         <h3>Confounder imbalance (SMD)</h3>
@@ -87,7 +88,7 @@
       <div class="card" id="card-cast">
         <h3>CAST trajectory</h3>
         <p class="hint" id="cast-text"></p>
-        <p class="hint">A smooth quadratic effect trajectory. The point fit is weighted least squares, which is robust for the near-collinear cumulative-RMST horizons; generalized least squares is used automatically only when the cross-horizon covariance is well-conditioned (for cumulative RMST it stays weighted least squares).</p>
+        <p class="hint">A smooth quadratic effect trajectory. The point fit uses generalized least squares (weight = Σ̂⁻¹) automatically when the cross-horizon covariance is well-conditioned, falling back to weighted least squares otherwise. On this survival-probability scale the horizons are far less correlated than on the cumulative-RMST scale, so the covariance is well-conditioned and generalized least squares engages.</p>
         <p class="hint">The shaded 95% band is the <em>covariance-aware</em> band: it propagates the Ledoit–Wolf-shrunk cross-horizon influence-function covariance through the fit (a sandwich variance), so correlated horizons are handled correctly rather than treated as independent. The band is conditional on the fitted forests and does not propagate the forests' own estimation error. Peak time and effect are model-based summaries of the horizon-specific causal estimates, not separately identified causal quantities.</p>
       </div>
       <div class="card" id="card-shrink">
@@ -104,10 +105,10 @@
       <p>Healthier patients (younger, earlier-stage, better performance status,
       fewer comorbidities) are preferentially selected into treatment (confounding
       by indication). The
-      <strong>Naive</strong> unadjusted RMST difference then measures treatment
-      effect <em>plus</em> baseline prognosis, so it is biased <em>upward</em> and
-      overstates benefit. At zero confounding it matches the truth; turn
-      confounding up and it diverges.</p>
+      <strong>Naive</strong> unadjusted survival-probability difference then
+      measures treatment effect <em>plus</em> baseline prognosis, so it is biased
+      <em>upward</em> and overstates benefit. At zero confounding it matches the
+      truth; turn confounding up and it diverges.</p>
     </div>
     <div class="step">
       <h2>2 · CSF adjusts for confounding</h2>
@@ -140,11 +141,12 @@
       <p>CSF gives correlated point estimates across horizons. <strong>CAST</strong>
       forms the cross-horizon covariance from the CSF influence-function scores,
       stabilizes it with <strong>Ledoit–Wolf shrinkage</strong>, and fits a smooth
-      quadratic in time. The point fit is weighted least squares (robust for the
-      near-collinear cumulative-RMST horizons; generalized least squares
-      <code>β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y</code> engages automatically when Σ̂ is
-      well-conditioned), and the 95% band is a covariance-aware sandwich that
-      propagates Σ̂. The result is a smooth effect trajectory whose clinical
+      quadratic in time. The point fit is generalized least squares
+      <code>β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y</code>, which engages automatically because the
+      survival-probability horizons make Σ̂ well-conditioned (it falls back to
+      weighted least squares when they do not), and the 95% band is a
+      covariance-aware sandwich that propagates Σ̂. The result is a smooth effect
+      trajectory whose clinical
       metrics (peak effect, time-to-peak) are model-based summaries of the
       per-horizon causal estimates rather than separately identified causal
       quantities.</p>
@@ -153,7 +155,7 @@
 
   <section class="provenance">
     <p><strong>Method provenance.</strong> The CSF fits use
-    <code>grf::causal_survival_forest</code> (RMST target). The CAST layer
+    <code>grf::causal_survival_forest</code> (survival.probability target). The CAST layer
     (<code>ledoit_wolf_shrinkage</code>, the cross-horizon influence-function
     covariance, and the covariance-aware quadratic trajectory fit) is ported from
     the production glioma CAST pipeline. All cohorts are simulated, with no

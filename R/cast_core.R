@@ -98,11 +98,12 @@ score_horizon_cov <- function(scores, verbose = FALSE) {
 # with a covariance-aware simultaneous band built from the shrunk cross-horizon
 # covariance Sigma. Design X = [1, t, t^2].
 #
-# Point estimate: weighted least squares (weights 1 / SE^2), which is robust for
-# the near-collinear cumulative-RMST horizons. Generalized least squares
-# (weight = Sigma^-1) is used automatically ONLY when Sigma is well-conditioned
-# (cond <= gls_cond_max) and the fit is sane; for cumulative RMST the horizons are
-# ~perfectly correlated, so Sigma is ill-conditioned and the fit stays WLS.
+# Point estimate: generalized least squares (weight = Sigma^-1) is used
+# automatically when Sigma is well-conditioned (cond <= gls_cond_max) and the fit
+# is sane; otherwise it falls back to weighted least squares (weights 1 / SE^2).
+# On the survival-probability scale the per-horizon scores are far less correlated
+# than on the cumulative-RMST scale, so Sigma is well-conditioned and GLS engages;
+# on the cumulative-RMST scale the horizons are near-collinear and the fit stays WLS.
 #
 # Uncertainty: the fitted-coefficient covariance is the sandwich
 #   Var(beta) = (X'WX)^-1 (X'W Sigma W X) (X'WX)^-1,
@@ -171,45 +172,34 @@ fit_cast_trajectory <- function(horizons, estimates, Sigma = NULL,
 }
 
 # ---------------------------------------------------------------------------
-# True (oracle) RMST-scale ATE over a covariate sample, computed from the known
+# True (oracle) survival-probability ATE over a covariate sample, from the known
 # potential-outcome survival curves S0, S1 on a fine time grid.
-# RMST_w(t | x) = integral_0^t S_w(u | x) du ; ATE(t) = mean_x [RMST_1 - RMST_0].
+# ATE_S(t) = mean_x [S_1(t | x) - S_0(t | x)].
 # S0, S1 are n x length(grid) matrices on the shared `grid`.
 # ---------------------------------------------------------------------------
-true_rmst_ate <- function(S0, S1, grid, horizons) {
-  du <- diff(grid)
-  # trapezoidal cumulative integral of each survival curve along the grid
-  cum_integral <- function(S) {
-    mids <- (S[, -1, drop = FALSE] + S[, -ncol(S), drop = FALSE]) / 2
-    inc <- sweep(mids, 2, du, `*`)
-    cbind(0, t(apply(inc, 1, cumsum)))   # n x length(grid), value at grid[j]
-  }
-  R0 <- cum_integral(S0)
-  R1 <- cum_integral(S1)
+true_survprob_ate <- function(S0, S1, grid, horizons) {
   sapply(horizons, function(t) {
     j <- which.min(abs(grid - t))
-    mean(R1[, j] - R0[, j])
+    mean(S1[, j] - S0[, j])
   })
 }
 
 # ---------------------------------------------------------------------------
-# Unadjusted ("naive") RMST difference at each horizon from arm-specific
-# Kaplan-Meier curves (RMST = area under KM up to the horizon).
+# Kaplan-Meier survival probability S(tau) for one arm.
 # ---------------------------------------------------------------------------
-km_rmst <- function(time, status, tau) {
+km_surv_prob <- function(time, status, tau) {
   fit <- survival::survfit(survival::Surv(time, status) ~ 1)
-  tt <- c(0, fit$time)
-  ss <- c(1, fit$surv)
-  keep <- tt <= tau
-  tt <- c(tt[keep], tau)
-  ss <- c(ss[keep], ss[sum(keep)])
-  sum(diff(tt) * head(ss, -1))
+  s <- summary(fit, times = tau, extend = TRUE)$surv
+  if (length(s) == 0) 1 else s
 }
 
-naive_rmst_ate <- function(time, status, W, horizons) {
+# ---------------------------------------------------------------------------
+# Unadjusted ("naive") survival-probability difference at each horizon from
+# arm-specific Kaplan-Meier curves: S_KM(t | W=1) - S_KM(t | W=0).
+# ---------------------------------------------------------------------------
+naive_survprob_ate <- function(time, status, W, horizons) {
   sapply(horizons, function(t) {
-    r1 <- km_rmst(time[W == 1], status[W == 1], t)
-    r0 <- km_rmst(time[W == 0], status[W == 0], t)
-    r1 - r0
+    km_surv_prob(time[W == 1], status[W == 1], t) -
+    km_surv_prob(time[W == 0], status[W == 0], t)
   })
 }

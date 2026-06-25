@@ -17,7 +17,7 @@ SUB <- as.integer(Sys.getenv("DEMO_SUBSAMPLE", "0"))   # >0 = fast smoke test
 N        <- if (SUB > 0) SUB else 2000
 CONF_GRID <- if (SUB > 0) c(0, 1) else c(0, 0.5, 1.0, 2.0)
 SHAPES    <- if (SUB > 0) c("plateau") else c("plateau", "reversal")
-HORIZONS  <- seq(12, 120, by = 12)
+HORIZONS  <- seq(12, 120, by = 24)        # 12 36 60 84 108 (5 horizons @ 24mo)
 GRID      <- seq(0, 210, by = 0.5)        # fine time grid for true curves (months)
 ADMIN_CENS <- 180                         # administrative censoring (months)
 # Random (non-informative) loss-to-follow-up: exponential dropout that can occur
@@ -32,15 +32,20 @@ cat(sprintf("[01_simulate] N=%d  conf=%s  shapes=%s\n",
             N, paste(CONF_GRID, collapse=","), paste(SHAPES, collapse=",")))
 
 # Time-varying log-hazard-ratio of treatment for each shape.
-# plateau : uniformly protective (HR<1 for all t) -> RMST benefit rises, plateaus.
-# reversal: protective early, harmful late (crossing) -> benefit rises, peaks, declines.
+# plateau : uniformly protective (HR<1 for all t); on the survival-probability
+#           scale the survival gap rises, peaks, then slowly narrows as both arms
+#           approach low survival.
+# reversal: protective early, harmful late, with a SMOOTH logistic transition
+#           around 48 months (asymptotic HR ~0.39 early, ~2.05 late); the survival
+#           curves cross, so the survival-probability ATE rises, peaks, then turns
+#           negative. The transition is smooth so a quadratic trajectory is a fair
+#           model (a hard step would create a kink no smooth fit can represent).
 hr_curve <- function(shape, u) {
   if (shape == "plateau") {
     exp(rep(-0.62, length(u)))
-  } else { # reversal: strong early protection, strong late harm (survival curves
-           # cross in-window) -> RMST-scale ATE rises, peaks, then clearly declines.
-    ustar <- 48
-    exp(ifelse(u < ustar, -0.95, 0.72))
+  } else {
+    s_w <- 12                                       # transition width (months)
+    exp(-0.95 + (0.72 - (-0.95)) * plogis((u - 48) / s_w))
   }
 }
 
@@ -116,7 +121,7 @@ simulate_cohort <- function(n, conf_strength, shape, seed) {
                     smoke = smoke, sex = sex, ethnicity = ethnicity,
                     W = as.integer(W), Y = Y, D = D, stringsAsFactors = FALSE)
 
-  true_ate <- true_rmst_ate(S0, S1, GRID, HORIZONS)
+  true_ate <- true_survprob_ate(S0, S1, GRID, HORIZONS)
 
   # standardized mean difference by arm; confounders become imbalanced as
   # confounding rises, while smoking (a non-confounder) stays balanced.

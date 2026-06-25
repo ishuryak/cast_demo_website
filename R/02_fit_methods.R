@@ -1,14 +1,16 @@
 # 02_fit_methods.R
-# Fit and score the comparators on each simulated scenario:
-#   Naive : unadjusted KM RMST difference (no confounding adjustment)
-#   Cox   : confounder-adjusted Cox PH (single time-constant HR; PH test)
-#   RSF-S : grf survival_forest S-learner plug-in RMST contrast (ML, not orthogonalized)
+# Fit and score the comparators on each simulated scenario. The estimand is the
+# survival-probability difference ATE_S(t) = P(T>t | W=1) - P(T>t | W=0):
+#   Naive : unadjusted KM survival-probability difference (no confounding adjustment)
+#   Cox   : confounder-adjusted Cox PH -> single HR + PH test, AND a marginal
+#           survival-probability difference curve (g-formula standardization)
+#   RSF-S : grf survival_forest S-learner plug-in survival-prob contrast (ML, not orthogonalized)
 #   RSF-T : grf survival_forest T-learner, separate per-arm forests (ML, not orthogonalized)
-#   CSF   : grf causal_survival_forest per horizon (adjusts for confounding)
+#   CSF   : grf causal_survival_forest per horizon, survival.probability target
 #   CAST  : CSF points -> cross-horizon influence-function covariance ->
-#           Ledoit-Wolf shrinkage -> WLS quadratic trajectory with a
-#           covariance-aware band (GLS auto-used if well-conditioned; + peak metrics)
-# Every method is scored against the KNOWN true ATE(t).
+#           Ledoit-Wolf shrinkage -> quadratic trajectory with a covariance-aware
+#           band (GLS engages on this well-conditioned scale; + peak metrics)
+# Every method is scored against the KNOWN true ATE_S(t).
 #
 # Output: output/fits.rds
 
@@ -33,13 +35,12 @@ sim <- readRDS("output/sim.rds")
 horizons <- sim$horizons
 K <- length(horizons)
 
-# RMST at a horizon from a grf survival_forest predicted survival curve.
-rmst_from_curve <- function(surv, times, tau) {
-  ord <- order(times); times <- times[ord]; surv <- surv[ord]
-  tt <- c(0, times); ss <- c(1, surv)
-  keep <- tt <= tau
-  tt <- c(tt[keep], tau); ss <- c(ss[keep], ss[sum(keep)])
-  sum(diff(tt) * head(ss, -1))
+# Survival probability S(tau) per patient from a grf survival_forest prediction
+# matrix (rows = patients, cols = failure.times): the predicted survival at the
+# largest failure time <= tau (1 if tau precedes the first failure time).
+surv_at <- function(pred, times, tau) {
+  j <- which(times <= tau)
+  if (!length(j)) rep(1, nrow(pred)) else pred[, max(j)]
 }
 
 # Hyperparameter grid for the RSF survival forest. grf::survival_forest has no
@@ -88,8 +89,8 @@ fit_scenario <- function(sc, label) {
   Y <- dat$Y; D <- dat$D; W <- dat$W
   n <- nrow(X)
 
-  ## ---- Naive: unadjusted KM RMST difference ----
-  naive <- naive_rmst_ate(Y, D, W, horizons)
+  ## ---- Naive: unadjusted KM survival-probability difference ----
+  naive <- naive_survprob_ate(Y, D, W, horizons)
 
   ## ---- Cox: confounder-adjusted, single HR + PH test ----
   cox <- coxph(Surv(Y, D) ~ W + age + stage + ps + comorb + smoke + sex +
@@ -98,6 +99,25 @@ fit_scenario <- function(sc, label) {
   cox_ci  <- exp(confint(cox)["W", ])
   ph      <- tryCatch(cox.zph(cox), error = function(e) NULL)
   cox_ph_p <- if (!is.null(ph)) ph$table["W", "p"] else NA_real_
+
+  ## ---- Cox marginal survival-probability difference (g-formula) ----
+  ## Standardize the Cox fit over the covariate sample: for each horizon,
+  ## mean_x[ S(t | x, W=1) - S(t | x, W=0) ] using the baseline cumulative hazard
+  ## H0(t) and S(t | x, W) = exp(-H0(t) * exp(linear predictor)). This is
+  ## confounder-adjusted, so its error is PH misspecification, not confounding;
+  ## a single HR forces a proportional gap that cannot rise then cross.
+  bh   <- basehaz(cox, centered = FALSE)
+  H0t  <- function(t) { i <- which(bh$time <= t); if (!length(i)) 0 else bh$hazard[max(i)] }
+  mm   <- model.matrix(~ W + age + stage + ps + comorb + smoke + sex +
+                         factor(ethnicity), data = dat)[, -1]
+  bco  <- coef(cox); jW <- which(names(bco) == "W")
+  lp   <- as.vector(mm %*% bco)
+  cox_ate <- sapply(horizons, function(t) {
+    Ht <- H0t(t)
+    s1 <- exp(-Ht * exp(lp + bco[jW] * (1 - mm[, "W"])))
+    s0 <- exp(-Ht * exp(lp - bco[jW] * mm[, "W"]))
+    mean(s1 - s0)
+  })
 
   ## ---- propensity for CSF ----
   W_hat_raw <- as.numeric(regression_forest(X, W, num.trees = NUM_TREES,
@@ -120,11 +140,8 @@ fit_scenario <- function(sc, label) {
   ftimes <- rsf$failure.times
   pred1 <- predict(rsf, cbind(X, W = 1))$predictions
   pred0 <- predict(rsf, cbind(X, W = 0))$predictions
-  rsf_ate <- sapply(horizons, function(t) {
-    r1 <- mean(apply(pred1, 1, rmst_from_curve, times = ftimes, tau = t))
-    r0 <- mean(apply(pred0, 1, rmst_from_curve, times = ftimes, tau = t))
-    r1 - r0
-  })
+  rsf_ate <- sapply(horizons, function(t)
+    mean(surv_at(pred1, ftimes, t)) - mean(surv_at(pred0, ftimes, t)))
 
   ## ---- T-learner: separate survival forests per arm (ML baseline, not orthogonalized) ----
   ## One forest fit on X (no W) for the treated rows, one for the control rows; each
@@ -140,18 +157,15 @@ fit_scenario <- function(sc, label) {
                               do_tune = (TUNE != "none"))
   tp1 <- predict(tl1, X)$predictions; ft1 <- tl1$failure.times
   tp0 <- predict(tl0, X)$predictions; ft0 <- tl0$failure.times
-  tlearner_ate <- sapply(horizons, function(t) {
-    r1 <- mean(apply(tp1, 1, rmst_from_curve, times = ft1, tau = t))
-    r0 <- mean(apply(tp0, 1, rmst_from_curve, times = ft0, tau = t))
-    r1 - r0
-  })
+  tlearner_ate <- sapply(horizons, function(t)
+    mean(surv_at(tp1, ft1, t)) - mean(surv_at(tp0, ft0, t)))
 
-  ## ---- CSF per horizon (RMST target) + doubly-robust (AIPW) scores ----
+  ## ---- CSF per horizon (survival.probability target) + doubly-robust (AIPW) scores ----
   csf_ate <- rep(NA_real_, K); csf_se <- rep(NA_real_, K)
   scores_mat <- matrix(NA_real_, n, K)   # column h = influence-function scores
   for (h in seq_len(K)) {
     f <- tryCatch(
-      causal_survival_forest(X, Y, W, D, W.hat = W_hat, target = "RMST",
+      causal_survival_forest(X, Y, W, D, W.hat = W_hat, target = "survival.probability",
                              horizon = horizons[h], num.trees = NUM_TREES,
                              tune.parameters = TUNE,
                              seed = FOREST_SEED + horizons[h]),
@@ -190,9 +204,10 @@ fit_scenario <- function(sc, label) {
     sqrt(mean((est[o] - truth[o])^2))
   }
 
-  cat(sprintf("  [%s] RMSE  naive=%.2f  RSF-S=%.2f  RSF-T=%.2f  CSF=%.2f  CAST=%.2f  | fit=%s LW alpha=%.3f cond %.2g->%.2g\n",
-              label, err(naive), err(rsf_ate), err(tlearner_ate), err(csf_ate),
-              err(cast_pred$fit), gls$method, sh$shrinkage, sh$cond_before, sh$cond_after))
+  cat(sprintf("  [%s] RMSE  naive=%.3f  cox=%.3f  RSF-S=%.3f  RSF-T=%.3f  CSF=%.3f  CAST=%.3f  | fit=%s LW alpha=%.3f cond %.2g->%.2g\n",
+              label, err(naive), err(cox_ate), err(rsf_ate), err(tlearner_ate),
+              err(csf_ate), err(cast_pred$fit), gls$method, sh$shrinkage,
+              sh$cond_before, sh$cond_after))
 
   list(
     horizons = horizons,
@@ -209,11 +224,11 @@ fit_scenario <- function(sc, label) {
                 peak_time = gls$peak_time, peak_effect = gls$peak_effect,
                 peak_in_range = gls$peak_in_range),
     cox = list(hr = cox_hr, lo = unname(cox_ci[1]), hi = unname(cox_ci[2]),
-               ph_p = unname(cox_ph_p)),
+               ph_p = unname(cox_ph_p), ate = cox_ate),
     shrinkage = list(alpha = sh$shrinkage, target_scale = sh$target_scale,
                      cond_before = sh$cond_before, cond_after = sh$cond_after,
                      sample_cov = sh$sample_cov, shrunk_cov = sh$cov),
-    rmse = list(naive = err(naive), rsf = err(rsf_ate),
+    rmse = list(naive = err(naive), cox = err(cox_ate), rsf = err(rsf_ate),
                 tlearner = err(tlearner_ate),
                 csf = err(csf_ate), cast = err(cast_pred$fit)),
     overlap = overlap,

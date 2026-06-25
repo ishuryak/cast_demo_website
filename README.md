@@ -14,7 +14,8 @@ cohorts where the true treatment effect is known:
    shrinkage, and a smooth quadratic fit with a covariance-aware band.
 
 Because the data are simulated, every method is scored against the **known true
-ATE(t)** (RMST-difference scale), the one comparison impossible with real data.
+ATE(t)** (survival-probability-difference scale), the one comparison impossible
+with real data.
 
 ## What you see
 
@@ -25,11 +26,13 @@ proportional-hazards test, confounder imbalance (SMD), and the Ledoit–Wolf
 shrinkage intensity and covariance condition number.
 
 The **effect-shape** selector switches between two trajectories: a **plateau**,
-where treatment is protective throughout (constant hazard ratio ≈ 0.54), so the
-RMST benefit accumulates and is sustained; and a **reversal**, where treatment
-helps early (HR ≈ 0.39) but harms after 48 months (HR ≈ 2.05), so the survival
-curves cross and the benefit rises, peaks, then declines. The reversal is a
-stylized teaching curve, not an empirical one, and because it breaks
+where treatment is protective throughout (constant hazard ratio ≈ 0.54), so on
+the survival-probability scale the survival gap rises, peaks, then slowly narrows
+as both arms approach low survival; and a **reversal**, where treatment helps
+early (asymptotic HR ≈ 0.39) but harms late (asymptotic HR ≈ 2.05) through a
+smooth transition around 48 months, so the survival curves cross and the
+survival-probability difference rises, peaks, then turns negative. The reversal
+is a stylized teaching curve, not an empirical one, and because it breaks
 proportional hazards it is the case a single Cox hazard ratio cannot describe,
 the motivation for a trajectory method.
 
@@ -37,8 +40,9 @@ the motivation for a trajectory method.
 
 The static 600-DPI fallback figures the pipeline writes, one per confounding
 level and effect shape (the live site is interactive: a slider moves through
-these same panels). Each shows truth, Naive, RSF, the CSF points with 95% CIs,
-and the CAST trajectory with its covariance-aware 95% band. As confounding
+these same panels). Each shows truth, Naive, RSF (S- and T-learner), the marginal
+Cox curve, the CSF points with 95% CIs, and the CAST trajectory with its
+covariance-aware 95% band. As confounding
 rises the Naive curve diverges while CSF and CAST stay close to truth, with an
 honest, growing residual bias at strong confounding.
 
@@ -56,7 +60,7 @@ cast_demo_website/
   R/
     cast_core.R          Ledoit–Wolf shrinkage, cross-horizon influence-function
                          covariance, covariance-aware quadratic trajectory fit,
-                         true/KM RMST helpers (ported from the glioma CAST pipeline)
+                         true/KM survival-probability helpers (ported from the glioma CAST pipeline)
     01_simulate.R        simulate confounded cohorts + known true ATE(t)
     02_fit_methods.R     Naive / Cox / RSF S- and T-learner / CSF / CAST, scored vs truth
     03_export.R          write docs/data/scenarios.json + PNG fallbacks
@@ -147,7 +151,7 @@ Only aggregate artifacts ship. The per-patient simulated intermediates in
 
 `R/cast_core.R` holds the shared CAST routines (Ledoit–Wolf shrinkage, the
 cross-horizon influence-function covariance, the covariance-aware quadratic
-trajectory fit, and the true/KM RMST helpers).
+trajectory fit, and the true/KM survival-probability helpers).
 
 ### Data-generating model
 
@@ -199,15 +203,19 @@ $h_0(u)=\dfrac{k}{\lambda_0}\left(\dfrac{u}{\lambda_0}\right)^{k-1}$
 smokers do worse; sex and ethnicity have zero coefficients.
 
 **3. Treatment effect** is a time-varying hazard ratio that depends on the shape
-and time only (never on covariates), with crossover $u^{*}=48$ months:
+and time only (never on covariates). The reversal transitions smoothly (logistic,
+width $s_w=12$ months) around $u^{*}=48$ months rather than stepping, so the
+survival-probability truth is differentiable and a smooth quadratic trajectory is
+a fair model:
 
 $$
 \text{plateau:}\ \ \mathrm{HR}(u)=e^{-0.62}\approx0.54;\qquad
-\text{reversal:}\ \ \mathrm{HR}(u)=
-\begin{cases}e^{-0.95}\approx0.39 & u<48\\[2pt] e^{0.72}\approx2.05 & u\ge 48\end{cases}
+\text{reversal:}\ \ \mathrm{HR}(u)=\exp\!\Big\{-0.95+1.67\,\sigma\big((u-48)/12\big)\Big\},
 $$
 
-The treated hazard is $h_1(u)=h_0(u)\,\mathrm{HR}(u)$.
+where $\sigma$ is the logistic function, so $\mathrm{HR}\to e^{-0.95}\approx0.39$
+early and $\to e^{0.72}\approx2.05$ late. The treated hazard is
+$h_1(u)=h_0(u)\,\mathrm{HR}(u)$.
 
 **4. Potential-outcome survival curves** for arm $w\in\{0,1\}$ on a fine grid
 ($u\in[0,210]$, step 0.5 months) are
@@ -249,21 +257,22 @@ about 30% (event rate ≈ 70%), spread throughout follow-up rather than
 concentrated at the administrative cap. Censoring is independent of survival, so
 it remains non-informative and the causal identification is unaffected.
 
-**7. Estimand and oracle truth.** The target is the RMST difference at horizon
-$t$. With the known potential-outcome curves,
+**7. Estimand and oracle truth.** The target is the survival-probability
+difference at horizon $t$. With the known potential-outcome curves,
 
 $$
-\mathrm{RMST}_w(t)=\int_0^t S_w(u)\,du,\qquad
-\mathrm{ATE}(t)=\frac1n\sum_{i=1}^n\big[\mathrm{RMST}_{1}(t\mid i)-\mathrm{RMST}_{0}(t\mid i)\big],
+\mathrm{ATE}(t)=\frac1n\sum_{i=1}^n\big[S_{1}(t\mid i)-S_{0}(t\mid i)\big],
 $$
 
-evaluated at $t\in\{12,24,\dots,120\}$ months. Because $S_0,S_1$ are known, this
+evaluated at $t\in\{12,36,60,84,108\}$ months. Because $S_0,S_1$ are known, this
 truth is exact. Sex and ethnicity (zero coefficients) and smoking (enters only
 $\eta^{\text{surv}}$, identically in both arms) never change the true ATE; it is
 driven by the confounders' effect on baseline survival and by $\mathrm{HR}(u)$.
 
-This produces **8 scenarios** (2 shapes × 4 confounding levels), each at 10
-horizons (12–120 months).
+This produces **8 scenarios** (2 shapes × 4 confounding levels), each at 5
+horizons (12–108 months, spaced 24 months apart — wide enough that the
+cross-horizon influence-function covariance is well-conditioned and the trajectory
+fit uses generalized least squares).
 
 ### Data tiers
 
@@ -276,7 +285,8 @@ horizons (12–120 months).
   (~14 KB) is fully **aggregate**: per scenario it stores cohort metadata
   (shape, confounding strength, n, event rate, treated fraction, SMDs), the
   truth / Naive / RSF S- and T-learner ATE vectors, the CSF points with CIs, the CAST trajectory
-  with band and peak metrics, the Cox HR + PH-test p-value, the Ledoit–Wolf
+  with band and peak metrics, the Cox HR + PH-test p-value and marginal
+  survival-probability curve, the Ledoit–Wolf
   shrinkage diagnostics, and each method's RMSE vs. truth. No patient-level rows.
   Because the cohorts are synthetic, nothing sensitive exists even in the
   gitignored intermediates.
@@ -290,14 +300,15 @@ DEMO_SUBSAMPLE=600 ./run_all.sh    # fast smoke test
 
 ## Method provenance
 
-The CSF fits use `grf::causal_survival_forest` (RMST target, propensity from a
-`grf::regression_forest`). The CAST layer builds the cross-horizon covariance
-from the CSF doubly-robust influence-function scores
+The CSF fits use `grf::causal_survival_forest` (survival.probability target,
+propensity from a `grf::regression_forest`). The CAST layer builds the
+cross-horizon covariance from the CSF doubly-robust influence-function scores
 (`get_scores()`; the covariance of the ATE vector is `cov(Ψ)/n`), stabilizes it
 with `ledoit_wolf_shrinkage()`, and fits a smooth quadratic in time. The point
-estimate is weighted least squares (robust for the near-collinear
-cumulative-RMST horizons); generalized least squares
-`β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y` is used automatically only when Σ̂ is well-conditioned.
+estimate is generalized least squares `β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y`, used
+automatically because the survival-probability horizons make Σ̂ well-conditioned
+(it falls back to weighted least squares when Σ̂ is ill-conditioned, as on the
+cumulative-RMST scale).
 The 95% band is the covariance-aware sandwich
 `Var(β̂) = (XᵀWX)⁻¹ XᵀWΣ̂WX (XᵀWX)⁻¹`, so the shrunk cross-horizon covariance
 propagates into the uncertainty rather than treating horizons as independent.

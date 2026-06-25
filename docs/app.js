@@ -4,21 +4,22 @@
 
 const COLORS = {
   truth: "#111111", naive: "#d55e00", rsf: "#0072b2", tlearner: "#cc79a7",
-  csf: "#009e73", cast: "#009e73"
+  coxate: "#9467bd", csf: "#009e73", cast: "#009e73"
 };
 const METHODS = [
   { key: "truth",    label: "Truth",            color: COLORS.truth },
   { key: "naive",    label: "Naive (unadjusted)", color: COLORS.naive },
   { key: "rsf",      label: "RSF S-learner",    color: COLORS.rsf },
   { key: "tlearner", label: "RSF T-learner",    color: COLORS.tlearner },
+  { key: "coxate",   label: "Cox (marginal)",   color: COLORS.coxate },
   { key: "csf",      label: "CSF (points)",     color: COLORS.csf },
   { key: "cast",     label: "CAST trajectory",  color: COLORS.cast },
   { key: "castci",   label: "CAST 95% band", color: COLORS.cast }
 ];
 const CONF_WORDS = ["none", "mild", "moderate", "strong", "very strong"];
 const SHAPE_TOOLTIPS = {
-  plateau: "Treatment is protective throughout (constant hazard ratio ≈ 0.54), so the RMST benefit accumulates and is sustained, never reversing.",
-  reversal: "Treatment helps early (HR ≈ 0.39) but harms after 48 months (HR ≈ 2.05); the survival curves cross, so the benefit rises, peaks, then declines. A stylized teaching curve, not an empirical one."
+  plateau: "Treatment is protective throughout (constant hazard ratio ≈ 0.54); on the survival-probability scale the survival gap rises, peaks, then slowly narrows as both arms approach low survival.",
+  reversal: "Treatment helps early (HR ≈ 0.39) but harms late (HR ≈ 2.05), with a smooth transition around 48 months; the survival curves cross, so the survival-probability difference rises, peaks, then turns negative. A stylized teaching curve, not an empirical one."
 };
 
 let DATA = null;
@@ -114,6 +115,8 @@ function render() {
     traces.push(line(h, s.rsf, "RSF S-learner", COLORS.rsf, 2.2, "dashdot"));
   if (state.visible.tlearner)
     traces.push(line(h, s.tlearner, "RSF T-learner", COLORS.tlearner, 2.2, "longdash"));
+  if (state.visible.coxate && s.cox && s.cox.ate)
+    traces.push(line(h, s.cox.ate, "Cox (marginal)", COLORS.coxate, 2.2, "dot"));
   if (state.visible.csf)
     traces.push({ x: h, y: s.csf.ate, mode: "markers", name: "CSF (points)",
       marker: { color: COLORS.csf, size: 9 },
@@ -128,7 +131,7 @@ function render() {
     margin: { l: 64, r: 16, t: 16, b: 52 },
     xaxis: { title: { text: "Horizon (months)", font: { size: 15 } },
       tickfont: { size: 13 }, zeroline: false, gridcolor: "#eef1f5" },
-    yaxis: { title: { text: "ATE: RMST difference (months)", font: { size: 15 } },
+    yaxis: { title: { text: "ATE: survival-probability difference", font: { size: 15 } },
       tickfont: { size: 13 }, zeroline: false, gridcolor: "#eef1f5" },
     legend: { orientation: "h", y: 1.04, x: 0, font: { size: 12 } },
     paper_bgcolor: "#fff", plot_bgcolor: "#fff", hovermode: "x unified"
@@ -149,6 +152,7 @@ function renderCards(s) {
     ["Naive", rmse.naive, COLORS.naive],
     ["S-learner", rmse.rsf, COLORS.rsf],
     ["T-learner", rmse.tlearner, COLORS.tlearner],
+    ["Cox", rmse.cox, COLORS.coxate],
     ["CSF", rmse.csf, COLORS.csf],
     ["CAST", rmse.cast, COLORS.cast]
   ].filter(r => r[1] != null);
@@ -161,7 +165,7 @@ function renderCards(s) {
     row.innerHTML =
       `<span class="name">${name}</span>` +
       `<span class="rmse-track"><span class="rmse-fill" style="width:${(100*val/maxv).toFixed(1)}%;background:${color}"></span></span>` +
-      `<span class="val">${val.toFixed(2)}</span>`;
+      `<span class="val">${val.toFixed(3)}</span>`;
     wrap.appendChild(row);
   });
 
@@ -186,8 +190,8 @@ function renderCards(s) {
   // CAST trajectory metrics
   const ct = s.cast;
   const peakTxt = ct.peak_in_range
-    ? `model summary: peak +${ct.peak_effect} mo at ${ct.peak_time} months`
-    : "model summary: monotonic over 12–120 months (no interior peak)";
+    ? `model summary: peak ${ct.peak_effect >= 0 ? "+" : ""}${ct.peak_effect} at ${ct.peak_time} months`
+    : "model summary: monotonic over 12–108 months (no interior peak)";
   document.getElementById("cast-text").innerHTML =
     `fit = <strong>${ct.method}</strong> · R² = ${ct.r_squared}<br>${peakTxt}`;
 
