@@ -270,7 +270,7 @@ $\eta^{\text{surv}}$, identically in both arms) never change the true ATE; it is
 driven by the confounders' effect on baseline survival and by $\mathrm{HR}(u)$.
 
 This produces **8 scenarios** (2 shapes × 4 confounding levels), each at 5
-horizons (12–108 months, spaced 24 months apart — wide enough that the
+horizons (12–108 months, spaced 24 months apart, wide enough that the
 cross-horizon influence-function covariance is well-conditioned and the trajectory
 fit uses generalized least squares).
 

@@ -174,10 +174,13 @@ function renderCards(s) {
   document.getElementById("cox-hr").textContent =
     `HR ${cox.hr} (${cox.lo}–${cox.hi})`;
   const php = cox.ph_p;
+  // ph_p is rounded to 4 dp in scenarios.json, so a tiny p-value arrives as 0;
+  // show "p < 0.0001" rather than the misleading "p = 0".
+  const phpTxt = php === 0 ? "p < 0.0001" : `p = ${php}`;
   document.getElementById("cox-ph").textContent =
     php == null ? "" :
-    `PH test p = ${php}` + (php < 0.05 ? ", proportional-hazards assumption violated" :
-                                          ", no strong PH violation here");
+    `PH test ${phpTxt}` + (php < 0.05 ? ", proportional-hazards assumption violated" :
+                                        ", no strong PH violation here");
 
   // Balance
   document.getElementById("smd-text").innerHTML =

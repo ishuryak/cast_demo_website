@@ -95,8 +95,10 @@ score_horizon_cov <- function(scores, verbose = FALSE) {
 
 # ---------------------------------------------------------------------------
 # CAST trajectory: a smooth quadratic in time fit to the per-horizon CSF effects,
-# with a covariance-aware simultaneous band built from the shrunk cross-horizon
-# covariance Sigma. Design X = [1, t, t^2].
+# with a covariance-aware pointwise band built from the shrunk cross-horizon
+# covariance Sigma. Design X = [1, t, t^2]. (The band is pointwise +/- 1.96 SE at
+# each horizon; the covariance-awareness is that Sigma propagates into Var(beta)
+# via the sandwich below, not a simultaneous sup-t multiplier.)
 #
 # Point estimate: generalized least squares (weight = Sigma^-1) is used
 # automatically when Sigma is well-conditioned (cond <= gls_cond_max) and the fit
