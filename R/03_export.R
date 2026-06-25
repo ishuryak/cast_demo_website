@@ -39,7 +39,10 @@ scenarios_out <- lapply(fits, function(f) {
                      cond_before = rnd(f$shrinkage$cond_before, 1),
                      cond_after = rnd(f$shrinkage$cond_after, 1)),
     rmse = list(naive = rnd(f$rmse$naive, 3), rsf = rnd(f$rmse$rsf, 3),
-                csf = rnd(f$rmse$csf, 3), cast = rnd(f$rmse$cast, 3))
+                csf = rnd(f$rmse$csf, 3), cast = rnd(f$rmse$cast, 3)),
+    overlap = list(min = rnd(f$overlap$min, 3), max = rnd(f$overlap$max, 3),
+                   pct_extreme = rnd(f$overlap$pct_extreme, 3),
+                   pct_clipped = rnd(f$overlap$pct_clipped, 3))
   )
 })
 

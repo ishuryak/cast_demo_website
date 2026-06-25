@@ -1,18 +1,20 @@
-# CAST demo website — causal survival trajectories on simulated oncology data
+# CAST demo website: causal survival trajectories on simulated oncology data
 
 An interactive teaching demo that shows, on **simulated** cancer-survival
 cohorts where the true treatment effect is known:
 
 1. how confounding by indication biases a **naive** unadjusted effect;
-2. how a **Causal Survival Forest (CSF)** removes that confounding;
-3. why standard baselines — **Cox** regression and a **Random Survival Forest
-   (RSF)** — fall short; and
+2. how a **Causal Survival Forest (CSF)** substantially reduces that
+   confounding (with residual bias only when strong confounding pushes
+   treatment propensities toward 0 or 1, a positivity/overlap limit);
+3. why standard baselines, **Cox** regression and a **Random Survival Forest
+   (RSF)**, fall short; and
 4. how **CAST** extends CSF from per-horizon points to a smooth treatment-effect
-   *trajectory* via bootstrap cross-horizon covariance, Ledoit–Wolf shrinkage,
-   and a GLS quadratic fit.
+   *trajectory* via the cross-horizon influence-function covariance, Ledoit–Wolf
+   shrinkage, and a smooth quadratic fit with a covariance-aware band.
 
 Because the data are simulated, every method is scored against the **known true
-ATE(t)** (RMST-difference scale) — the one comparison impossible with real data.
+ATE(t)** (RMST-difference scale), the one comparison impossible with real data.
 
 ## What you see
 
@@ -36,9 +38,9 @@ also writes; the live site is interactive):
 ```
 cast_demo_website/
   R/
-    cast_core.R          Ledoit–Wolf shrinkage, bootstrap cross-horizon
-                         covariance, GLS quadratic fit, true/KM RMST helpers
-                         (ported from the production glioma CAST pipeline)
+    cast_core.R          Ledoit–Wolf shrinkage, cross-horizon influence-function
+                         covariance, covariance-aware quadratic trajectory fit,
+                         true/KM RMST helpers (ported from the glioma CAST pipeline)
     01_simulate.R        simulate confounded cohorts + known true ATE(t)
     02_fit_methods.R     Naive / Cox / RSF / CSF / CAST, scored vs truth
     03_export.R          write docs/data/scenarios.json + PNG fallbacks
@@ -66,19 +68,19 @@ On Windows-R-from-WSL, point `RSCRIPT` at the Windows binary, e.g.
 ## Run
 
 ```bash
-# full run (N=2000; 4 confounding levels x 2 shapes) — a few minutes
+# full run (N=2000; 4 confounding levels x 2 shapes), a few minutes
 ./run_all.sh
 
-# fast smoke test (smaller N, fewer trees/bootstraps, reduced grid)
+# fast smoke test (smaller N, fewer trees, reduced grid, no tuning)
 DEMO_SUBSAMPLE=600 ./run_all.sh
 ```
 
 `run_all.sh` prefers `$RSCRIPT`, then Windows R 4.5.1 (when run from WSL), then
 `Rscript` on `PATH`. Env vars cross the WSL→Windows boundary through `WSLENV`
 (already set in the script). Tunables: `DEMO_SUBSAMPLE` (cohort size; 0 = full),
-`DEMO_NUM_TREES`, `DEMO_BOOT`, `DEMO_SEED` (forest seed; default 101, so the
-exported `scenarios.json` is reproducible across runs), and `DEMO_TUNE`
-(hyperparameter tuning; default `all` for a full run, `none` for the smoke test).
+`DEMO_NUM_TREES`, `DEMO_SEED` (forest seed; default 101, so the exported
+`scenarios.json` is reproducible across runs), and `DEMO_TUNE` (hyperparameter
+tuning; default `all` for a full run, `none` for the smoke test).
 
 **Hyperparameter tuning.** On a full run all forests are tuned, which is slower
 but more accurate. The propensity (`grf::regression_forest`) and CSF
@@ -109,7 +111,7 @@ The site lives in `docs/`, which GitHub Pages can serve directly:
 4. After a minute the site is live at
    `https://<your-username>.github.io/<repo-name>/`.
 
-Only aggregate artifacts ship — the per-patient simulated intermediates in
+Only aggregate artifacts ship. The per-patient simulated intermediates in
 `output/` are gitignored.
 
 ## For collaborators
@@ -126,8 +128,9 @@ Only aggregate artifacts ship — the per-patient simulated intermediates in
 3. **`R/03_export.R`** → `docs/data/scenarios.json` + `docs/figs/*.png`. Writes
    the aggregate results the website reads, plus the 600-DPI fallback figures.
 
-`R/cast_core.R` holds the shared CAST routines (Ledoit–Wolf shrinkage, bootstrap
-cross-horizon covariance, GLS quadratic fit, and the true/KM RMST helpers).
+`R/cast_core.R` holds the shared CAST routines (Ledoit–Wolf shrinkage, the
+cross-horizon influence-function covariance, the covariance-aware quadratic
+trajectory fit, and the true/KM RMST helpers).
 
 ### Data-generating model
 
@@ -214,13 +217,20 @@ Smoking, sex, and ethnicity do **not** enter $\pi$. Treatment is **binary**.
 
 **6. Observed data.** The latent event time is drawn by inverse-CDF from the
 *assigned* arm's curve, $T=S_W^{-1}(U)$ with $U\sim\mathrm{Unif}(0,1)$
-(implemented via $F_W=1-S_W$). Censoring is light random dropout plus
-administrative censoring at 180 months:
+(implemented via $F_W=1-S_W$). Censoring is non-informative random
+loss-to-follow-up (exponential dropout that can occur at any time from study
+entry, independent of $T$, $W$, and the covariates), capped by administrative
+censoring at 180 months:
 
 $$
-C=\min\!\big(\mathrm{Unif}(36,260),\,180\big),\qquad
+C=\min\!\big(\mathrm{Exp}(1/210),\,180\big),\qquad
 Y=\min(T,C),\qquad D=\mathbf 1\{T\le C\}.
 $$
+
+The exponential mean (210 months) is calibrated so the overall censoring rate is
+about 30% (event rate ≈ 70%), spread throughout follow-up rather than
+concentrated at the administrative cap. Censoring is independent of survival, so
+it remains non-informative and the causal identification is unaffected.
 
 **7. Estimand and oracle truth.** The target is the RMST difference at horizon
 $t$. With the known potential-outcome curves,
@@ -246,7 +256,7 @@ horizons (12–120 months).
   event `D`), the true ATE curves, and the fitted results. Kept out of git on
   principle (row-per-patient layout); regenerate them by running the pipeline.
 - **Published data (the only data in the repo):** `docs/data/scenarios.json`
-  (~14 KB) is fully **aggregate** — per scenario it stores cohort metadata
+  (~14 KB) is fully **aggregate**: per scenario it stores cohort metadata
   (shape, confounding strength, n, event rate, treated fraction, SMDs), the
   truth / Naive / RSF ATE vectors, the CSF points with CIs, the CAST trajectory
   with band and peak metrics, the Cox HR + PH-test p-value, the Ledoit–Wolf
@@ -264,10 +274,16 @@ DEMO_SUBSAMPLE=600 ./run_all.sh    # fast smoke test
 ## Method provenance
 
 The CSF fits use `grf::causal_survival_forest` (RMST target, propensity from a
-`grf::regression_forest`). The CAST layer — `ledoit_wolf_shrinkage()`, the
-patient-level bootstrap cross-horizon covariance, and the GLS quadratic
-`β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y` — is ported directly from the production glioma CAST
-pipeline so the demo runs the real method.
+`grf::regression_forest`). The CAST layer builds the cross-horizon covariance
+from the CSF doubly-robust influence-function scores
+(`get_scores()`; the covariance of the ATE vector is `cov(Ψ)/n`), stabilizes it
+with `ledoit_wolf_shrinkage()`, and fits a smooth quadratic in time. The point
+estimate is weighted least squares (robust for the near-collinear
+cumulative-RMST horizons); generalized least squares
+`β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y` is used automatically only when Σ̂ is well-conditioned.
+The 95% band is the covariance-aware sandwich
+`Var(β̂) = (XᵀWX)⁻¹ XᵀWΣ̂WX (XᵀWX)⁻¹`, so the shrunk cross-horizon covariance
+propagates into the uncertainty rather than treating horizons as independent.
 
 ## Data note
 

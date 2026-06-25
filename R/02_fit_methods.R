@@ -4,8 +4,9 @@
 #   Cox   : confounder-adjusted Cox PH (single time-constant HR; PH test)
 #   RSF   : grf survival_forest S-learner plug-in RMST contrast (ML, not orthogonalized)
 #   CSF   : grf causal_survival_forest per horizon (adjusts for confounding)
-#   CAST  : CSF points -> bootstrap cross-horizon covariance -> Ledoit-Wolf
-#           shrinkage -> GLS quadratic trajectory (+ peak metrics)
+#   CAST  : CSF points -> cross-horizon influence-function covariance ->
+#           Ledoit-Wolf shrinkage -> WLS quadratic trajectory with a
+#           covariance-aware band (GLS auto-used if well-conditioned; + peak metrics)
 # Every method is scored against the KNOWN true ATE(t).
 #
 # Output: output/fits.rds
@@ -19,7 +20,6 @@ source("R/cast_core.R")
 
 SUB        <- as.integer(Sys.getenv("DEMO_SUBSAMPLE", "0"))
 NUM_TREES  <- as.integer(Sys.getenv("DEMO_NUM_TREES", if (SUB > 0) "300" else "1000"))
-B_BOOT     <- as.integer(Sys.getenv("DEMO_BOOT", if (SUB > 0) "40" else "200"))
 # Fixed forest seed so the exported scenarios.json is reproducible across runs.
 FOREST_SEED <- as.integer(Sys.getenv("DEMO_SEED", "101"))
 # grf hyperparameter tuning. "all" cross-validates over grf's standard parameter
@@ -99,10 +99,18 @@ fit_scenario <- function(sc, label) {
   cox_ph_p <- if (!is.null(ph)) ph$table["W", "p"] else NA_real_
 
   ## ---- propensity for CSF ----
-  W_hat <- as.numeric(regression_forest(X, W, num.trees = NUM_TREES,
-                                        tune.parameters = TUNE,
-                                        seed = FOREST_SEED)$predictions)
-  W_hat <- pmin(pmax(W_hat, 0.01), 0.99)
+  W_hat_raw <- as.numeric(regression_forest(X, W, num.trees = NUM_TREES,
+                                            tune.parameters = TUNE,
+                                            seed = FOREST_SEED)$predictions)
+  # Overlap (positivity) diagnostics on the estimated propensity, before the
+  # [0.01, 0.99] clip. As confounding rises, the propensity is pushed toward 0/1,
+  # overlap degrades, and more patients are clipped -- which is what leaves the
+  # residual CSF bias visible in the strong-confounding figures.
+  PS_LO <- 0.01; PS_HI <- 0.99
+  overlap <- list(min = min(W_hat_raw), max = max(W_hat_raw),
+                  pct_extreme = mean(W_hat_raw < 0.05 | W_hat_raw > 0.95),
+                  pct_clipped = mean(W_hat_raw < PS_LO | W_hat_raw > PS_HI))
+  W_hat <- pmin(pmax(W_hat_raw, PS_LO), PS_HI)
 
   ## ---- RSF S-learner plug-in (ML baseline; W as a feature, no orthogonalization) ----
   Xw <- cbind(X, W = W)
@@ -117,9 +125,9 @@ fit_scenario <- function(sc, label) {
     r1 - r0
   })
 
-  ## ---- CSF per horizon (RMST target) ----
-  forests <- vector("list", K)
+  ## ---- CSF per horizon (RMST target) + doubly-robust (AIPW) scores ----
   csf_ate <- rep(NA_real_, K); csf_se <- rep(NA_real_, K)
+  scores_mat <- matrix(NA_real_, n, K)   # column h = influence-function scores
   for (h in seq_len(K)) {
     f <- tryCatch(
       causal_survival_forest(X, Y, W, D, W.hat = W_hat, target = "RMST",
@@ -127,19 +135,31 @@ fit_scenario <- function(sc, label) {
                              tune.parameters = TUNE,
                              seed = FOREST_SEED + horizons[h]),
       error = function(e) { message("  CSF h=", horizons[h], ": ", e$message); NULL })
-    forests[h] <- list(f)   # [h]<-list() preserves NULL slots; [[h]]<-NULL would delete
     if (!is.null(f)) {
       a <- tryCatch(average_treatment_effect(f), error = function(e) NULL)
       if (!is.null(a)) { csf_ate[h] <- a["estimate"]; csf_se[h] <- a["std.err"] }
+      sco <- tryCatch(as.numeric(get_scores(f)), error = function(e) NULL)
+      if (!is.null(sco) && length(sco) == n) scores_mat[, h] <- sco
     }
   }
 
-  ## ---- CAST: bootstrap covariance -> shrinkage -> GLS quadratic ----
-  bc <- bootstrap_horizon_cov(forests, X, horizons, B = B_BOOT, seed = 7)
-  ok <- is.finite(csf_ate)
-  gls <- fit_gls_quadratic(horizons[ok], csf_ate[ok], Sigma = bc$cov[ok, ok, drop = FALSE],
-                           se_values = csf_se[ok])
-  cast_pred <- gls$predict(horizons)
+  ## ---- CAST: cross-horizon influence-function covariance -> Ledoit-Wolf
+  ##      shrinkage -> WLS quadratic trajectory with a covariance-aware band ----
+  ok <- is.finite(csf_ate) & apply(scores_mat, 2, function(col) all(is.finite(col)))
+  if (sum(ok) >= 3) {
+    sh  <- score_horizon_cov(scores_mat[, ok, drop = FALSE])
+    gls <- fit_cast_trajectory(horizons[ok], csf_ate[ok], Sigma = sh$cov,
+                               se_values = csf_se[ok])
+    cast_pred <- gls$predict(horizons)
+  } else {
+    message("  [", label, "] <3 usable CSF horizons; CAST trajectory skipped")
+    sh  <- list(cov = matrix(NA_real_, 1, 1), sample_cov = matrix(NA_real_, 1, 1),
+                shrinkage = NA_real_, target_scale = NA_real_,
+                cond_before = NA_real_, cond_after = NA_real_)
+    gls <- list(beta = rep(NA_real_, 3), r_squared = NA_real_, method = NA_character_,
+                peak_time = NA_real_, peak_effect = NA_real_, peak_in_range = FALSE)
+    cast_pred <- list(fit = rep(NA_real_, K), se = rep(NA_real_, K))
+  }
 
   ## ---- scoring against truth ----
   truth <- sc$true_ate$true_ate
@@ -149,9 +169,9 @@ fit_scenario <- function(sc, label) {
     sqrt(mean((est[o] - truth[o])^2))
   }
 
-  cat(sprintf("  [%s] RMSE  naive=%.2f  RSF=%.2f  CSF=%.2f  CAST=%.2f  | LW alpha=%.3f cond %.2g->%.2g\n",
+  cat(sprintf("  [%s] RMSE  naive=%.2f  RSF=%.2f  CSF=%.2f  CAST=%.2f  | fit=%s LW alpha=%.3f cond %.2g->%.2g\n",
               label, err(naive), err(rsf_ate), err(csf_ate), err(cast_pred$fit),
-              bc$shrinkage, bc$cond_before, bc$cond_after))
+              gls$method, sh$shrinkage, sh$cond_before, sh$cond_after))
 
   list(
     horizons = horizons,
@@ -168,11 +188,12 @@ fit_scenario <- function(sc, label) {
                 peak_in_range = gls$peak_in_range),
     cox = list(hr = cox_hr, lo = unname(cox_ci[1]), hi = unname(cox_ci[2]),
                ph_p = unname(cox_ph_p)),
-    shrinkage = list(alpha = bc$shrinkage, target_scale = bc$target_scale,
-                     cond_before = bc$cond_before, cond_after = bc$cond_after,
-                     sample_cov = bc$sample_cov, shrunk_cov = bc$cov),
+    shrinkage = list(alpha = sh$shrinkage, target_scale = sh$target_scale,
+                     cond_before = sh$cond_before, cond_after = sh$cond_after,
+                     sample_cov = sh$sample_cov, shrunk_cov = sh$cov),
     rmse = list(naive = err(naive), rsf = err(rsf_ate),
                 csf = err(csf_ate), cast = err(cast_pred$fit)),
+    overlap = overlap,
     meta = sc$meta)
 }
 

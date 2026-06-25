@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CAST demo — causal survival trajectories on simulated oncology data</title>
+<title>CAST demo: causal survival trajectories on simulated oncology data</title>
 <link rel="stylesheet" href="style.css" />
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
 </head>
@@ -11,7 +11,7 @@
 <header>
   <h1>From confounding to trajectories</h1>
   <p class="sub">How a Causal Survival Forest (CSF) removes confounding, and how
-     CAST extends it to a full treatment-effect trajectory — on simulated
+     CAST extends it to a full treatment-effect trajectory, on simulated
      oncology data where the <em>true</em> effect is known.</p>
 </header>
 
@@ -69,16 +69,28 @@
         <p class="hint" id="smd-text"></p>
         <p class="hint">Standardized mean difference between arms. |SMD|&gt;0.1 signals imbalance the naive comparison cannot fix. As confounding rises, the four confounders become imbalanced while smoking (a non-confounder) and the negative controls sex and ethnicity stay near zero.</p>
       </div>
+      <div class="card" id="card-overlap">
+        <h3>Propensity overlap (positivity)</h3>
+        <p class="hint" id="overlap-text"></p>
+        <p class="hint">The estimated probability of treatment from the propensity
+        forest. Good overlap (values away from 0 and 1) is the positivity condition
+        that causal adjustment needs. As confounding rises, healthier patients are
+        almost always treated and propensities spread toward 0 and 1, so the share
+        beyond [0.05, 0.95] grows. This near-violation of positivity is what leaves
+        CSF with residual bias at strong confounding. The [0.01, 0.99] clip rarely
+        binds, so the residual reflects genuine overlap stress rather than the
+        clip.</p>
+      </div>
       <div class="card" id="card-cast">
         <h3>CAST trajectory</h3>
         <p class="hint" id="cast-text"></p>
-        <p class="hint">A smooth quadratic effect trajectory. The fit uses GLS with the inverse shrunk covariance when that is reliable, and falls back to a weighted fit when near-collinear horizons would otherwise destabilize it.</p>
-        <p class="hint">The shaded 95% band is <em>conditional on the fitted forests</em>: it comes from the bootstrap cross-horizon covariance with the forests held fixed, so it may understate total uncertainty because it does not propagate the forests' own estimation error. Peak time and effect are model-based summaries of the horizon-specific causal estimates, not separately identified causal quantities.</p>
+        <p class="hint">A smooth quadratic effect trajectory. The point fit is weighted least squares, which is robust for the near-collinear cumulative-RMST horizons; generalized least squares is used automatically only when the cross-horizon covariance is well-conditioned (for cumulative RMST it stays weighted least squares).</p>
+        <p class="hint">The shaded 95% band is the <em>covariance-aware</em> band: it propagates the Ledoit–Wolf-shrunk cross-horizon influence-function covariance through the fit (a sandwich variance), so correlated horizons are handled correctly rather than treated as independent. The band is conditional on the fitted forests and does not propagate the forests' own estimation error. Peak time and effect are model-based summaries of the horizon-specific causal estimates, not separately identified causal quantities.</p>
       </div>
       <div class="card" id="card-shrink">
         <h3>Ledoit–Wolf shrinkage</h3>
         <p class="hint" id="shrink-text"></p>
-        <p class="hint">Shrinkage intensity λ and the cross-horizon covariance condition number, before → after shrinkage, that makes the GLS inverse stable.</p>
+        <p class="hint">Shrinkage intensity λ and the cross-horizon covariance condition number, before → after shrinkage, that stabilizes the covariance feeding the band.</p>
       </div>
     </aside>
   </section>
@@ -98,9 +110,13 @@
       <h2>2 · CSF adjusts for confounding</h2>
       <p>The <strong>Causal Survival Forest</strong> orthogonalizes against a
       propensity model and a censoring model (Neyman-orthogonal, like double
-      machine learning), recovering the true ATE at each horizon across
-      confounding levels. The <strong>RSF S-learner</strong> — a plain survival
-      forest with treatment as a feature — is shown as an ML baseline that is
+      machine learning), recovering the true ATE at each horizon under
+      mild-to-moderate confounding and substantially reducing (though not fully
+      removing) the bias under strong confounding, where treatment propensities
+      are pushed toward 0 or 1 and overlap is stressed (a positivity limit; see
+      the strong-confounding figures, where CSF sits above the truth but far
+      below the naive curve). The <strong>RSF S-learner</strong> (a plain survival
+      forest with treatment as a feature) is shown as an ML baseline that is
       <em>not</em> orthogonalized and carries regularization bias.</p>
     </div>
     <div class="step">
@@ -113,21 +129,26 @@
     <div class="step">
       <h2>4 · CAST extends CSF to a trajectory</h2>
       <p>CSF gives correlated point estimates across horizons. <strong>CAST</strong>
-      bootstraps the cross-horizon covariance (patient-level), stabilizes it with
-      <strong>Ledoit–Wolf shrinkage</strong>, and fits a GLS quadratic in time:
-      <code>β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y</code>. The result is a smooth effect
-      trajectory whose clinical metrics (peak effect, time-to-peak) are
-      model-based summaries of the per-horizon causal estimates rather than
-      separately identified causal quantities.</p>
+      forms the cross-horizon covariance from the CSF influence-function scores,
+      stabilizes it with <strong>Ledoit–Wolf shrinkage</strong>, and fits a smooth
+      quadratic in time. The point fit is weighted least squares (robust for the
+      near-collinear cumulative-RMST horizons; generalized least squares
+      <code>β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y</code> engages automatically when Σ̂ is
+      well-conditioned), and the 95% band is a covariance-aware sandwich that
+      propagates Σ̂. The result is a smooth effect trajectory whose clinical
+      metrics (peak effect, time-to-peak) are model-based summaries of the
+      per-horizon causal estimates rather than separately identified causal
+      quantities.</p>
     </div>
   </section>
 
   <section class="provenance">
     <p><strong>Method provenance.</strong> The CSF fits use
     <code>grf::causal_survival_forest</code> (RMST target). The CAST layer
-    (<code>ledoit_wolf_shrinkage</code>, bootstrap cross-horizon covariance, and
-    the GLS quadratic fit) is ported directly from the production glioma CAST
-    pipeline. All cohorts are simulated — no patient data.</p>
+    (<code>ledoit_wolf_shrinkage</code>, the cross-horizon influence-function
+    covariance, and the covariance-aware quadratic trajectory fit) is ported from
+    the production glioma CAST pipeline. All cohorts are simulated, with no
+    patient data.</p>
     <p class="gen" id="gen-stamp"></p>
   </section>
 </main>

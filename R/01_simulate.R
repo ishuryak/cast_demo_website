@@ -20,6 +20,11 @@ SHAPES    <- if (SUB > 0) c("plateau") else c("plateau", "reversal")
 HORIZONS  <- seq(12, 120, by = 12)
 GRID      <- seq(0, 210, by = 0.5)        # fine time grid for true curves (months)
 ADMIN_CENS <- 180                         # administrative censoring (months)
+# Random (non-informative) loss-to-follow-up: exponential dropout that can occur
+# at ANY time from study entry, independent of survival/treatment/covariates, so
+# censoring is spread throughout follow-up rather than only administrative. The
+# mean is calibrated so the overall censoring rate is ~30% (event rate ~70%).
+CENS_MEAN <- 210                          # mean months to random dropout
 
 dir.create("output", showWarnings = FALSE)
 
@@ -101,8 +106,9 @@ simulate_cohort <- function(n, conf_strength, shape, seed) {
   }
   Tevent <- vapply(seq_len(n), draw_T, numeric(1))
 
-  # --- censoring (light random dropout + administrative) ---
-  Cens <- pmin(runif(n, 36, 260), ADMIN_CENS)
+  # --- censoring: exponential random dropout throughout follow-up (independent
+  #     of T, W, and covariates => non-informative) + administrative cap ---
+  Cens <- pmin(rexp(n, rate = 1 / CENS_MEAN), ADMIN_CENS)
   Y <- pmin(Tevent, Cens)
   D <- as.integer(Tevent <= Cens)
 

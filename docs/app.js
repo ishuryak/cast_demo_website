@@ -12,7 +12,7 @@ const METHODS = [
   { key: "rsf",     label: "RSF S-learner",    color: COLORS.rsf },
   { key: "csf",     label: "CSF (points)",     color: COLORS.csf },
   { key: "cast",    label: "CAST trajectory",  color: COLORS.cast },
-  { key: "castci",  label: "CAST 95% band (conditional)", color: COLORS.cast }
+  { key: "castci",  label: "CAST 95% band", color: COLORS.cast }
 ];
 const CONF_WORDS = ["none", "mild", "moderate", "strong", "very strong"];
 
@@ -94,11 +94,11 @@ function render() {
   traces.push({ x: h, y: h.map(() => 0), mode: "lines", hoverinfo: "skip",
     line: { color: "#c9ced6", width: 1, dash: "dot" }, showlegend: false });
 
-  if (state.visible.castci && s.cast.lo) {
+  if (state.visible.castci && s.cast.lo && s.cast.lo.every(v => v != null)) {
     traces.push({ x: h.concat([...h].reverse()),
       y: s.cast.hi.concat([...s.cast.lo].reverse()),
       fill: "toself", fillcolor: "rgba(0,158,115,0.15)", line: { width: 0 },
-      hoverinfo: "skip", name: "CAST 95% band (conditional)", showlegend: false });
+      hoverinfo: "skip", name: "CAST 95% band", showlegend: false });
   }
   if (state.visible.truth)
     traces.push(line(h, s.truth, "Truth", COLORS.truth, 3.5, "solid"));
@@ -163,15 +163,15 @@ function renderCards(s) {
   const php = cox.ph_p;
   document.getElementById("cox-ph").textContent =
     php == null ? "" :
-    `PH test p = ${php}` + (php < 0.05 ? " — proportional-hazards assumption violated" :
-                                          " — no strong PH violation here");
+    `PH test p = ${php}` + (php < 0.05 ? ", proportional-hazards assumption violated" :
+                                          ", no strong PH violation here");
 
   // Balance
   document.getElementById("smd-text").innerHTML =
-    `Confounders — age = <strong>${fmt(s.meta.smd_age)}</strong>, ` +
+    `Confounders: age = <strong>${fmt(s.meta.smd_age)}</strong>, ` +
     `performance status = <strong>${fmt(s.meta.smd_ps)}</strong>, ` +
     `comorbidity = <strong>${fmt(s.meta.smd_comorb)}</strong><br>` +
-    `Non-confounder — smoking = <strong>${fmt(s.meta.smd_smoke)}</strong> (stays ≈ 0)<br>` +
+    `Non-confounder: smoking = <strong>${fmt(s.meta.smd_smoke)}</strong> (stays ≈ 0)<br>` +
     `events ${(100*s.meta.event_rate).toFixed(0)}% · treated ${(100*s.meta.treated_frac).toFixed(0)}% · n = ${s.meta.n}`;
 
   // CAST trajectory metrics
@@ -181,6 +181,16 @@ function renderCards(s) {
     : "model summary: monotonic over 12–120 months (no interior peak)";
   document.getElementById("cast-text").innerHTML =
     `fit = <strong>${ct.method}</strong> · R² = ${ct.r_squared}<br>${peakTxt}`;
+
+  // Propensity overlap (positivity)
+  const ov = s.overlap;
+  const ovEl = document.getElementById("overlap-text");
+  if (ov && ovEl) {
+    ovEl.innerHTML =
+      `estimated P(treat) ∈ [<strong>${ov.min}</strong>, <strong>${ov.max}</strong>]<br>` +
+      `${(100 * ov.pct_extreme).toFixed(1)}% beyond [0.05, 0.95] · ` +
+      `${(100 * ov.pct_clipped).toFixed(1)}% clipped at [0.01, 0.99]`;
+  }
 
   // Shrinkage
   const sk = s.shrinkage;

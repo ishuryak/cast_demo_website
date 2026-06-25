@@ -19,7 +19,7 @@ if [ -z "${RSCRIPT:-}" ]; then
 fi
 
 # WSLENV is required so env vars cross from WSL into the Windows R process.
-export WSLENV="DEMO_SUBSAMPLE:DEMO_NUM_TREES:DEMO_BOOT:DEMO_SEED:DEMO_TUNE${WSLENV:+:$WSLENV}"
+export WSLENV="DEMO_SUBSAMPLE:DEMO_NUM_TREES:DEMO_SEED:DEMO_TUNE${WSLENV:+:$WSLENV}"
 export DEMO_SUBSAMPLE="${DEMO_SUBSAMPLE:-0}"
 
 mkdir -p output logs

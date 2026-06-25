@@ -56,104 +56,99 @@ ledoit_wolf_shrinkage <- function(X, verbose = FALSE) {
 }
 
 # ---------------------------------------------------------------------------
-# Bootstrap cross-horizon covariance of the ATE estimates.
-# Patient-level resampling (the independent unit): for each bootstrap replicate
-# we resample patients with replacement and re-predict the per-horizon ATE from
-# the already-fitted causal survival forests, then form the covariance across
-# horizons and stabilize it with Ledoit-Wolf shrinkage.
+# Cross-horizon covariance of the per-horizon ATE estimates, from the CSF
+# doubly-robust (AIPW) influence-function scores.
+# grf's average_treatment_effect() reports estimate = mean(scores) and
+# SE = sqrt(var(scores) / n), so the covariance of the ATE *vector* across
+# horizons is cov(Psi) / n, where Psi is the n x K matrix whose column h holds
+# the per-patient scores at horizon h (patient-aligned across horizons). This is
+# the correct asymptotic covariance (full rank, n >> K) and is stabilized with
+# Ledoit-Wolf shrinkage. It replaces the earlier fixed-forest patient bootstrap,
+# whose band was only conditional on the forests.
 # ---------------------------------------------------------------------------
-bootstrap_horizon_cov <- function(forests, X, horizons, B = 200, seed = 42,
-                                  verbose = FALSE) {
-  n <- nrow(X)
-  K <- length(horizons)
-  est <- matrix(NA_real_, nrow = B, ncol = K)
-  set.seed(seed)
-  for (b in 1:B) {
-    idx <- sample.int(n, n, replace = TRUE)
-    Xb <- X[idx, , drop = FALSE]
-    for (h in seq_len(K)) {
-      f <- forests[[h]]
-      if (!is.null(f)) {
-        pr <- tryCatch(predict(f, Xb)$predictions, error = function(e) NA_real_)
-        est[b, h] <- mean(pr, na.rm = TRUE)
-      }
-    }
-    if (verbose && b %% 50 == 0) cat("    bootstrap", b, "of", B, "\n")
-  }
+score_horizon_cov <- function(scores, verbose = FALSE) {
+  # scores: n x K matrix; column h = get_scores() for the horizon-h CSF forest.
+  cc <- stats::complete.cases(scores)
+  if (sum(cc) < 10) cc <- rep(TRUE, nrow(scores))
+  S  <- scores[cc, , drop = FALSE]
+  nS <- nrow(S)
 
-  cc <- stats::complete.cases(est)
-  if (sum(cc) < 10) cc <- rep(TRUE, B)
-  lw <- ledoit_wolf_shrinkage(est[cc, , drop = FALSE], verbose = verbose)
+  lw <- ledoit_wolf_shrinkage(S, verbose = verbose)   # shrinks the K x K score cov
+  cov_matrix <- lw$cov / nS                            # -> covariance of the ATE vector
 
-  cov_matrix <- lw$cov
-  # Safety: nudge / eigen-floor if still ill-conditioned (mirrors production code).
-  cond_after <- tryCatch(kappa(cov_matrix, exact = TRUE), error = function(e) Inf)
-  if (is.infinite(cond_after) || cond_after > 1e10) {
-    nudge <- max(diag(cov_matrix)) * 1e-4
-    cov_matrix <- cov_matrix + diag(rep(nudge, ncol(cov_matrix)))
-  }
+  # Safety: eigen-floor to positive definite (condition number is scale-free, so
+  # dividing by nS does not change cond_before / cond_after from ledoit_wolf).
   ev <- eigen(cov_matrix, only.values = TRUE)$values
   if (any(ev <= 0)) {
     eig <- eigen(cov_matrix)
-    eig$values[eig$values <= 0] <- min(eig$values[eig$values > 0]) * 1e-3
+    pos <- eig$values[eig$values > 0]
+    floor_val <- if (length(pos)) min(pos) * 1e-3 else 1e-12  # guard all-<=0 case
+    eig$values[eig$values <= 0] <- floor_val
     cov_matrix <- eig$vectors %*% diag(eig$values) %*% t(eig$vectors)
   }
 
-  list(cov = cov_matrix, sample_cov = lw$sample_cov, shrinkage = lw$shrinkage,
-       target_scale = lw$target_scale, cond_before = lw$cond_before,
+  list(cov = cov_matrix, sample_cov = lw$sample_cov / nS, shrinkage = lw$shrinkage,
+       target_scale = lw$target_scale / nS, cond_before = lw$cond_before,
        cond_after = tryCatch(kappa(cov_matrix, exact = TRUE),
-                             error = function(e) NA_real_),
-       boot_estimates = est[cc, , drop = FALSE])
+                             error = function(e) NA_real_))
 }
 
 # ---------------------------------------------------------------------------
-# GLS quadratic trajectory fit:  beta = (X' Sigma^-1 X)^-1 X' Sigma^-1 y
-# Design X = [1, t, t^2]; Sigma is the shrunk cross-horizon covariance.
-# Falls back to weighted least squares if Sigma is not usable.
+# CAST trajectory: a smooth quadratic in time fit to the per-horizon CSF effects,
+# with a covariance-aware simultaneous band built from the shrunk cross-horizon
+# covariance Sigma. Design X = [1, t, t^2].
+#
+# Point estimate: weighted least squares (weights 1 / SE^2), which is robust for
+# the near-collinear cumulative-RMST horizons. Generalized least squares
+# (weight = Sigma^-1) is used automatically ONLY when Sigma is well-conditioned
+# (cond <= gls_cond_max) and the fit is sane; for cumulative RMST the horizons are
+# ~perfectly correlated, so Sigma is ill-conditioned and the fit stays WLS.
+#
+# Uncertainty: the fitted-coefficient covariance is the sandwich
+#   Var(beta) = (X'WX)^-1 (X'W Sigma W X) (X'WX)^-1,
+# with W the fitting weight matrix. This propagates the cross-horizon correlation
+# into the band; independent per-horizon SEs (W with Sigma = diag(SE^2)) would
+# understate it. When W = Sigma^-1 (the GLS case) the sandwich collapses to the
+# efficient (X' Sigma^-1 X)^-1.
 # ---------------------------------------------------------------------------
-fit_gls_quadratic <- function(horizons, estimates, Sigma = NULL,
-                              se_values = NULL) {
+fit_cast_trajectory <- function(horizons, estimates, Sigma = NULL,
+                                se_values = NULL, gls_cond_max = 100) {
   Xd <- cbind(1, horizons, horizons^2)
-  w_wls <- if (is.null(se_values)) rep(1, length(estimates)) else 1 / se_values^2
+  w  <- if (is.null(se_values)) rep(1, length(estimates)) else 1 / se_values^2
 
-  solve_with <- function(Wmat) {
-    XtW <- t(Xd) %*% Wmat
-    vb <- tryCatch(solve(XtW %*% Xd), error = function(e) NULL)
-    if (is.null(vb)) return(NULL)
-    list(beta = as.vector(vb %*% XtW %*% estimates), var_beta = vb)
-  }
-
-  # Try GLS with the (shrunk) cross-horizon covariance, but accept it only if the
-  # covariance-weighted fit is reliable. Under near-perfectly-correlated horizons
-  # and a slightly misspecified quadratic, GLS can drift in level; production CAST
-  # falls back to weighted least squares in that case. (Mirrors that guard.)
-  method <- "WLS"; beta <- NULL; var_beta <- NULL
+  # Choose the point-fit weight matrix: GLS only if Sigma is well-conditioned.
+  method <- "WLS"; Wmat <- diag(w, nrow = length(w))
   if (!is.null(Sigma)) {
+    cond <- tryCatch(kappa(Sigma, exact = TRUE), error = function(e) Inf)
     Sinv <- tryCatch(solve(Sigma), error = function(e) NULL)
-    if (!is.null(Sinv)) {
-      g <- solve_with(Sinv)
-      if (!is.null(g) && all(is.finite(g$beta))) {
-        fit_g <- as.vector(Xd %*% g$beta)
-        res_g <- estimates - fit_g
-        ss_tot <- sum((estimates - mean(estimates))^2)
-        r2_g <- if (ss_tot > 0) 1 - sum(res_g^2) / ss_tot else NA_real_
-        rel_bias  <- mean(abs(res_g)) / (mean(abs(estimates)) + 1e-8)
-        max_ratio <- max(abs(res_g)) / (max(abs(estimates)) + 1e-10)
-        if (is.finite(r2_g) && r2_g >= 0.5 && rel_bias <= 0.15 && max_ratio <= 10) {
-          method <- "GLS"; beta <- g$beta; var_beta <- g$var_beta
-        }
+    if (is.finite(cond) && cond <= gls_cond_max && !is.null(Sinv)) {
+      vb <- tryCatch(solve(t(Xd) %*% Sinv %*% Xd), error = function(e) NULL)
+      if (!is.null(vb)) {
+        bg  <- as.vector(vb %*% t(Xd) %*% Sinv %*% estimates)
+        res <- estimates - as.vector(Xd %*% bg)
+        sst <- sum((estimates - mean(estimates))^2)
+        r2g <- if (sst > 0) 1 - sum(res^2) / sst else NA_real_
+        if (is.finite(r2g) && r2g >= 0.5) { method <- "GLS"; Wmat <- Sinv }
       }
     }
   }
-  if (is.null(beta)) {                       # WLS fallback (or no covariance given)
-    wl <- solve_with(diag(w_wls))
-    beta <- wl$beta; var_beta <- wl$var_beta; method <- "WLS"
-  }
+
+  XtW   <- t(Xd) %*% Wmat
+  bread <- tryCatch(solve(XtW %*% Xd),
+                    error = function(e) solve(XtW %*% Xd + diag(1e-8, ncol(Xd))))
+  beta  <- as.vector(bread %*% XtW %*% estimates)
+
+  # Covariance-aware sandwich for the fitted coefficients.
+  Sig_use  <- if (!is.null(Sigma)) Sigma else
+              diag(if (is.null(se_values)) rep(1, length(estimates)) else se_values^2,
+                   nrow = length(estimates))
+  meat     <- XtW %*% Sig_use %*% t(XtW)        # X'W Sigma W X (Wmat symmetric)
+  var_beta <- bread %*% meat %*% bread
 
   fitted <- as.vector(Xd %*% beta)
-  resid <- estimates - fitted
-  ss_tot <- sum((estimates - mean(estimates))^2)
-  r2 <- if (ss_tot > 0) 1 - sum(resid^2) / ss_tot else NA_real_
+  resid  <- estimates - fitted
+  sst    <- sum((estimates - mean(estimates))^2)
+  r2     <- if (sst > 0) 1 - sum(resid^2) / sst else NA_real_
 
   # Vertex of the quadratic: peak (or trough) time and effect.
   b0 <- beta[1]; b1 <- beta[2]; b2 <- beta[3]
@@ -165,7 +160,7 @@ fit_gls_quadratic <- function(horizons, estimates, Sigma = NULL,
   predict_fn <- function(h) {
     Xh <- cbind(1, h, h^2)
     fit <- as.vector(Xh %*% beta)
-    se <- sqrt(pmax(0, diag(Xh %*% var_beta %*% t(Xh))))
+    se  <- sqrt(pmax(0, diag(Xh %*% var_beta %*% t(Xh))))
     list(fit = fit, se = se)
   }
 
