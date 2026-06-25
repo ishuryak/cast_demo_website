@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-25 11:25",
+  "generated": "2026-06-25 12:07",
   "horizons": [12, 36, 60, 84, 108],
   "shapes": ["plateau", "reversal"],
   "conf_grid": [0, 0.5, 1, 2],

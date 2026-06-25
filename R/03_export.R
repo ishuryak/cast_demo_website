@@ -94,13 +94,55 @@ pub_plot <- function(f, file, title) {
   segments(h, f$csf$lo, h, f$csf$hi, col = ebcol, lwd = 2)  # CSF 95% CI bars
   points(h, f$csf$ate, col = green, pch = 19, cex = 1.2)    # CSF points
   lines(h, f$cast$fit, col = green, lwd = 2.6)              # CAST trajectory
-  legend("topleft", bty = "n", cex = 0.8,
-         legend = c("Truth", "Naive (unadjusted)", "RSF S-learner",
-                    "RSF T-learner", "Cox (marginal)", "CSF (points, 95% CI)",
-                    "CAST trajectory", "CAST 95% band"),
-         col = c("black", "#D55E00", "#0072B2", tlcol, coxcol, green, green, bandcol),
-         lty = c(1, 2, 4, 5, 6, NA, 1, NA), pch = c(NA, NA, NA, NA, NA, 19, NA, 15),
-         lwd = c(3, 2, 2, 2, 2, NA, 2.6, NA), pt.cex = c(1, 1, 1, 1, 1, 1.2, 1, 2.4))
+
+  # ---- float the legend into the emptiest corner --------------------------
+  # The data shape varies by scenario (rising plateau vs. crossing reversal), so a
+  # fixed "topleft" legend often lands on top of the curves. Instead, measure the
+  # legend box, build a dense cloud of every "occupied" point (each line, the
+  # FILLED CAST band interior, and the CSF CI whiskers), count how many fall in
+  # each of the four corner boxes, and place the legend where the fewest do. A
+  # translucent white background keeps it readable even where a line passes near.
+  leg_args <- list(
+    legend = c("Truth", "Naive (unadjusted)", "RSF S-learner",
+               "RSF T-learner", "Cox (marginal)", "CSF (points, 95% CI)",
+               "CAST trajectory", "CAST 95% band"),
+    col = c("black", "#D55E00", "#0072B2", tlcol, coxcol, green, green, bandcol),
+    lty = c(1, 2, 4, 5, 6, NA, 1, NA), pch = c(NA, NA, NA, NA, NA, 19, NA, 15),
+    lwd = c(3, 2, 2, 2, 2, NA, 2.6, NA), pt.cex = c(1, 1, 1, 1, 1, 1.2, 1, 2.4),
+    cex = 0.8, bty = "o", box.col = NA, bg = adjustcolor("white", alpha.f = 0.7))
+  dens <- seq(min(h), max(h), length.out = 60)
+  px <- numeric(0); py <- numeric(0)
+  add_pts <- function(x, y) { px <<- c(px, x); py <<- c(py, y) }
+  for (s in list(f$truth, f$naive, f$rsf, f$tlearner, f$cox$ate, f$cast$fit, f$csf$ate)) {
+    s <- as.numeric(s); okk <- is.finite(s)
+    if (sum(okk) >= 2) add_pts(dens, approx(h[okk], s[okk], dens, rule = 2)$y)
+  }
+  # CAST band interior: fill the lo..hi region so the legend avoids the shading.
+  # Weighted x5 (added five times) because covering a filled shaded region reads
+  # as more cluttered than grazing a single thin line of equal sampled-point count.
+  bok <- is.finite(f$cast$lo) & is.finite(f$cast$hi)
+  if (any(bok)) {
+    blo <- approx(h[bok], f$cast$lo[bok], dens, rule = 2)$y
+    bhi <- approx(h[bok], f$cast$hi[bok], dens, rule = 2)$y
+    for (rep_w in 1:5)
+      for (q in seq(0, 1, length.out = 5)) add_pts(dens, blo + q * (bhi - blo))
+  }
+  # CSF CI vertical whiskers at each horizon
+  for (i in seq_along(h))
+    if (is.finite(f$csf$lo[i]) && is.finite(f$csf$hi[i]))
+      add_pts(rep(h[i], 5), seq(f$csf$lo[i], f$csf$hi[i], length.out = 5))
+
+  lg   <- do.call(legend, c(list(x = "topleft", plot = FALSE), leg_args))
+  lwd_ <- lg$rect$w; lht_ <- lg$rect$h
+  u    <- par("usr"); pad <- c(0.02 * diff(u[1:2]), 0.02 * diff(u[3:4]))
+  boxes <- list(
+    topleft     = c(u[1] + pad[1], u[1] + pad[1] + lwd_, u[4] - pad[2] - lht_, u[4] - pad[2]),
+    topright    = c(u[2] - pad[1] - lwd_, u[2] - pad[1], u[4] - pad[2] - lht_, u[4] - pad[2]),
+    bottomleft  = c(u[1] + pad[1], u[1] + pad[1] + lwd_, u[3] + pad[2], u[3] + pad[2] + lht_),
+    bottomright = c(u[2] - pad[1] - lwd_, u[2] - pad[1], u[3] + pad[2], u[3] + pad[2] + lht_))
+  inbox <- function(b) sum(px >= b[1] & px <= b[2] & py >= b[3] & py <= b[4])
+  pos   <- names(boxes)[which.min(vapply(boxes, inbox, numeric(1)))]
+  do.call(legend, c(list(x = pos), leg_args))
   dev.off()
 }
 
