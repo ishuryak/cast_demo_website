@@ -59,36 +59,57 @@ writeLines(toJSON(out, auto_unbox = TRUE, na = "null", digits = 6, pretty = TRUE
 cat("[03_export] wrote docs/data/scenarios.json (", length(scenarios_out), "scenarios )\n")
 
 # ---- publication-style PNG fallbacks (base R; 600 DPI, bold black axes) ----
+# Faithful static replica of the live site plot: same series, the shaded CAST 95%
+# band, and the CSF point-wise 95% CI error bars. Colors match docs/app.js.
 pub_plot <- function(f, file, title) {
   png(file, width = 7, height = 5, units = "in", res = 600, bg = "white")
   par(font.lab = 2, font.axis = 2, cex.lab = 1.25, cex.axis = 1.05,
       mar = c(4.6, 4.8, 2.4, 1.2), lwd = 1.6)
   h <- f$horizons
-  ylim <- range(c(f$truth, f$naive, f$rsf, f$csf$ate, f$cast$fit), na.rm = TRUE)
+  green   <- "#009E73"
+  bandcol <- adjustcolor(green, alpha.f = 0.15)   # same tint as the site ribbon
+  ebcol   <- adjustcolor(green, alpha.f = 0.45)   # CSF error-bar color (site)
+  # include band + CI extents so nothing is clipped
+  ylim <- range(c(f$truth, f$naive, f$rsf, f$csf$ate, f$csf$lo, f$csf$hi,
+                  f$cast$fit, f$cast$lo, f$cast$hi), na.rm = TRUE)
   ylim <- ylim + c(-0.05, 0.05) * diff(ylim)
   plot(h, f$truth, type = "n", xlab = "Horizon (months)",
        ylab = "ATE: RMST difference (months)", main = title, ylim = ylim,
        bty = "l", font.main = 2)
   abline(h = 0, col = "grey75", lty = 3)
-  lines(h, f$truth, col = "black", lwd = 3)                 # truth
+  # CAST 95% band first, under the lines (matches the site's shaded ribbon)
+  okb <- is.finite(f$cast$lo) & is.finite(f$cast$hi)
+  if (any(okb))
+    polygon(c(h[okb], rev(h[okb])), c(f$cast$hi[okb], rev(f$cast$lo[okb])),
+            col = bandcol, border = NA)
+  lines(h, f$truth, col = "black",   lwd = 3)               # truth
   lines(h, f$naive, col = "#D55E00", lwd = 2, lty = 2)      # naive
   lines(h, f$rsf,   col = "#0072B2", lwd = 2, lty = 4)      # RSF
-  points(h, f$csf$ate, col = "#009E73", pch = 19, cex = 1.2) # CSF points
-  lines(h, f$cast$fit, col = "#009E73", lwd = 2.6)          # CAST trajectory
-  legend("topleft", bty = "n", cex = 0.95,
+  segments(h, f$csf$lo, h, f$csf$hi, col = ebcol, lwd = 2)  # CSF 95% CI bars
+  points(h, f$csf$ate, col = green, pch = 19, cex = 1.2)    # CSF points
+  lines(h, f$cast$fit, col = green, lwd = 2.6)              # CAST trajectory
+  legend("topleft", bty = "n", cex = 0.92,
          legend = c("Truth", "Naive (unadjusted)", "RSF S-learner",
-                    "CSF (points)", "CAST trajectory"),
-         col = c("black", "#D55E00", "#0072B2", "#009E73", "#009E73"),
-         lty = c(1, 2, 4, NA, 1), pch = c(NA, NA, NA, 19, NA), lwd = c(3,2,2,NA,2.6))
+                    "CSF (points, 95% CI)", "CAST trajectory", "CAST 95% band"),
+         col = c("black", "#D55E00", "#0072B2", green, green, bandcol),
+         lty = c(1, 2, 4, NA, 1, NA), pch = c(NA, NA, NA, 19, NA, 15),
+         lwd = c(3, 2, 2, NA, 2.6, NA), pt.cex = c(1, 1, 1, 1.2, 1, 2.4))
   dev.off()
 }
 
+# One figure per (shape x confounding level), so every slider position the site
+# offers has a matching static preview. The strong-confounding files keep their
+# existing names (referenced by the README); the others are new.
+file_word  <- c("none", "mild", "moderate", "strong", "very strong")  # file names
+title_word <- c("no",   "mild", "moderate", "strong", "very strong")  # grammatical
 for (shape in res$shapes) {
-  cmax <- max(res$conf_grid)
-  key <- sprintf("%s_conf%.2f", shape, cmax)
-  if (!is.null(fits[[key]])) {
-    pub_plot(fits[[key]], sprintf("docs/figs/%s_strong_confounding.png", shape),
-             sprintf("%s effect, strong confounding", tools::toTitleCase(shape)))
-    cat("[03_export] wrote docs/figs/", shape, "_strong_confounding.png\n", sep = "")
+  for (ci in seq_along(res$conf_grid)) {
+    key <- sprintf("%s_conf%.2f", shape, res$conf_grid[ci])
+    if (is.null(fits[[key]])) next
+    file <- sprintf("docs/figs/%s_%s_confounding.png", shape, file_word[ci])
+    pub_plot(fits[[key]], file,
+             sprintf("%s effect, %s confounding", tools::toTitleCase(shape),
+                     title_word[ci]))
+    cat("[03_export] wrote", file, "\n")
   }
 }
