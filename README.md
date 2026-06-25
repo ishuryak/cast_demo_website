@@ -49,7 +49,7 @@ cast_demo_website/
                          covariance, covariance-aware quadratic trajectory fit,
                          true/KM RMST helpers (ported from the glioma CAST pipeline)
     01_simulate.R        simulate confounded cohorts + known true ATE(t)
-    02_fit_methods.R     Naive / Cox / RSF / CSF / CAST, scored vs truth
+    02_fit_methods.R     Naive / Cox / RSF S- and T-learner / CSF / CAST, scored vs truth
     03_export.R          write docs/data/scenarios.json + PNG fallbacks
     install_packages.R   one-time dependency install
   docs/                              <- the published static site (GitHub Pages root)
@@ -130,8 +130,9 @@ Only aggregate artifacts ship. The per-patient simulated intermediates in
 1. **`R/01_simulate.R`** → `output/sim.rds`. Simulates the confounded cohorts and
    the *known* true ATE(t). One entry per scenario, each holding the per-patient
    rows and the oracle effect curve.
-2. **`R/02_fit_methods.R`** → `output/fits.rds`. Fits Naive / Cox / RSF / CSF /
-   CAST on each cohort and scores every method against the truth.
+2. **`R/02_fit_methods.R`** → `output/fits.rds`. Fits Naive / Cox / RSF S-learner /
+   RSF T-learner / CSF / CAST on each cohort and scores every method against the
+   truth.
 3. **`R/03_export.R`** → `docs/data/scenarios.json` + `docs/figs/*.png`. Writes
    the aggregate results the website reads, plus the 600-DPI fallback figures.
 
@@ -265,7 +266,7 @@ horizons (12–120 months).
 - **Published data (the only data in the repo):** `docs/data/scenarios.json`
   (~14 KB) is fully **aggregate**: per scenario it stores cohort metadata
   (shape, confounding strength, n, event rate, treated fraction, SMDs), the
-  truth / Naive / RSF ATE vectors, the CSF points with CIs, the CAST trajectory
+  truth / Naive / RSF S- and T-learner ATE vectors, the CSF points with CIs, the CAST trajectory
   with band and peak metrics, the Cox HR + PH-test p-value, the Ledoit–Wolf
   shrinkage diagnostics, and each method's RMSE vs. truth. No patient-level rows.
   Because the cohorts are synthetic, nothing sensitive exists even in the

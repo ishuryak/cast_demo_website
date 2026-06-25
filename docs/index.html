@@ -115,16 +115,22 @@
       removing) the bias under strong confounding, where treatment propensities
       are pushed toward 0 or 1 and overlap is stressed (a positivity limit; see
       the strong-confounding figures, where CSF sits above the truth but far
-      below the naive curve). The <strong>RSF S-learner</strong> (a plain survival
-      forest with treatment as a feature) is shown as an ML baseline that is
-      <em>not</em> orthogonalized and carries regularization bias.</p>
+      below the naive curve). Two non-orthogonalized ML baselines are shown for
+      contrast: the <strong>RSF S-learner</strong> (one survival forest with
+      treatment as a feature), which can ignore treatment when splitting and so
+      attenuates the effect toward zero even with no confounding, and the
+      <strong>RSF T-learner</strong> (separate per-arm forests), which avoids
+      that attenuation but, lacking a propensity model, extrapolates across arms
+      and stays biased under confounding. Neither is orthogonalized; only CSF
+      adjusts in a principled way.</p>
     </div>
     <div class="step">
       <h2>3 · Baselines fall short</h2>
       <p><strong>Cox</strong> gives one hazard ratio for all time and assumes
       proportional hazards; it cannot express a rising-then-plateauing or
-      reversing effect. <strong>RSF</strong> predicts survival but gives no
-      principled causal contrast.</p>
+      reversing effect. The <strong>S- and T-learner</strong> survival forests
+      predict survival well but give no principled causal contrast, and fail in
+      two different ways (effect attenuation versus cross-arm extrapolation).</p>
     </div>
     <div class="step">
       <h2>4 · CAST extends CSF to a trajectory</h2>

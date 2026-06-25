@@ -3,16 +3,17 @@
 // selector, and per-method toggles, plus accuracy / Cox / balance / shrinkage cards.
 
 const COLORS = {
-  truth: "#111111", naive: "#d55e00", rsf: "#0072b2",
+  truth: "#111111", naive: "#d55e00", rsf: "#0072b2", tlearner: "#cc79a7",
   csf: "#009e73", cast: "#009e73"
 };
 const METHODS = [
-  { key: "truth",   label: "Truth",            color: COLORS.truth },
-  { key: "naive",   label: "Naive (unadjusted)", color: COLORS.naive },
-  { key: "rsf",     label: "RSF S-learner",    color: COLORS.rsf },
-  { key: "csf",     label: "CSF (points)",     color: COLORS.csf },
-  { key: "cast",    label: "CAST trajectory",  color: COLORS.cast },
-  { key: "castci",  label: "CAST 95% band", color: COLORS.cast }
+  { key: "truth",    label: "Truth",            color: COLORS.truth },
+  { key: "naive",    label: "Naive (unadjusted)", color: COLORS.naive },
+  { key: "rsf",      label: "RSF S-learner",    color: COLORS.rsf },
+  { key: "tlearner", label: "RSF T-learner",    color: COLORS.tlearner },
+  { key: "csf",      label: "CSF (points)",     color: COLORS.csf },
+  { key: "cast",     label: "CAST trajectory",  color: COLORS.cast },
+  { key: "castci",   label: "CAST 95% band", color: COLORS.cast }
 ];
 const CONF_WORDS = ["none", "mild", "moderate", "strong", "very strong"];
 
@@ -106,6 +107,8 @@ function render() {
     traces.push(line(h, s.naive, "Naive", COLORS.naive, 2.2, "dash"));
   if (state.visible.rsf)
     traces.push(line(h, s.rsf, "RSF S-learner", COLORS.rsf, 2.2, "dashdot"));
+  if (state.visible.tlearner)
+    traces.push(line(h, s.tlearner, "RSF T-learner", COLORS.tlearner, 2.2, "longdash"));
   if (state.visible.csf)
     traces.push({ x: h, y: s.csf.ate, mode: "markers", name: "CSF (points)",
       marker: { color: COLORS.csf, size: 9 },
@@ -139,7 +142,8 @@ function renderCards(s) {
   const rmse = s.rmse;
   const rows = [
     ["Naive", rmse.naive, COLORS.naive],
-    ["RSF", rmse.rsf, COLORS.rsf],
+    ["S-learner", rmse.rsf, COLORS.rsf],
+    ["T-learner", rmse.tlearner, COLORS.tlearner],
     ["CSF", rmse.csf, COLORS.csf],
     ["CAST", rmse.cast, COLORS.cast]
   ].filter(r => r[1] != null);

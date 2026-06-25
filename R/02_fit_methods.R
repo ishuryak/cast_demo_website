@@ -2,7 +2,8 @@
 # Fit and score the comparators on each simulated scenario:
 #   Naive : unadjusted KM RMST difference (no confounding adjustment)
 #   Cox   : confounder-adjusted Cox PH (single time-constant HR; PH test)
-#   RSF   : grf survival_forest S-learner plug-in RMST contrast (ML, not orthogonalized)
+#   RSF-S : grf survival_forest S-learner plug-in RMST contrast (ML, not orthogonalized)
+#   RSF-T : grf survival_forest T-learner, separate per-arm forests (ML, not orthogonalized)
 #   CSF   : grf causal_survival_forest per horizon (adjusts for confounding)
 #   CAST  : CSF points -> cross-horizon influence-function covariance ->
 #           Ledoit-Wolf shrinkage -> WLS quadratic trajectory with a
@@ -125,6 +126,26 @@ fit_scenario <- function(sc, label) {
     r1 - r0
   })
 
+  ## ---- T-learner: separate survival forests per arm (ML baseline, not orthogonalized) ----
+  ## One forest fit on X (no W) for the treated rows, one for the control rows; each
+  ## then predicts counterfactual survival for ALL patients and the RMST contrast is
+  ## the T-learner ATE. No W-dilution (unlike the S-learner), but no propensity model
+  ## (unlike CSF), so each arm extrapolates into the other's covariate space and the
+  ## contrast stays biased under confounding.
+  tl1 <- tune_survival_forest(X[W == 1, , drop = FALSE], Y[W == 1], D[W == 1],
+                              num.trees = NUM_TREES, seed = FOREST_SEED,
+                              do_tune = (TUNE != "none"))
+  tl0 <- tune_survival_forest(X[W == 0, , drop = FALSE], Y[W == 0], D[W == 0],
+                              num.trees = NUM_TREES, seed = FOREST_SEED,
+                              do_tune = (TUNE != "none"))
+  tp1 <- predict(tl1, X)$predictions; ft1 <- tl1$failure.times
+  tp0 <- predict(tl0, X)$predictions; ft0 <- tl0$failure.times
+  tlearner_ate <- sapply(horizons, function(t) {
+    r1 <- mean(apply(tp1, 1, rmst_from_curve, times = ft1, tau = t))
+    r0 <- mean(apply(tp0, 1, rmst_from_curve, times = ft0, tau = t))
+    r1 - r0
+  })
+
   ## ---- CSF per horizon (RMST target) + doubly-robust (AIPW) scores ----
   csf_ate <- rep(NA_real_, K); csf_se <- rep(NA_real_, K)
   scores_mat <- matrix(NA_real_, n, K)   # column h = influence-function scores
@@ -169,15 +190,16 @@ fit_scenario <- function(sc, label) {
     sqrt(mean((est[o] - truth[o])^2))
   }
 
-  cat(sprintf("  [%s] RMSE  naive=%.2f  RSF=%.2f  CSF=%.2f  CAST=%.2f  | fit=%s LW alpha=%.3f cond %.2g->%.2g\n",
-              label, err(naive), err(rsf_ate), err(csf_ate), err(cast_pred$fit),
-              gls$method, sh$shrinkage, sh$cond_before, sh$cond_after))
+  cat(sprintf("  [%s] RMSE  naive=%.2f  RSF-S=%.2f  RSF-T=%.2f  CSF=%.2f  CAST=%.2f  | fit=%s LW alpha=%.3f cond %.2g->%.2g\n",
+              label, err(naive), err(rsf_ate), err(tlearner_ate), err(csf_ate),
+              err(cast_pred$fit), gls$method, sh$shrinkage, sh$cond_before, sh$cond_after))
 
   list(
     horizons = horizons,
     truth = truth,
     naive = naive,
     rsf = rsf_ate,
+    tlearner = tlearner_ate,
     csf = list(ate = csf_ate, se = csf_se,
                lo = csf_ate - 1.96 * csf_se, hi = csf_ate + 1.96 * csf_se),
     cast = list(fit = cast_pred$fit, se = cast_pred$se,
@@ -192,6 +214,7 @@ fit_scenario <- function(sc, label) {
                      cond_before = sh$cond_before, cond_after = sh$cond_after,
                      sample_cov = sh$sample_cov, shrunk_cov = sh$cov),
     rmse = list(naive = err(naive), rsf = err(rsf_ate),
+                tlearner = err(tlearner_ate),
                 csf = err(csf_ate), cast = err(cast_pred$fit)),
     overlap = overlap,
     meta = sc$meta)

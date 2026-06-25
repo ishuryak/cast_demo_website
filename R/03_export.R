@@ -25,6 +25,7 @@ scenarios_out <- lapply(fits, function(f) {
     truth = rnd(f$truth),
     naive = rnd(f$naive),
     rsf   = rnd(f$rsf),
+    tlearner = rnd(f$tlearner),
     csf   = list(ate = rnd(f$csf$ate), lo = rnd(f$csf$lo), hi = rnd(f$csf$hi)),
     cast  = list(fit = rnd(f$cast$fit), lo = rnd(f$cast$lo), hi = rnd(f$cast$hi),
                  peak_time = rnd(f$cast$peak_time, 1),
@@ -39,6 +40,7 @@ scenarios_out <- lapply(fits, function(f) {
                      cond_before = rnd(f$shrinkage$cond_before, 1),
                      cond_after = rnd(f$shrinkage$cond_after, 1)),
     rmse = list(naive = rnd(f$rmse$naive, 3), rsf = rnd(f$rmse$rsf, 3),
+                tlearner = rnd(f$rmse$tlearner, 3),
                 csf = rnd(f$rmse$csf, 3), cast = rnd(f$rmse$cast, 3)),
     overlap = list(min = rnd(f$overlap$min, 3), max = rnd(f$overlap$max, 3),
                    pct_extreme = rnd(f$overlap$pct_extreme, 3),
@@ -67,10 +69,11 @@ pub_plot <- function(f, file, title) {
       mar = c(4.6, 4.8, 2.4, 1.2), lwd = 1.6)
   h <- f$horizons
   green   <- "#009E73"
+  tlcol   <- "#CC79A7"                             # RSF T-learner (site COLORS.tlearner)
   bandcol <- adjustcolor(green, alpha.f = 0.15)   # same tint as the site ribbon
   ebcol   <- adjustcolor(green, alpha.f = 0.45)   # CSF error-bar color (site)
   # include band + CI extents so nothing is clipped
-  ylim <- range(c(f$truth, f$naive, f$rsf, f$csf$ate, f$csf$lo, f$csf$hi,
+  ylim <- range(c(f$truth, f$naive, f$rsf, f$tlearner, f$csf$ate, f$csf$lo, f$csf$hi,
                   f$cast$fit, f$cast$lo, f$cast$hi), na.rm = TRUE)
   ylim <- ylim + c(-0.05, 0.05) * diff(ylim)
   plot(h, f$truth, type = "n", xlab = "Horizon (months)",
@@ -84,16 +87,18 @@ pub_plot <- function(f, file, title) {
             col = bandcol, border = NA)
   lines(h, f$truth, col = "black",   lwd = 3)               # truth
   lines(h, f$naive, col = "#D55E00", lwd = 2, lty = 2)      # naive
-  lines(h, f$rsf,   col = "#0072B2", lwd = 2, lty = 4)      # RSF
+  lines(h, f$rsf,      col = "#0072B2", lwd = 2, lty = 4)   # RSF S-learner
+  lines(h, f$tlearner, col = tlcol,     lwd = 2, lty = 5)   # RSF T-learner
   segments(h, f$csf$lo, h, f$csf$hi, col = ebcol, lwd = 2)  # CSF 95% CI bars
   points(h, f$csf$ate, col = green, pch = 19, cex = 1.2)    # CSF points
   lines(h, f$cast$fit, col = green, lwd = 2.6)              # CAST trajectory
-  legend("topleft", bty = "n", cex = 0.92,
+  legend("topleft", bty = "n", cex = 0.85,
          legend = c("Truth", "Naive (unadjusted)", "RSF S-learner",
-                    "CSF (points, 95% CI)", "CAST trajectory", "CAST 95% band"),
-         col = c("black", "#D55E00", "#0072B2", green, green, bandcol),
-         lty = c(1, 2, 4, NA, 1, NA), pch = c(NA, NA, NA, 19, NA, 15),
-         lwd = c(3, 2, 2, NA, 2.6, NA), pt.cex = c(1, 1, 1, 1.2, 1, 2.4))
+                    "RSF T-learner", "CSF (points, 95% CI)", "CAST trajectory",
+                    "CAST 95% band"),
+         col = c("black", "#D55E00", "#0072B2", tlcol, green, green, bandcol),
+         lty = c(1, 2, 4, 5, NA, 1, NA), pch = c(NA, NA, NA, NA, 19, NA, 15),
+         lwd = c(3, 2, 2, 2, NA, 2.6, NA), pt.cex = c(1, 1, 1, 1, 1.2, 1, 2.4))
   dev.off()
 }
 
