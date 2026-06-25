@@ -26,12 +26,19 @@ shrinkage intensity and covariance condition number.
 
 ## Preview
 
-Strong-confounding snapshots (the static 600-DPI fallback figures the pipeline
-also writes; the live site is interactive):
+The static 600-DPI fallback figures the pipeline writes, one per confounding
+level and effect shape (the live site is interactive: a slider moves through
+these same panels). Each shows truth, Naive, RSF, the CSF points with 95% CIs,
+and the CAST trajectory with its covariance-aware 95% band. As confounding
+rises the Naive curve diverges while CSF and CAST stay close to truth, with an
+honest, growing residual bias at strong confounding.
 
-![Plateau effect, strong confounding](docs/figs/plateau_strong_confounding.png)
-
-![Reversal effect, strong confounding](docs/figs/reversal_strong_confounding.png)
+| Confounding | Plateau effect | Reversal effect |
+|:--|:--:|:--:|
+| **None** (γ = 0) | ![Plateau, no confounding](docs/figs/plateau_none_confounding.png) | ![Reversal, no confounding](docs/figs/reversal_none_confounding.png) |
+| **Mild** (γ = 0.5) | ![Plateau, mild confounding](docs/figs/plateau_mild_confounding.png) | ![Reversal, mild confounding](docs/figs/reversal_mild_confounding.png) |
+| **Moderate** (γ = 1) | ![Plateau, moderate confounding](docs/figs/plateau_moderate_confounding.png) | ![Reversal, moderate confounding](docs/figs/reversal_moderate_confounding.png) |
+| **Strong** (γ = 2) | ![Plateau, strong confounding](docs/figs/plateau_strong_confounding.png) | ![Reversal, strong confounding](docs/figs/reversal_strong_confounding.png) |
 
 ## Layout
 
