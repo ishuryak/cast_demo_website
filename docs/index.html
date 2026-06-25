@@ -153,6 +153,71 @@
     </div>
   </section>
 
+  <section class="failure-modes">
+    <h2>Failure modes at a glance</h2>
+    <p class="fm-lead">Every estimator on the plot fails in its own
+    characteristic way. Move the confounding slider and switch effect shapes to
+    watch each one break against the known truth.</p>
+    <div class="fm-grid">
+      <div class="fm-item" style="border-left-color:#d55e00">
+        <h3>Naive (unadjusted)</h3>
+        <p><span class="mode">Confounding by indication.</span> The unadjusted
+        survival-probability difference measures the treatment effect plus the
+        baseline prognostic gap between arms. Because healthier patients are
+        preferentially treated, it is biased upward and overstates benefit, and
+        the bias grows as confounding rises. It matches the truth only under
+        randomization (γ = 0).</p>
+      </div>
+      <div class="fm-item" style="border-left-color:#0072b2">
+        <h3>RSF S-learner</h3>
+        <p><span class="mode">Treatment-signal dilution.</span> With treatment
+        entered as just one of many covariates, the survival forest can split on
+        the other features and rarely on treatment, so the estimated contrast
+        shrinks toward zero. This attenuation appears even at zero confounding,
+        where the S-learner sits well below the truth.</p>
+      </div>
+      <div class="fm-item" style="border-left-color:#cc79a7">
+        <h3>RSF T-learner</h3>
+        <p><span class="mode">Cross-arm extrapolation.</span> Separate per-arm
+        forests each see only their own arm's covariate distribution, then
+        predict counterfactual survival for everyone, extrapolating into regions
+        never observed in that arm. Without a propensity model it avoids the
+        S-learner's attenuation but stays biased under confounding, drifting
+        upward with the naive curve.</p>
+      </div>
+      <div class="fm-item" style="border-left-color:#9467bd">
+        <h3>Cox (marginal)</h3>
+        <p><span class="mode">Proportional-hazards misspecification.</span> A
+        single time-constant hazard ratio cannot represent a time-varying
+        effect. It is confounder-adjusted, so confounding does not bias it, but
+        on the reversal shape the one hazard ratio averages the protective-early
+        and harmful-late phases to about 1, and the marginal curve collapses
+        onto zero. The proportional-hazards test flags this (p &lt; 0.0001 on
+        every reversal panel).</p>
+      </div>
+      <div class="fm-item" style="border-left-color:#009e73">
+        <h3>CSF (causal survival forest)</h3>
+        <p><span class="mode">Positivity / overlap stress.</span> Orthogonalizing
+        against a propensity and a censoring model removes confounding under good
+        overlap, but when strong confounding pushes treatment propensities toward
+        0 or 1, overlap degrades and a residual bias remains (the points sit above
+        the truth at strong confounding, though far below the naive curve). CSF
+        also returns correlated per-horizon points with no smooth trajectory, and
+        here it is scored in-sample, so its accuracy is optimistic.</p>
+      </div>
+      <div class="fm-item" style="border-left-color:#009e73">
+        <h3>CAST (trajectory)</h3>
+        <p><span class="mode">Trajectory-shape misspecification.</span> CAST
+        smooths the CSF points into a quadratic in time; when the true effect is
+        not quadratic, such as the reversal's sharp early peak, the smooth fit
+        underfits the peak and its error can exceed the per-horizon CSF points.
+        Its peak time and effect are model-based summaries of the per-horizon
+        causal estimates, not separately identified causal quantities, and the
+        band is conditional on the fitted forests.</p>
+      </div>
+    </div>
+  </section>
+
   <section class="provenance">
     <p><strong>Method provenance.</strong> The CSF fits use
     <code>grf::causal_survival_forest</code> (survival.probability target). The CAST layer
