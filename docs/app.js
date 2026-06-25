@@ -16,6 +16,10 @@ const METHODS = [
   { key: "castci",   label: "CAST 95% band", color: COLORS.cast }
 ];
 const CONF_WORDS = ["none", "mild", "moderate", "strong", "very strong"];
+const SHAPE_TOOLTIPS = {
+  plateau: "Treatment is protective throughout (constant hazard ratio ≈ 0.54), so the RMST benefit accumulates and is sustained, never reversing.",
+  reversal: "Treatment helps early (HR ≈ 0.39) but harms after 48 months (HR ≈ 2.05); the survival curves cross, so the benefit rises, peaks, then declines. A stylized teaching curve, not an empirical one."
+};
 
 let DATA = null;
 let state = { shape: null, confIdx: 0, visible: {} };
@@ -44,6 +48,7 @@ function init() {
     const b = document.createElement("button");
     b.textContent = sh.charAt(0).toUpperCase() + sh.slice(1);
     b.dataset.shape = sh;
+    b.title = SHAPE_TOOLTIPS[sh] || "";   // hover explanation at the control
     if (sh === state.shape) b.classList.add("active");
     b.onclick = () => {
       state.shape = sh;

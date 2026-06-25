@@ -19,10 +19,19 @@ ATE(t)** (RMST-difference scale), the one comparison impossible with real data.
 ## What you see
 
 A single ATE-vs-horizon figure with a **confounding-strength slider**, an
-**effect-shape** selector (plateau vs. reversal), and per-method **toggles**,
-plus live cards for accuracy (RMSE vs. truth), the Cox hazard ratio and
+**effect-shape** selector, and per-method **toggles**, plus live cards for
+accuracy (RMSE vs. truth), the Cox hazard ratio and
 proportional-hazards test, confounder imbalance (SMD), and the Ledoit–Wolf
 shrinkage intensity and covariance condition number.
+
+The **effect-shape** selector switches between two trajectories: a **plateau**,
+where treatment is protective throughout (constant hazard ratio ≈ 0.54), so the
+RMST benefit accumulates and is sustained; and a **reversal**, where treatment
+helps early (HR ≈ 0.39) but harms after 48 months (HR ≈ 2.05), so the survival
+curves cross and the benefit rises, peaks, then declines. The reversal is a
+stylized teaching curve, not an empirical one, and because it breaks
+proportional hazards it is the case a single Cox hazard ratio cannot describe,
+the motivation for a trajectory method.
 
 ## Preview
 
