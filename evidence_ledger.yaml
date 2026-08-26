@@ -1,0 +1,86 @@
+# evidence_ledger.yaml
+# Claims-to-source provenance for this repository.
+#
+# WHAT THIS FILE IS NOT, and why it is short. The evidence ledger's strict
+# release contract exists for a submission-ready manuscript or grant: it binds
+# every substantive numeric claim in a document to a keyed source cell, and every
+# reference to a DOI, a verification date and a local PDF. This project has no
+# such document. Its deliverable is a static teaching website plus the R pipeline
+# that generates it, and `audit_manifest.yaml` records evidence-audit as N/A on
+# that basis (the deliverable's nature, which is permanent, not its stage).
+#
+# Filling this file with a manuscript-shaped ledger for a document that does not
+# exist would assert coverage that nothing checks. What this project actually has
+# instead, and where each lives:
+#
+#   numeric claims in README.md and docs/index.html
+#       -> every one traces to docs/data/scenarios.json, which the shipped test
+#          suite re-reads on every run (tests/test_data_contract.mjs,
+#          tests/test_render_smoke.mjs). The claims that come from a separate
+#          experiment rather than the published grid are produced by
+#          R/04_replicate_seeds.R, which ships, so a reader can re-run them.
+#
+#   data-generating parameters
+#       -> sim_provenance.yaml (60 registered), pinned to the code by
+#          tests/test_sim_provenance.R.
+#
+#   estimation-side constants
+#       -> constant_registry.yaml (12 registered), checked by
+#          ~/.claude/stale-constant-audit/stale_constant_audit.py.
+#
+#   literature citations
+#       -> References/README.md and CITATION.cff. Both sources are recorded
+#          below so this file is not empty of the thing it is actually for.
+
+document: "README.md"
+base_dir: "."
+references_dir: "References"
+
+# No claims block: see the note above. Numeric claims in this repository are
+# checked by the test suite against docs/data/scenarios.json rather than keyed
+# here, and a claims block asserting otherwise would be decorative.
+claims: []
+
+references:
+  - id: 1
+    citation: >-
+      Yang E, Vasishtha R, Dad LK, Kachnic LA, Hope A, Wang E, Wu X, Yuan Y,
+      Brenner DJ, Shuryak I. CAST: Time-Varying Treatment Effects with
+      Application to Chemotherapy and Radiotherapy on Head and Neck Squamous Cell
+      Carcinoma. arXiv:2505.06367 (2025).
+    url: "https://arxiv.org/abs/2505.06367"
+    verified_on: "2026-08-25"
+    # Open access (arXiv). Deliberately NOT downloaded into References/: nothing
+    # in this repository needs the PDF to run or to be read, and the record in
+    # References/README.md carries the citation, the licence and how it was
+    # verified. See that file.
+    proof_unobtainable:
+      reason: >-
+        Openly accessible on arXiv and cited by link. No local PDF is kept
+        because none is needed to run or read anything here, and a repository
+        that ships a teaching demo has no reason to carry article PDFs.
+      hard_approved: true
+      approved_by: "Igor Shuryak"
+      approved_on: "2026-08-26"
+
+  - id: 2
+    citation: >-
+      Yang E, Agrawal S, Kinslow CJ, Cheng SK, Yang L, Wang E, Wang TJ,
+      Kachnic LA, Brenner DJ, Shuryak I. Estimating temporal treatment-effect
+      patterns of radiotherapy and chemotherapy in lower-grade gliomas using
+      causal machine learning. Scientific Reports 2026;16:23659.
+    doi: "10.1038/s41598-026-54656-0"
+    url: "https://doi.org/10.1038/s41598-026-54656-0"
+    verified_on: "2026-08-25"
+    # Open access (Scientific Reports, CC BY). Verified via the Crossref API,
+    # because doi.org and nature.com bounce an automated fetch through a cookie
+    # wall. Same reasoning as above for keeping no local PDF.
+    proof_unobtainable:
+      reason: >-
+        Open access under CC BY and cited by DOI. Verified against the Crossref
+        API record rather than the publisher page, which blocks automated
+        fetches. No local PDF is needed to run or read anything in this
+        repository.
+      hard_approved: true
+      approved_by: "Igor Shuryak"
+      approved_on: "2026-08-26"

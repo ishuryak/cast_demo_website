@@ -1,0 +1,4 @@
+# Normalize line endings so the repo is stable across Windows / WSL / macOS.
+* text=auto eol=lf
+*.png binary
+*.rds binary

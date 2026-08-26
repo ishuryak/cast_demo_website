@@ -1,0 +1,228 @@
+# constant_registry.yaml
+# Hard-coded analysis constants on the ESTIMATION side of this demo.
+#
+# Division of labour with sim_provenance.yaml: that file registers the
+# data-generating model (what the simulated world is). This file registers the
+# constants the estimators impose on top of it (how that world is measured).
+# A value can legitimately appear in both; they answer different questions.
+#
+# The failure this guards against: a constant written because it was true of the
+# analysis at the time, left behind when the estimand, the horizon grid or the
+# scale moved. Nothing raises, because the constant is still a plausible number.
+# Every entry with a retired value therefore carries a `context:` regex naming
+# the ROLE the number plays, so the sweep can tell a retired E-value baseline
+# from an unrelated 0.5.
+#
+# This is a teaching demo, not a calibrated analysis: no constant here is fitted
+# to a cohort. Each is a design threshold whose justification is recorded so that
+# changing the grid, the scale or the estimand shows up as a registry edit rather
+# than a silent drift.
+
+exclude_paths:
+  # Both forms: "**/tests/**" does NOT match this project's top-level tests/,
+  # so the exclusion silently did nothing until a test first contained a
+  # registered constant (tests/test_sim_provenance.R anchors n = 2000).
+  - "tests/**"             # tests legitimately pin values, including retired ones
+  - "**/tests/**"
+  - "output/**"            # gitignored R intermediates and scratch prototypes
+  - "logs/**"
+  - "docs/data/**"         # exported results, not source
+  - "development/**"       # the committed development record quotes old values
+  - "FIXES.md"             # the evidence record quotes the values it retired
+
+constants:
+
+  # ---- CAST trajectory fit ------------------------------------------------
+  gls_cond_max:
+    value: 100
+    provenance: design
+    why: >
+      Maximum condition number of the shrunk cross-horizon covariance Sigma at
+      which the point fit uses GLS (weight = Sigma^-1) rather than falling back
+      to WLS. Above roughly 100 the inverse of Sigma amplifies estimation noise
+      in the covariance more than correct weighting gains. On the
+      survival-probability scale the realized condition numbers are single
+      digits, so GLS engages in all 24 scenarios; on the cumulative-RMST scale
+      of the production pipeline the horizons are near-collinear and the same
+      threshold sends the fit to WLS. Depends on horizon spacing: horizons
+      closer together than the current 24 months would raise the condition
+      number and could flip the branch.
+    sites:
+      - R/cast_core.R
+
+  gls_min_r2:
+    value: 0.5
+    provenance: design
+    why: >
+      Minimum R^2 of the GLS quadratic below which the fit falls back to WLS
+      even when Sigma is well-conditioned (the "fit is sane" guard). A
+      well-conditioned Sigma does not guarantee that a quadratic in time
+      describes the horizon estimates; this refuses a GLS solution explaining
+      less than half their variation. Realized R^2 is well above 0.5 in all 24
+      published scenarios, so the guard never binds here. Registered because it
+      is a second, non-obvious condition on a branch the documentation used to
+      describe as depending only on conditioning.
+    sites:
+      - R/cast_core.R
+
+  # ---- propensity handling ------------------------------------------------
+  propensity_clip_hi:
+    value: 0.99
+    provenance: design
+    why: >
+      Upper clip on the estimated propensity before it is passed to
+      causal_survival_forest as W.hat (the lower clip is 1 - this). Guards
+      against a propensity of exactly 0 or 1 making an inverse-weight term
+      non-finite. Deliberately wider than the [0.05, 0.95] band the overlap card
+      reports as "extreme", so the diagnostic fires well before the clip does.
+      The clip does NOT bind on the published grid: pct_clipped is 0 in all 24
+      scenarios, and the realized propensity envelope is registered separately
+      as propensity_realized_envelope_lo / _hi rather than restated here, so
+      there is exactly one place to update when the grid moves. The residual
+      CSF bias at strong confounding therefore reflects genuine overlap stress
+      rather than the clip. If a future grid makes pct_clipped nonzero, that
+      claim on the site's overlap card stops being true and must change.
+    sites:
+      - R/02_fit_methods.R
+
+  propensity_realized_envelope_hi:
+    value: 0.980
+    provenance: derived
+    why: >
+      Largest estimated propensity anywhere on the published grid, reached at
+      gamma = 2 (plateau, Gamma_u = 1.5). Registered because it is the evidence
+      for the claim the site's overlap card makes -- that the [0.01, 0.99] clip
+      never binds -- and that claim is only as current as this number. Recompute
+      as max over docs/data/scenarios.json of scenarios[*].overlap.max.
+      RETIRED VALUE 0.979 was one panel's maximum (reversal, gamma = 2,
+      Gamma_u = 0) quoted in two places as if it were the envelope over all 24;
+      the audit passed anyway because the number lived in prose rather than in a
+      registered value. It does now.
+    sites:
+      - "R/02_fit_methods.R:@propensity envelope over the whole grid"
+    retired_values: [0.979]
+    context: "propensit|overlap|clip|W\\.?hat|envelope|reaching \\["
+    allow_in:
+      - "development/**"
+      - "FIXES.md"
+
+  propensity_realized_envelope_lo:
+    value: 0.067
+    provenance: derived
+    why: >
+      Smallest estimated propensity anywhere on the published grid, reached at
+      gamma = 2 (plateau, Gamma_u = 0.75). Same role and same recomputation as
+      propensity_realized_envelope_hi, over scenarios[*].overlap.min. RETIRED
+      VALUE 0.079 was one panel's minimum quoted as the envelope.
+    sites:
+      - "R/02_fit_methods.R:@propensity envelope over the whole grid"
+    retired_values: [0.079]
+    context: "propensit|overlap|clip|W\\.?hat|envelope|reaching \\["
+    allow_in:
+      - "development/**"
+      - "FIXES.md"
+
+  overlap_extreme_hi:
+    value: 0.95
+    provenance: design
+    why: >
+      Upper edge of the band outside which an estimated propensity is counted as
+      "extreme" in the overlap (positivity) diagnostic shown on the site (the
+      lower edge is 1 - this). The conventional rule-of-thumb band. Reported,
+      not acted on: nothing is trimmed at this boundary. Realized at most 1.2%
+      of patients, at gamma = 2.
+    sites:
+      - R/02_fit_methods.R
+
+  # ---- E-value companion statistic ---------------------------------------
+  evalue_baseline_survival:
+    value: derived-per-horizon-from-control-arm-KM
+    provenance: derived
+    why: >
+      Baseline survival S0(t) that the survival-probability difference is
+      converted against to obtain the risk ratio the E-value is computed from.
+      Taken from the observed control-arm Kaplan-Meier curve at that same
+      horizon, so it needs no oracle knowledge and matches what a real analysis
+      would use. Exported per scenario as robustness.s0_baseline.
+    # One site deliberately: after the fix there is no literal baseline left to
+    # cross-check between arms, which is the whole point. The guard that matters
+    # here is `retired_values` + `context` below, which fails if a literal 0.5
+    # reappears anywhere near the risk-ratio conversion, in any language.
+    sites:
+      - "R/02_fit_methods.R:@s0_km <- vapply"
+    # A flat 0.5 assumed at EVERY horizon. Control-arm survival runs from about
+    # 0.80 at 12 months to about 0.15 at 108, so it mis-anchored both ends of the
+    # window while producing entirely plausible-looking E-values, and the
+    # assumption was documented nowhere. Must not reappear as a default argument
+    # to rr_from_diff().
+    retired_values: [0.5]
+    context: "rr_from_diff|base\\s*=|s0_km|s0_baseline"
+
+  # ---- horizon-dependent selections --------------------------------------
+  autoc_horizon_months:
+    value: 60
+    provenance: design
+    why: >
+      The horizon whose CSF forest is retained as f_mid and used for the AUTOC
+      benefit-ranking statistic; also the tau at which the RSF hyperparameter
+      grid is scored by out-of-bag concordance. The middle of the 12-108 month
+      window, so the ranking statistic is computed where follow-up is richest
+      rather than at either extreme. Depends on horizons_months in
+      sim_provenance.yaml: this is an equality test against a literal, so if 60
+      ever leaves the horizon grid, f_mid stays NULL and AUTOC is silently
+      skipped rather than erroring. tests/test_fit_constants.R pins that 60 is
+      still in the grid.
+    sites:
+      - R/02_fit_methods.R
+
+  # ---- rendering ----------------------------------------------------------
+  curve_grid_step_months:
+    value: 4
+    provenance: design
+    why: >
+      Step of the dense time grid on which the fitted quadratic and its band are
+      evaluated for smooth rendering (CURVE_GRID). Fine enough that the
+      quadratic renders as a curve rather than a polyline across a 96-month
+      window (25 points), coarse enough to keep the exported JSON small.
+      Presentation only: it does not enter any estimate.
+    sites:
+      - R/02_fit_methods.R
+
+  # ---- also registered in sim_provenance.yaml -----------------------------
+  # These parameterize the simulated world AND are literals in estimation code,
+  # so they are registered in both files, per the two-registry rule. The
+  # authoritative rationale for each is in sim_provenance.yaml.
+  forest_seed:
+    value: 101
+    provenance: design
+    why: >
+      Fixed grf seed, so the exported scenarios.json is reproducible across
+      runs. Per-horizon CSF forests use seed + horizon, so each horizon gets a
+      distinct forest. Overridable by DEMO_SEED. See sim_provenance.yaml
+      (forest_seed) for the full rationale.
+    sites:
+      - "R/02_fit_methods.R:@FOREST_SEED <-"
+
+  last_horizon_months:
+    value: 108
+    provenance: design
+    why: >
+      Last of the five horizons (12, 36, 60, 84, 108), set by
+      seq(12, 120, by = 24). It bounds the trajectory window, the CURVE_GRID and
+      the peak-in-range test. Must stay comfortably inside administrative
+      censoring (180 months) so the window is not truncation-limited. See
+      sim_provenance.yaml (horizons_months).
+    sites:
+      - "R/01_simulate.R:@HORIZONS  <-"
+
+  censoring_mean_months:
+    value: 210
+    provenance: design
+    why: >
+      Mean months to random (non-informative) dropout, calibrated so the overall
+      censoring rate is about 30 percent. Coincides numerically with the upper
+      end of the fine time grid (also 210) for unrelated reasons; the two are
+      independent and must not be collapsed. See sim_provenance.yaml
+      (random_dropout_mean_months).
+    sites:
+      - "R/01_simulate.R:@CENS_MEAN <-"

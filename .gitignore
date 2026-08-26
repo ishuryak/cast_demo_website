@@ -1,0 +1,37 @@
+# R intermediates (may contain per-patient simulated rows — keep out of git).
+# output/preview/ holds smoke-test exports and is intermediate for the same reason.
+output/
+logs/
+.Rhistory
+.RData
+.Rproj.user/
+
+# docs/ is NOT ignored -- it is the published site and is tracked in full. It
+# needs no negation here: `output/` above does not match it. (Two `!docs/...`
+# lines used to sit here negating patterns that never matched, which read as
+# though docs/ were ignored and rescued.) The exported web artifacts are
+# aggregate and safe to publish; the per-patient intermediates under output/ are
+# what stays out.
+
+# Internal editorial notes — not part of the published repo
+CAST_Trajectory_Covariance_Notes_*.docx
+CAST_Trajectory_Covariance_Notes_*.md
+CAST_Trajectory_Covariance_Notes_*.patch
+
+# Screenshots and other local capture artifacts: large, regenerable, and not
+# part of the published site.
+CAST_demo_screenshot.pdf
+*_screenshot.pdf
+
+# OS / editor cruft
+.DS_Store
+*~
+
+# Publisher / paywalled reference PDFs are NEVER committed. Committing is
+# publishing, and a private repository can be shared or made public later, by
+# which point the blob is already in the history and removing it needs a rewrite
+# of every commit rather than a delete. Keep local copies outside the repository
+# and cite the DOI in References/README.md.
+References/*.pdf
+References/*.PDF
+!References/README.md

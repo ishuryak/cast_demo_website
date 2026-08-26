@@ -1,0 +1,781 @@
+# sim_provenance.yaml
+# Provenance for every constant in the data-generating model of this demo.
+#
+# This is a TEACHING simulation, not a calibration to any cohort. Recording that
+# plainly is the point of this file: the constants below were chosen to produce a
+# clinically plausible-looking oncology cohort and a visible, interpretable
+# teaching signal, and NONE of them is fitted to, or claimed to reproduce, a
+# specific dataset. Every one is therefore `source: user_supplied` with
+# `assumption_ack: true` -- an acknowledged design assumption, not a literature
+# value. Nothing here cites a paper, because nothing here is taken from one.
+#
+# Where a value was chosen so an EMERGENT property comes out at a target
+# (control median survival, censoring rate), both the target and the realized
+# value are recorded in its description, so a later edit that moves the realized
+# value away from its target is detectable rather than silent.
+#
+# Composite entries are decomposed to scalars: every number the reader can see in
+# R/01_simulate.R is registered individually rather than nested inside a
+# structure, so each can be grepped against the source and none hides inside a
+# block. Values that are display conveniences (the hazard ratios the site quotes
+# in place of the log hazard ratios the code uses) are `source: derived` with the
+# arithmetic that produces them.
+#
+# Source of truth for every value: R/01_simulate.R. The one exception is
+# replication_seed_base, which belongs to R/04_replicate_seeds.R.
+#
+# Schema note: this file follows the registry schema that
+# ~/.claude/simulation-audit/sim_provenance.py validates, so
+# `sim_provenance.py validate sim_provenance.yaml` passes. The stronger
+# `check --strict` additionally needs a run trace that R/01_simulate.R does not
+# emit; that gap is recorded in audit_manifest.yaml rather than papered over.
+
+project:
+  name: "cast_demo_website"
+  contact_email: "is144@cumc.columbia.edu"
+
+references_dir: "References"
+seed_policy: "fixed"
+
+parameters:
+
+# ---- cohort size, horizon grid, integration grid -------------------------
+
+  - id: n_per_scenario
+    description: >-
+      Patients simulated per scenario. Large enough that the cross-horizon influence-function covariance is full rank and well-conditioned (n >> K = 5), small enough that a 24-scenario grid with tuned forests finishes in minutes. Consequence recorded in the README: at this n a method's RMSE moves by up to 0.018 (sd) between cohort draws, which is why the site says to read the ordering rather than the third decimal.
+    units: "patients"
+    source: user_supplied
+    value: 2000
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [1000, 5000]
+
+  - id: horizon_first_months
+    description: >-
+      First evaluation horizon. Early enough that the survival-probability effect is still small and rising, so the trajectory has a visible shape.
+    units: "months"
+    source: user_supplied
+    value: 12
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [6, 24]
+
+  - id: horizon_spacing_months
+    description: >-
+      Spacing between evaluation horizons. Wide enough that adjacent-horizon influence functions are not near-collinear, which is what keeps Sigma well-conditioned and lets the GLS branch engage; at 12-month spacing on this scale the conditioning degrades.
+    units: "months"
+    source: user_supplied
+    value: 24
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [12, 36]
+
+  - id: horizon_count
+    description: >-
+      Number of evaluation horizons (12, 36, 60, 84, 108 months). Five points are enough to identify a quadratic with residual degrees of freedom and few enough that n >> K holds comfortably.
+    units: "horizons"
+    source: user_supplied
+    value: 5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [4, 10]
+
+  - id: true_curve_grid_step_months
+    description: >-
+      Step of the fine time grid on which cumulative hazard is accumulated and inverse-CDF sampling is done. At this step the left-endpoint Riemann sum's error is far below the Monte-Carlo noise.
+    units: "months"
+    source: user_supplied
+    value: 0.5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.1, 1.0]
+
+  - id: true_curve_grid_max_months
+    description: >-
+      Upper limit of the fine time grid. Exceeds the administrative censoring time so no draw runs off the end of the grid.
+    units: "months"
+    source: user_supplied
+    value: 210
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [180, 360]
+
+# ---- baseline (control) survival -----------------------------------------
+
+  - id: weibull_shape_k
+    description: >-
+      Weibull shape of the control-arm hazard. k > 1 gives a mildly increasing hazard, the usual qualitative shape for an untreated advanced-cancer cohort. Not fitted to any dataset.
+    units: "dimensionless"
+    source: user_supplied
+    value: 1.4
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [1.0, 2.0]
+
+  - id: weibull_log_scale_intercept
+    description: >-
+      Intercept of the Weibull log-scale. CALIBRATED, not free: chosen so the marginal control-arm median survival is near four years. Realized marginal median is 46.6 months, quoted on the site as about 47. Note exp(4.3) * log(2)^(1/1.4) = 56.7 months is the median at linear predictor 0 only; the cohort mean linear predictor is about -0.14, mostly the smoking term. An earlier draft quoted the 56.7 figure and did not reproduce (see FIXES.md).
+    units: "log months"
+    source: user_supplied
+    value: 4.3
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [3.8, 4.8]
+
+  - id: prog_coef_z_age
+    description: >-
+      Coefficient of standardized age in the control-arm log-scale predictor. Sign is the clinically expected direction; magnitude is on the standardized scale and was chosen so prognosis varies enough for confounding to bite without any one covariate dominating. Stage carries the largest weight, as it would clinically. NOT an effect size taken from any published cohort.
+    units: "log months per SD"
+    source: user_supplied
+    value: -0.25
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.0, 1.0]
+
+  - id: prog_coef_z_stage
+    description: >-
+      Coefficient of standardized stage in the control-arm log-scale predictor. Sign is the clinically expected direction; magnitude is on the standardized scale and was chosen so prognosis varies enough for confounding to bite without any one covariate dominating. Stage carries the largest weight, as it would clinically. NOT an effect size taken from any published cohort.
+    units: "log months per SD"
+    source: user_supplied
+    value: -0.45
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.0, 1.0]
+
+  - id: prog_coef_z_ps
+    description: >-
+      Coefficient of standardized performance status in the control-arm log-scale predictor. Sign is the clinically expected direction; magnitude is on the standardized scale and was chosen so prognosis varies enough for confounding to bite without any one covariate dominating. Stage carries the largest weight, as it would clinically. NOT an effect size taken from any published cohort.
+    units: "log months per SD"
+    source: user_supplied
+    value: 0.3
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.0, 1.0]
+
+  - id: prog_coef_z_comorb
+    description: >-
+      Coefficient of standardized comorbidity count in the control-arm log-scale predictor. Sign is the clinically expected direction; magnitude is on the standardized scale and was chosen so prognosis varies enough for confounding to bite without any one covariate dominating. Stage carries the largest weight, as it would clinically. NOT an effect size taken from any published cohort.
+    units: "log months per SD"
+    source: user_supplied
+    value: -0.3
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.0, 1.0]
+
+  - id: prog_coef_smoke
+    description: >-
+      Coefficient of ever-smoker indicator in the control-arm log-scale predictor. Sign is the clinically expected direction; magnitude is on the standardized scale and was chosen so prognosis varies enough for confounding to bite without any one covariate dominating. Stage carries the largest weight, as it would clinically. NOT an effect size taken from any published cohort.
+    units: "log months per SD"
+    source: user_supplied
+    value: -0.4
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.0, 1.0]
+
+  - id: neg_control_coef_sex
+    description: >-
+      Coefficient of sex everywhere in the model. Exactly zero BY CONSTRUCTION, so the demo can show a method correctly ignoring an irrelevant covariate. A nonzero value here would silently turn a negative control into a prognostic factor.
+    units: "log months"
+    source: user_supplied
+    value: 0.0
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.0, 0.0]
+
+  - id: neg_control_coef_ethnicity
+    description: >-
+      Coefficient of ethnicity everywhere in the model. Exactly zero BY CONSTRUCTION, so the demo can show a method correctly ignoring an irrelevant covariate. A nonzero value here would silently turn a negative control into a prognostic factor.
+    units: "log months"
+    source: user_supplied
+    value: 0.0
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.0, 0.0]
+
+# ---- treatment effect (time-varying hazard ratio) -------------------------
+
+  - id: euler_e
+    description: >-
+      Base of the natural logarithm, registered only so the derived hazard ratios below can be written as arithmetic. The registry's formula evaluator accepts + - * / ** % and nothing else, so exp(x) is expressed as euler_e ** x.
+    units: "dimensionless"
+    source: user_supplied
+    value: 2.718281828459045
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [2.718281828459045, 2.718281828459045]
+
+  - id: plateau_log_hazard_ratio
+    description: >-
+      Constant log hazard ratio of treatment on the plateau shape. A large but not implausible benefit, chosen so the survival-probability ATE peaks near 0.16 and is clearly visible against the estimator scatter. Because it is CONSTANT in time, this shape makes the Cox model correctly specified, which the README states explicitly rather than leaving for a reader to notice.
+    units: "log hazard ratio"
+    source: user_supplied
+    value: -0.62
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.2, -0.2]
+
+  - id: plateau_hazard_ratio
+    description: >-
+      Hazard ratio on the plateau shape, quoted on the site and in the README as approximately 0.54.
+    units: "hazard ratio"
+    source: derived
+    derived:
+      formula: "euler_e ** plateau_log_hazard_ratio"
+      upstream: [euler_e, plateau_log_hazard_ratio]
+      rationale: >-
+        Display value only; the simulation uses the log form. Registered so the number the reader sees is tied to the number the code uses.
+
+  - id: reversal_log_hazard_ratio_early
+    description: >-
+      Asymptotic early log hazard ratio on the reversal shape (protective).
+    units: "log hazard ratio"
+    source: user_supplied
+    value: -0.95
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.5, -0.5]
+
+  - id: reversal_log_hazard_ratio_late
+    description: >-
+      Asymptotic late log hazard ratio on the reversal shape (harmful). Chosen with the early asymptote so the survival curves actually CROSS inside the 12-108 month window, which is the case a single hazard ratio cannot describe and the motivation for a trajectory method.
+    units: "log hazard ratio"
+    source: user_supplied
+    value: 0.72
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.3, 1.5]
+
+  - id: reversal_log_hazard_ratio_delta
+    description: >-
+      Total rise in log hazard ratio across the reversal's logistic transition. Registered as derived because the source writes the two asymptotes and forms this difference inline; the README quotes the difference (1.67) in the closed form of HR(u), so it is tied to the two literals here rather than restated independently.
+    units: "log hazard ratio"
+    source: derived
+    derived:
+      formula: "reversal_log_hazard_ratio_late - reversal_log_hazard_ratio_early"
+      upstream: [reversal_log_hazard_ratio_late, reversal_log_hazard_ratio_early]
+      rationale: >-
+        Equals 1.67, the coefficient of the logistic term in the README's HR(u).
+
+  - id: reversal_hazard_ratio_early
+    description: >-
+      Early hazard ratio on the reversal shape, quoted as approximately 0.39.
+    units: "hazard ratio"
+    source: derived
+    derived:
+      formula: "euler_e ** reversal_log_hazard_ratio_early"
+      upstream: [euler_e, reversal_log_hazard_ratio_early]
+      rationale: >-
+        Display value only.
+
+  - id: reversal_hazard_ratio_late
+    description: >-
+      Late hazard ratio on the reversal shape, quoted as approximately 2.05.
+    units: "hazard ratio"
+    source: derived
+    derived:
+      formula: "euler_e ** reversal_log_hazard_ratio_late"
+      upstream: [euler_e, reversal_log_hazard_ratio_late]
+      rationale: >-
+        Display value only.
+
+  - id: reversal_transition_midpoint_months
+    description: >-
+      Midpoint of the reversal's logistic transition from protective to harmful. Placed so the crossing falls inside the 12-108 month horizon window.
+    units: "months"
+    source: user_supplied
+    value: 48
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [24, 84]
+
+  - id: reversal_transition_width_months
+    description: >-
+      Width of the reversal's logistic transition. The transition is SMOOTH rather than a step so the true survival-probability ATE is differentiable and a quadratic trajectory is a fair model; a hard step would create a kink no smooth fit could represent, which would be an unfair test of CAST.
+    units: "months"
+    source: user_supplied
+    value: 12
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [6, 24]
+
+# ---- covariate marginals -------------------------------------------------
+# Plausible-looking marginals for an adult solid-tumour cohort. Drawn
+# INDEPENDENTLY of one another, which is a simplification: in a real cohort
+# these are correlated, and that independence makes the adjustment problem
+# easier than reality. Recorded here rather than left implicit.
+
+  - id: age_mean
+    description: >-
+      Mean age at diagnosis.
+    units: "years"
+    source: user_supplied
+    value: 60
+    distribution: {family: normal, params: {mean: 60, sd: 10}}
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+
+  - id: age_sd
+    description: >-
+      Standard deviation of age.
+    units: "years"
+    source: user_supplied
+    value: 10
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [5, 15]
+
+  - id: performance_status_mean
+    description: >-
+      Mean performance status on a KPS-like 0-100 scale, clipped to [40, 100].
+    units: "KPS points"
+    source: user_supplied
+    value: 80
+    distribution: {family: normal, params: {mean: 80, sd: 12}}
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+
+  - id: performance_status_sd
+    description: >-
+      Standard deviation of performance status.
+    units: "KPS points"
+    source: user_supplied
+    value: 12
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [6, 20]
+
+  - id: performance_status_clip_lo
+    description: >-
+      Lower clip on performance status, so no patient is drawn below a plausible floor for a treated cohort.
+    units: "KPS points"
+    source: user_supplied
+    value: 40
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 60]
+
+  - id: performance_status_clip_hi
+    description: >-
+      Upper clip on performance status (the scale maximum).
+    units: "KPS points"
+    source: user_supplied
+    value: 100
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [100, 100]
+
+  - id: comorbidity_poisson_lambda
+    description: >-
+      Poisson mean of the comorbidity count, capped at 4. A modest comorbidity burden.
+    units: "counts"
+    source: user_supplied
+    value: 1.0
+    distribution: {family: gamma, params: {shape: 1.0, rate: 1.0}}
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+
+  - id: comorbidity_cap
+    description: >-
+      Maximum comorbidity count after capping the Poisson draw.
+    units: "counts"
+    source: user_supplied
+    value: 4
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [3, 6]
+
+  - id: smoking_prevalence
+    description: >-
+      Probability of being an ever-smoker. Smoking is the PROGNOSTIC NON-CONFOUNDER: it shortens survival but does not enter the propensity, so its standardized mean difference stays near zero as confounding rises, which is what the site's balance card demonstrates.
+    units: "probability"
+    source: user_supplied
+    value: 0.45
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.2, 0.7]
+
+  - id: male_fraction
+    description: >-
+      Probability of sex = 1. A negative control: it affects nothing.
+    units: "probability"
+    source: user_supplied
+    value: 0.5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.4, 0.6]
+
+  - id: stage_prob_1
+    description: >-
+      Probability of AJCC-like stage 1 at diagnosis. The four probabilities sum to 1.
+    units: "probability"
+    source: user_supplied
+    value: 0.25
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.05, 0.5]
+
+  - id: stage_prob_2
+    description: >-
+      Probability of AJCC-like stage 2 at diagnosis. The four probabilities sum to 1.
+    units: "probability"
+    source: user_supplied
+    value: 0.3
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.05, 0.5]
+
+  - id: stage_prob_3
+    description: >-
+      Probability of AJCC-like stage 3 at diagnosis. The four probabilities sum to 1.
+    units: "probability"
+    source: user_supplied
+    value: 0.25
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.05, 0.5]
+
+  - id: stage_prob_4
+    description: >-
+      Probability of AJCC-like stage 4 at diagnosis. The four probabilities sum to 1.
+    units: "probability"
+    source: user_supplied
+    value: 0.2
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.05, 0.5]
+
+  - id: ethnicity_prob_A
+    description: >-
+      Probability of ethnicity level A. Levels are deliberately unlabelled A/B/C because the variable exists only as a negative control and carries no coefficient anywhere in the model.
+    units: "probability"
+    source: user_supplied
+    value: 0.5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.1, 0.6]
+
+  - id: ethnicity_prob_B
+    description: >-
+      Probability of ethnicity level B. Levels are deliberately unlabelled A/B/C because the variable exists only as a negative control and carries no coefficient anywhere in the model.
+    units: "probability"
+    source: user_supplied
+    value: 0.3
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.1, 0.6]
+
+  - id: ethnicity_prob_C
+    description: >-
+      Probability of ethnicity level C. Levels are deliberately unlabelled A/B/C because the variable exists only as a negative control and carries no coefficient anywhere in the model.
+    units: "probability"
+    source: user_supplied
+    value: 0.2
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0.1, 0.6]
+
+# ---- measured-confounding knob (gamma) -----------------------------------
+
+  - id: gamma_level_none
+    description: >-
+      Measured-confounding strength, randomized: assignment is independent of everything level of the slider. Multiplies every propensity coefficient below.
+    units: "dimensionless"
+    source: user_supplied
+    value: 0
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 4]
+
+  - id: gamma_level_mild
+    description: >-
+      Measured-confounding strength, mild level of the slider. Multiplies every propensity coefficient below.
+    units: "dimensionless"
+    source: user_supplied
+    value: 0.5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 4]
+
+  - id: gamma_level_moderate
+    description: >-
+      Measured-confounding strength, moderate level of the slider. Multiplies every propensity coefficient below.
+    units: "dimensionless"
+    source: user_supplied
+    value: 1.0
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 4]
+
+  - id: gamma_level_strong
+    description: >-
+      Measured-confounding strength, strong level of the slider. Multiplies every propensity coefficient below. The top of the range was chosen because it is where estimated propensities start being pushed toward 0 and 1 and CSF's residual bias becomes visible, which is the positivity lesson that panel exists to teach.
+    units: "dimensionless"
+    source: user_supplied
+    value: 2.0
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 4]
+
+  - id: propensity_coef_z_age
+    description: >-
+      Coefficient of standardized age in the treatment-assignment logit, multiplied by gamma. Confounding by indication: healthier patients (younger, earlier stage, better performance status, fewer comorbidities) are more likely treated. Smoking, sex and ethnicity are deliberately EXCLUDED from the propensity, which is what makes smoking a pure prognostic non-confounder.
+    units: "logit per SD"
+    source: user_supplied
+    value: -0.5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.5, 1.5]
+
+  - id: propensity_coef_z_stage
+    description: >-
+      Coefficient of standardized stage in the treatment-assignment logit, multiplied by gamma. Confounding by indication: healthier patients (younger, earlier stage, better performance status, fewer comorbidities) are more likely treated. Smoking, sex and ethnicity are deliberately EXCLUDED from the propensity, which is what makes smoking a pure prognostic non-confounder.
+    units: "logit per SD"
+    source: user_supplied
+    value: -0.6
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.5, 1.5]
+
+  - id: propensity_coef_z_ps
+    description: >-
+      Coefficient of standardized performance status in the treatment-assignment logit, multiplied by gamma. Confounding by indication: healthier patients (younger, earlier stage, better performance status, fewer comorbidities) are more likely treated. Smoking, sex and ethnicity are deliberately EXCLUDED from the propensity, which is what makes smoking a pure prognostic non-confounder.
+    units: "logit per SD"
+    source: user_supplied
+    value: 0.5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.5, 1.5]
+
+  - id: propensity_coef_z_comorb
+    description: >-
+      Coefficient of standardized comorbidity count in the treatment-assignment logit, multiplied by gamma. Confounding by indication: healthier patients (younger, earlier stage, better performance status, fewer comorbidities) are more likely treated. Smoking, sex and ethnicity are deliberately EXCLUDED from the propensity, which is what makes smoking a pure prognostic non-confounder.
+    units: "logit per SD"
+    source: user_supplied
+    value: -0.45
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [-1.5, 1.5]
+
+# ---- unmeasured-confounding knob (Gamma) ---------------------------------
+# The latent factor is a standardized normal drawn into every cohort and
+# withheld from every fitted model. It is passed to exactly one place, the
+# deliberately labelled ORACLE CSF refit, whose only purpose is to measure
+# what omitting it costs.
+
+  - id: Gamma_u_level_none
+    description: >-
+      Unmeasured-confounding strength, none level of the second slider. Multiplies both latent coefficients below.
+    units: "dimensionless"
+    source: user_supplied
+    value: 0
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 3]
+
+  - id: Gamma_u_level_moderate
+    description: >-
+      Unmeasured-confounding strength, moderate level of the second slider. Multiplies both latent coefficients below.
+    units: "dimensionless"
+    source: user_supplied
+    value: 0.75
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 3]
+
+  - id: Gamma_u_level_strong
+    description: >-
+      Unmeasured-confounding strength, strong level of the second slider. Multiplies both latent coefficients below. Chosen so that at this level every estimator, CSF and CAST included, is visibly biased while the measured-covariate SMDs and the overlap diagnostics still look healthy. That combination is the teaching point of the second slider.
+    units: "dimensionless"
+    source: user_supplied
+    value: 1.5
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 3]
+
+  - id: latent_coef_on_survival
+    description: >-
+      Coefficient of the standardized latent factor in the control-arm log-scale predictor, multiplied by Gamma. Protective: higher latent fitness means longer survival.
+    units: "log months per SD"
+    source: user_supplied
+    value: 0.45
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 1.0]
+
+  - id: latent_coef_on_treatment
+    description: >-
+      Coefficient of the standardized latent factor in the treatment-assignment logit, multiplied by Gamma. Larger than the survival coefficient so assignment imbalance appears before prognostic spread dominates. Both signs are protective/pro-treatment, so the induced bias is UPWARD and adds to the measured-confounding bias rather than cancelling it. Because the latent factor enters here as well as the outcome model, the oracle refit must receive it on BOTH sides; an oracle given it only in the outcome model leaves the orthogonalization misspecified on the treatment side and recovers about half the real bias (see FIXES.md and tests/test_fit_contract.R).
+    units: "logit per SD"
+    source: user_supplied
+    value: 0.6
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 1.5]
+
+# ---- censoring -----------------------------------------------------------
+
+  - id: administrative_censoring_months
+    description: >-
+      Administrative censoring time: 15 years of maximum follow-up, comfortably beyond the last horizon (108 months) so the horizon window is not truncation-limited.
+    units: "months"
+    source: user_supplied
+    value: 180
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [120, 240]
+
+  - id: random_dropout_mean_months
+    description: >-
+      Mean of the exponential loss-to-follow-up. CALIBRATED: chosen so the overall censoring rate is about 30 percent (event rate about 70). Realized event rate is 0.62-0.75 across the 24 scenarios; the lower rates occur on the plateau shape and at high Gamma, where survival is longer or more dispersed. Dropout can occur at ANY time from study entry and is independent of survival, treatment and covariates, so censoring stays non-informative and the causal identification is unaffected.
+    units: "months"
+    source: user_supplied
+    value: 210
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [120, 400]
+
+# ---- reproducibility -----------------------------------------------------
+
+  - id: cohort_seed_base
+    description: >-
+      Base of the per-scenario cohort seed; scenario i uses this + i, so the 24 published scenarios use 1001-1024. One deterministic seed per scenario, so the exported scenarios.json is reproducible across runs. Consequence stated in the README: each panel is a single Monte-Carlo draw, not an average over replicates.
+    units: "seed"
+    source: user_supplied
+    value: 1000
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 100000]
+
+  - id: replication_seed_base
+    description: >-
+      Base of the cohort seeds used by R/04_replicate_seeds.R, which uses this + i. Deliberately clear of the published grid's 1001-1024 so a replication can never replicate a panel against itself; pinned by tests/test_source_guards.R.
+    units: "seed"
+    source: user_supplied
+    value: 2000
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 100000]
+
+  - id: forest_seed
+    description: >-
+      Fixed grf seed, overridable with DEMO_SEED. Per-horizon CSF forests use this + horizon, so each horizon gets a distinct honest-splitting draw. That was investigated as a possible cause of the cross-horizon covariance looking better-conditioned than expected and DISMISSED; see development/2026_08_25_public-release-audit.md.
+    units: "seed"
+    source: user_supplied
+    value: 101
+    user_supplied:
+      provided_by: "Igor Shuryak"
+      date: "2026-08-25"
+      assumption_ack: true
+      range: [0, 100000]
+

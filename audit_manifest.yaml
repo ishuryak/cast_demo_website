@@ -1,0 +1,161 @@
+# audit_manifest.yaml -- project-local auditor routing record.
+#
+# The recorded verdict for EACH of the twelve auditors is the artifact proving
+# coverage was considered rather than forgotten. Run the gate with:
+#
+#   python3 ~/.claude/routing/audit_gate.py --project .            # draft
+#   python3 ~/.claude/routing/audit_gate.py --project . --release  # hard gate
+#
+# The stale-constant audit is NOT one of the gate's twelve (it has its own
+# engine and rule); it was run separately on 2026-08-26 and passed in REGISTRY
+# STRICT mode, 10 constants, 0 errors, 0 warnings.
+#
+# NOTE ON SCOPE. This project's deliverable is a static teaching WEBSITE plus the
+# R pipeline that generates it. It is not a manuscript, grant, LOI, poster or
+# abstract, and it ships no patient data. Several auditors below are therefore
+# N/A on the deliverable's nature, which is a permanent property of this project
+# and NOT a deferral on project stage.
+
+project: cast_demo_website
+generated_on: 2026-08-26
+
+deliverables:
+  - none         # a static website + its generating pipeline; no scientific
+                 # document deliverable exists or is planned.
+
+canonical_artifacts:
+  analysis_code:
+    - R/cast_core.R
+    - R/01_simulate.R
+    - R/02_fit_methods.R
+    - R/03_export.R
+    - R/scenario_labels.R
+
+facts:
+  has_causal_claim: true          # the whole demo is a treatment-effect
+                                  # comparison against a known true ATE(t).
+
+auditors:
+
+  methods-audit:
+    status: RUN
+    justification: >-
+      Causal / survival estimand with an explicit estimator set. Run as part of
+      the 2026-08-25 public-release pass and the oracle/E-value pass; the two
+      findings it produced (the oracle refit was not orthogonalized on the
+      treatment side; the E-value was anchored to a flat 0.5 control survival at
+      every horizon) are recorded with their evidence in FIXES.md entries 10 and
+      11, and the reasoning in development/2026_08_25_oracle-and-evalue-audit.md.
+    completion:
+      inputs:
+        - {path: R/02_fit_methods.R, sha256: sha256:d3f667ed700e50e147426e4c33d372f7e1c8701ad078f3065b5267e6708f5cd7}
+        - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
+      report: development/2026_08_25_oracle-and-evalue-audit.md
+      report_sha256: sha256:74a3573745af515f1f4223c98a5d01fbfdf3c8760356153ae5d09009baf94817
+      reviewed_on: 2026-08-25
+      findings_count: 3
+      core_rubric_confirmed: true
+
+  paper-code-audit:
+    status: N/A
+    justification: >-
+      There is no Methods text to reconcile against the code. The nearest
+      equivalent -- README data-generating model vs R/01_simulate.R, and the
+      README method description vs R/02_fit_methods.R -- was checked in the
+      2026-08-26 review and is covered by tests/test_fit_contract.R, which pins
+      the oracle-propensity and E-value-anchor contracts in the code itself.
+
+  pipeline-audit:
+    status: N/A
+    justification: >-
+      No pipeline_config.py / pipeline_runner.py in this project. The equivalent
+      checks are covered by cheaper, project-specific mechanisms: run_all.sh
+      echoes its resolved configuration into logs/, R/03_export.R refuses to
+      publish a subsample export into docs/, and tests/run_tests.sh checks the
+      shipped export against what the front end reads.
+
+  manuscript-audit:
+    status: N/A
+    justification: >-
+      No manuscript. The analogous checks -- every figure verified against its
+      caption, every shipped number traced to docs/data/scenarios.json -- were
+      run by hand in the 2026-08-26 review (9/9 figures, 24 scenarios).
+
+  biomedical-data-audit:
+    status: N/A
+    justification: >-
+      No patient-level, registry or trial data. Every cohort is simulated from
+      the generative model in R/01_simulate.R; no real patient data are used or
+      distributed anywhere in the project.
+
+  evidence-audit:
+    status: N/A
+    justification: >-
+      The release contract applies to a submission-ready manuscript or grant, of
+      which this project has neither. The two literature citations it does carry
+      are recorded and verified in References/README.md and CITATION.cff.
+      Numeric claims in README.md are traced to docs/data/scenarios.json, which
+      the shipped test suite re-checks; the claims-to-source ledger machinery is
+      scaffolded (evidence_ledger.yaml) but has no manuscript to bind to.
+
+  simulation-audit:
+    status: RUN
+    justification: >-
+      Every cohort is simulated, so this auditor applies. sim_provenance.yaml
+      registers all 60 data-generating parameters (56 user_supplied design
+      assumptions, 4 derived) and `sim_provenance.py validate` reports
+      `registry OK` as of 2026-08-26. Before this pass it did not: the registry
+      used a project-local schema the engine rejected with `unknown top-level
+      key(s): meta`, so the auditor had never read it.
+      KNOWN GAP, recorded rather than papered over: `check --strict` additionally
+      needs a run trace (simulation_input_trace.csv + simulation_provenance.json)
+      that R/01_simulate.R does not emit. Emitting one means routing every
+      parameter read through the provenance logger, a change to the generating
+      code that would force a re-run of the published grid, and it was not made
+      in this pass. In the meantime tests/test_sim_provenance.R pins each of the
+      54 registered values to a regex matching the exact construct it comes from,
+      which is what actually catches registry-vs-code drift.
+    run:
+      registry: sim_provenance.yaml
+      run_dir: output            # no trace emitted here yet; see justification
+      inputs:
+        - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
+        - {path: sim_provenance.yaml, sha256: sha256:6c7b3805925e064d97144ddf17cfd0e5244e1ada0f74f1b0ad12cfe47ae0ea2a}
+
+  radiation-oncology-reviewer:
+    status: N/A
+    justification: >-
+      No radiotherapy, dose, dosimetry or radiation-treated cohort. Treatment is
+      an abstract binary indicator W with a time-varying hazard ratio; nothing in
+      the demo is radiation-specific.
+
+  surprising-result-skeptic:
+    status: N/A
+    justification: >-
+      No surprising or headline empirical finding is claimed. Every result is a
+      known-truth simulation whose answer is fixed by construction, and the one
+      counterintuitive-looking result (Cox beating CSF on the plateau shape) was
+      traced to its cause -- the plateau DGP is a proportional-hazards Weibull,
+      so Cox is correctly specified -- and is stated explicitly in the README.
+
+  reader-first-audit:
+    status: N/A
+    justification: >-
+      The auditor checks IMRaD structure in a human-facing scientific document
+      (abstract, methods, results, discussion). This project's human-facing
+      artifacts are a website and a repository README, which have no such
+      sections; a trial run reported three errors, all of the form "no Abstract /
+      Methods / Discussion section found". The equivalent reader-facing checks
+      for this deliverable -- can a visitor see the design, is each method
+      explained, is every panel labeled by the protocol that produced it -- are
+      covered by the site's own explanatory cards and failure-mode section.
+
+  tough-reviewer:
+    status: N/A
+    justification: "No grant or proposal in this project."
+
+  subagent-scan:
+    status: N/A
+    justification: >-
+      The 2026-08-26 review was performed in a single context with no subagent
+      fan-out, so the shared fan-out contract does not apply.

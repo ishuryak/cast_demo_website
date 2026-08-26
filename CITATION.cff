@@ -1,0 +1,96 @@
+cff-version: 1.2.0
+message: >-
+  If you use this demonstration site, please cite the CAST methods paper below
+  (preferred-citation) and link to this repository. The CAST method is the work
+  of Yang et al.; this repository demonstrates it on simulated data and is not
+  the analysis code of that paper.
+title: "CAST demo website: causal survival trajectories on simulated oncology data"
+abstract: >-
+  An interactive teaching demo on simulated oncology survival cohorts where the
+  true treatment effect is known. It shows how confounding by indication biases a
+  naive comparison, how a Causal Survival Forest adjusts for measured
+  confounding, where each standard baseline breaks, what an unmeasured confounder
+  does to all of them at once, and how CAST extends per-horizon causal estimates
+  into a smooth treatment-effect trajectory with a covariance-aware band. No
+  patient data are used or distributed.
+type: software
+authors:
+  - family-names: Shuryak
+    given-names: Igor
+    name-suffix: MD, PhD
+    email: is144@cumc.columbia.edu
+    affiliation: Columbia University
+repository-code: "https://github.com/ishuryak/cast_demo_website"
+license: MIT
+keywords:
+  - causal inference
+  - survival analysis
+  - treatment effect heterogeneity
+  - causal survival forest
+  - simulation
+preferred-citation:
+  type: article
+  title: >-
+    CAST: Time-Varying Treatment Effects with Application to Chemotherapy and
+    Radiotherapy on Head and Neck Squamous Cell Carcinoma
+  year: 2025
+  journal: arXiv
+  url: "https://arxiv.org/abs/2505.06367"
+  identifiers:
+    - type: other
+      value: "arXiv:2505.06367"
+      description: arXiv preprint identifier
+  authors:
+    - family-names: Yang
+      given-names: Everest
+    - family-names: Vasishtha
+      given-names: Ria
+    - family-names: Dad
+      given-names: Luqman K.
+    - family-names: Kachnic
+      given-names: Lisa A.
+    - family-names: Hope
+      given-names: Andrew
+    - family-names: Wang
+      given-names: Eric
+    - family-names: Wu
+      given-names: Xiao
+    - family-names: Yuan
+      given-names: Yading
+    - family-names: Brenner
+      given-names: David J.
+    - family-names: Shuryak
+      given-names: Igor
+references:
+  - type: article
+    title: >-
+      Estimating temporal treatment-effect patterns of radiotherapy and
+      chemotherapy in lower-grade gliomas using causal machine learning
+    year: 2026
+    journal: Scientific Reports
+    volume: 16
+    number: 23659
+    doi: 10.1038/s41598-026-54656-0
+    notes: >-
+      The applied study whose production pipeline R/cast_core.R is ported from.
+    authors:
+      - family-names: Yang
+        given-names: Everest
+      - family-names: Agrawal
+        given-names: Sparsh
+      - family-names: Kinslow
+        given-names: Connor J.
+      - family-names: Cheng
+        given-names: Simon K.
+      - family-names: Yang
+        given-names: Lillian
+      - family-names: Wang
+        given-names: Eric
+      - family-names: Wang
+        given-names: Tony J.
+      - family-names: Kachnic
+        given-names: Lisa A.
+      - family-names: Brenner
+        given-names: David J.
+      - family-names: Shuryak
+        given-names: Igor

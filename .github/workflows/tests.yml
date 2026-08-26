@@ -1,0 +1,48 @@
+# Run the site-facing test suites on every push and pull request.
+#
+# Scope is deliberate: the two node suites need no R and no pipeline run, so
+# they execute in seconds on a stock runner and cover the failure that has
+# actually broken this site before -- the front end and the exported
+# scenarios.json drifting apart. The R suites (cast_core math, export labels,
+# fit contract, source guards) need R plus grf, which would turn a
+# ten-second job into a multi-minute one; run those locally with
+# ./tests/run_tests.sh, which runs all six.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  site-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+      - name: Site data contract (every field app.js reads exists and lines up)
+        run: node tests/test_data_contract.mjs docs/data/scenarios.json
+
+      - name: Site render smoke (app.js runs at all 24 slider positions)
+        run: node tests/test_render_smoke.mjs docs/data/scenarios.json
+
+      - name: Shipped site is complete
+        run: |
+          set -euo pipefail
+          for f in docs/index.html docs/app.js docs/style.css \
+                   docs/data/scenarios.json; do
+            test -s "$f" || { echo "::error::missing or empty: $f"; exit 1; }
+          done
+          # .nojekyll is legitimately EMPTY (its presence is the signal that
+          # tells Pages not to run Jekyll), so it is checked with -f, not -s.
+          test -f docs/.nojekyll || { echo "::error::missing docs/.nojekyll"; exit 1; }
+          n=$(ls docs/figs/*.png | wc -l)
+          test "$n" -eq 9 || { echo "::error::expected 9 figures, found $n"; exit 1; }
+          echo "docs/ complete: 9 figures, all site assets present"
