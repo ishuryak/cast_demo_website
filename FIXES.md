@@ -11,6 +11,39 @@ Entries are newest first.
 
 ---
 
+## 2026-08-26 (layout) · The cards moved out of the dead column
+
+**Moves published numbers: no.** `docs/style.css` is the only file changed. No
+data, figure, estimate or caption is touched, and all seven test suites pass
+unchanged.
+
+### 17. Two thirds of the page below the figure was empty
+
+- **What was wrong.** The plot sat in a `1fr` column with the seven cards in a
+  fixed 320px column beside it. Seven stacked cards run far taller than the
+  540px plot, so everything to the left of them below the figure was blank:
+  close to two screens of dead space on a laptop, and the cards themselves were
+  squeezed into a 320px ribbon.
+- **The proof it was real.** A 1440x2400 headless render of the published site
+  shows the plot ending at y = 990 and the card column continuing past y = 2400,
+  with the entire left half empty between them. The print-to-PDF export shows the
+  same thing as three consecutive pages with an empty left column.
+- **The fix.** The plot spans the full width and the cards flow beneath it in a
+  multi-column layout (`columns: 21rem`, a column WIDTH, so the browser fits as
+  many as the viewport allows and drops to one on a phone with no media query).
+  Multi-column rather than grid on purpose: the cards differ several-fold in
+  height, and a grid aligns row heights, which would reopen the gaps it is meant
+  to close. Fixing that exposed the same defect one box up, where eight method
+  checkboxes stacked vertically in a grid column and tripled the height of the
+  controls; they now span the full width and wrap.
+- **Verified.** Rendered headless at 1920, 1440, 1280 and 820 px, and at four
+  UI states driven through `app.js` (default; reversal at strong measured and
+  strong unmeasured confounding; a mid state; and with three methods toggled
+  off), so the layout is checked against the full range of card content lengths
+  rather than one screenshot of the default. No dead column at any width, no
+  horizontal overflow, and the 900px breakpoint collapses to a single column
+  cleanly. `./tests/run_tests.sh` -> 7 suites passed, 0 failed.
+
 ## 2026-08-26 (third pass) · Claims a stranger can check
 
 **Moves published numbers: YES, in the README only, and no analysis result
