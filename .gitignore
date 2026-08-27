@@ -18,6 +18,13 @@ CAST_Trajectory_Covariance_Notes_*.docx
 CAST_Trajectory_Covariance_Notes_*.md
 CAST_Trajectory_Covariance_Notes_*.patch
 
+# Reviewer comment documents. The review itself is transcribed and answered in
+# development/, which is what belongs in the repo; the reviewer's own file is a
+# private working document and is not ours to publish.
+*comments.docx
+*comments.doc
+*_review.docx
+
 # Screenshots and other local capture artifacts: large, regenerable, and not
 # part of the published site.
 CAST_demo_screenshot.pdf
