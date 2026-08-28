@@ -144,13 +144,13 @@ ok("every NO_SITE exemption carries a reason and the list stays short",
    all(nzchar(NO_SITE)) && length(NO_SITE) <= 4L)
 ok("every exempted id is actually in the registry", all(names(NO_SITE) %in% ids))
 
-# --- 3. the knobs the site's two sliders expose are all registered ---------
+# --- 3. the knobs the site's two level selectors expose are all registered ---
 # These are the numbers a visitor can move on the page, so a drift between the
 # registry and the code reaches a reader before it reaches anyone else.
 for (knob in c("gamma_level_none", "gamma_level_mild", "gamma_level_moderate",
                "gamma_level_strong", "Gamma_u_level_none",
                "Gamma_u_level_moderate", "Gamma_u_level_strong"))
-  ok(sprintf("slider level %s is registered", knob), knob %in% ids)
+  ok(sprintf("confounding level %s is registered", knob), knob %in% ids)
 
 # --- 4. the registry says what it is ---------------------------------------
 reg_txt <- paste(reg_lines, collapse = "\n")

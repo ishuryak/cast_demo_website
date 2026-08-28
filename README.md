@@ -24,9 +24,10 @@ with real data.
 
 ## What you see
 
-A single ATE-vs-horizon figure with two sliders – **measured-confounding
-strength** (γ) and **unmeasured-confounding strength** (Γ) – an
-**effect-shape** selector, and per-method **toggles**, plus live cards for
+A single ATE-vs-horizon figure with two level selectors – **measured-confounding
+strength** (γ, four levels) and **unmeasured-confounding strength** (Γ, three
+levels) – an **effect-shape** selector, and per-method **toggles**, plus live
+cards for
 accuracy (RMSE vs. truth), the Cox hazard ratio and proportional-hazards test,
 confounder imbalance (SMD, including the latent factor's own imbalance),
 propensity overlap, the unmeasured-confounding oracle gap with its E-value, the
@@ -40,15 +41,16 @@ as both arms approach low survival; and a **reversal**, where treatment helps
 early (asymptotic HR ≈ 0.39) but harms late (asymptotic HR ≈ 2.05) through a
 smooth transition around 48 months, so the survival curves cross and the
 survival-probability difference rises, peaks, then turns negative. The reversal
-is a stylized teaching curve, not an empirical one, and because it breaks
+is simulated like the plateau, drawn sharper than most real crossings, and
+because it breaks
 proportional hazards it is the case a single Cox hazard ratio cannot describe,
 the motivation for a trajectory method.
 
 ## Preview
 
 The static 600-DPI fallback figures the pipeline writes, one per confounding
-level and effect shape (the live site is interactive: a slider moves through
-these same panels). Each shows truth, Naive, RSF (S- and T-learner), the marginal
+level and effect shape (the live site is interactive: its measured-confounding
+selector moves through these same panels). Each shows truth, Naive, RSF (S- and T-learner), the marginal
 Cox curve, the CSF points with 95% CIs, and the CAST trajectory with its
 covariance-aware 95% band. As confounding
 rises the Naive curve diverges while CSF and CAST stay close to truth, with an
@@ -62,7 +64,7 @@ honest, growing residual bias at strong confounding.
 | **Strong** (γ = 2) | ![Plateau, strong confounding](docs/figs/plateau_strong_confounding.png) | ![Reversal, strong confounding](docs/figs/reversal_strong_confounding.png) |
 
 Every panel above is the Γ = 0 slice: no unmeasured confounder. The
-unmeasured-confounding axis is the second slider on the live site, and the panel
+unmeasured-confounding axis is the second selector on the live site, and the panel
 below is its static summary. Measured confounding is held at γ = 1 while the
 latent factor's strength rises, so the measured covariates stay balanced and the
 overlap diagnostics stay clean while CSF drifts away from the truth anyway.
@@ -91,14 +93,15 @@ cast_demo_website/
     04_replicate_seeds.R re-draw one scenario at N seeds; what replicates
     install_packages.R   one-time dependency install
   tests/
-    run_tests.sh             one command; runs the seven suites below
+    run_tests.sh             one command; runs the eight suites below
     test_data_contract.mjs   every field the site reads exists and lines up
-    test_render_smoke.mjs    app.js actually runs at all 24 slider positions
-    test_export_labels.R     figure labels track gamma, not slider position
+    test_render_smoke.mjs    app.js actually runs at all 24 control settings
+    test_export_labels.R     figure labels track gamma, not control position
     test_cast_core.R         golden values + invariants for the CAST math
     test_fit_contract.R      the oracle refit is a full oracle; E-value anchoring
     test_source_guards.R     the sourcing contract 04 reuses 01 and 02 through
     test_sim_provenance.R    every registered parameter still sits in the code
+    test_style_contract.mjs  the CSS lets the markup take a size (bar fills)
   docs/                              <- the published static site (GitHub Pages root)
     index.html  app.js  style.css      static site (Plotly, no build step)
     data/scenarios.json                aggregate results (safe to publish)
@@ -317,7 +320,7 @@ Smoking, sex, and ethnicity do **not** enter $\pi$. Treatment is **binary**.
 $U$ enters *both* $\eta^{\text{surv}}$ and $\eta^{\text{treat}}$, so it is a
 confounder in the strict sense, and at $\Gamma>0$ it confounds even when
 $\gamma=0$: assignment is no longer random, but nothing in the observed
-covariates records it. This is what the second slider controls. Every fitted
+covariates records it. This is what the second selector sets. Every fitted
 model in `R/02_fit_methods.R` sees only (age, stage, performance status,
 comorbidity, smoking, sex, ethnicity); $U$ is passed to exactly one place, the
 deliberately labelled **oracle** CSF refit, whose only purpose is to measure
@@ -376,7 +379,7 @@ levels $\gamma\in\lbrace 0,0.5,1,2\rbrace$ × 3 unmeasured-confounding levels
 $\Gamma\in\lbrace 0,0.75,1.5\rbrace$), each at 5 horizons (12–108 months, spaced
 24 months apart, wide enough that the cross-horizon influence-function covariance
 is well-conditioned and the trajectory fit uses generalized least squares). All
-24 are reachable from the live site's two sliders. The 8 static preview figures
+24 are reachable from the live site's two selectors. The 8 static preview figures
 are the $\Gamma=0$ slice, plus one figure for the unmeasured axis.
 
 ### Data tiers
@@ -453,21 +456,27 @@ re-run it rather than trusting this table if the numbers matter to you.
 ./tests/run_tests.sh
 ```
 
-Seven suites, all runnable without a full pipeline run (pass a different
+Eight suites, all runnable without a full pipeline run (pass a different
 `scenarios.json` as the first argument to check another export, e.g.
 `./tests/run_tests.sh output/preview/data/scenarios.json` after a smoke test):
 
 - **`test_data_contract.mjs`** (node) checks that `docs/data/scenarios.json`
   satisfies everything `docs/app.js` reads: every (shape – measured level –
-  unmeasured level) combination the sliders can reach resolves to a scenario,
+  unmeasured level) combination the selectors can reach resolves to a scenario,
   every vector matches the horizon count, and every card field is present. This
   is the check that catches a front end and an export that have drifted apart,
   which is exactly how the site broke once before.
 - **`test_render_smoke.mjs`** (node) goes further and actually *runs* `app.js`
-  against the data in a minimal DOM, driving all 24 slider positions and
+  against the data in a minimal DOM, driving all 24 control settings and
   asserting that each one draws a plot with all seven method traces and fills
   every card. The contract test proves the fields exist; this proves the code
   that consumes them works.
+- **`test_style_contract.mjs`** (node) checks that anything the page sizes with a
+  percentage also declares a display that can take a size. It exists because the
+  RMSE bar fills were emitted correctly and styled correctly and still rendered
+  as empty grey rails: they were inline spans, and an inline non-replaced element
+  ignores `width` and `height`. Every other suite passed throughout, because the
+  markup was never the problem.
 - **`test_export_labels.R`** checks that a confounding-strength label is derived
   from the value of γ, never from a position in the grid, so a change to
   `CONF_GRID` cannot silently retitle a figure.

@@ -1,6 +1,6 @@
 // Render smoke test: run docs/app.js against a real scenarios.json in a minimal
-// DOM shim and drive EVERY slider position, checking that each one produces a
-// plot and fills every card.
+// DOM shim and drive EVERY confounding-level combination through the page's own
+// controls, checking that each one produces a plot and fills every card.
 //
 // The data-contract test proves the JSON has the right fields. This proves the
 // code that consumes them actually runs: it catches a typo'd element id, a card
@@ -31,6 +31,7 @@ const classes = new Set([...htmlSrc.matchAll(/class="([^"]+)"/g)]
 function mkEl(tag = "div") {
   const el = {
     tagName: tag, children: [], dataset: {}, style: {}, title: "",
+    type: "", name: "", id: "", value: "", checked: false, htmlFor: "",
     _text: "", _html: "",
     classList: { _s: new Set(),
       add(c) { this._s.add(c); }, remove(c) { this._s.delete(c); },
@@ -40,8 +41,12 @@ function mkEl(tag = "div") {
   };
   Object.defineProperty(el, "textContent", {
     get() { return el._text; }, set(v) { el._text = String(v); } });
+  // Setting innerHTML replaces the children in a real DOM. The shim used to keep
+  // them, which was invisible while each state was rendered once and became a
+  // phantom "18 RMSE rows" the moment a state was rendered three times.
   Object.defineProperty(el, "innerHTML", {
-    get() { return el._html; }, set(v) { el._html = String(v); } });
+    get() { return el._html; },
+    set(v) { el._html = String(v); el.children.length = 0; } });
   return el;
 }
 const registry = new Map();
@@ -70,7 +75,7 @@ const EPILOGUE = "\n;globalThis.__api = { get state() { return state; }, render,
 try { vm.runInContext(appSrc + EPILOGUE, sandbox, { filename: "docs/app.js" }); }
 catch (e) { fail.push(`app.js threw at load: ${e.message}`); }
 
-// ---- drive every slider position ------------------------------------------
+// ---- drive every confounding-level combination ----------------------------
 for (let i = 0; i < 20; i++) await new Promise(r => setImmediate(r));  // drain the fetch chain
 appErrors.forEach(e => fail.push(`app.js reported an error during init: ${e}`));
 const api = sandbox.__api;
@@ -81,6 +86,36 @@ const cardIds = ["cox-hr", "cox-ph", "smd-text", "cast-text", "overlap-text",
                  "shrink-text", "unmeas-text", "conf-label"];
 
 if (plotCalls === 0) fail.push("init() never produced a plot (render() aborted?)");
+
+// ---- the confounding axes are options, not a range input --------------------
+// A four-stop slider promised a continuum the precomputed grid does not have.
+// These assertions pin the replacement: one option per exported level, each one
+// wired to render().
+function radios(containerId) {
+  return (registry.get(containerId)?.children ?? []).filter(c => c.type === "radio");
+}
+function pick(containerId, i) {
+  const rs = radios(containerId);
+  if (!rs.length) return;                       // hidden single-level axis
+  rs.forEach((r, j) => { r.checked = j === i; });
+  if (typeof rs[i]?.onchange !== "function")
+    throw new Error(`${containerId} option ${i} has no onchange handler`);
+  rs[i].onchange();
+}
+for (const [id, g, what] of [["conf-buttons", confs, "measured"],
+                             ["unmeas-buttons", unmeas, "unmeasured"]]) {
+  const n = radios(id).length;
+  const want = g.length > 1 || id === "conf-buttons" ? g.length : 0;
+  if (n !== want)
+    fail.push(`#${id}: ${n} ${what}-confounding options, expected ${want}`);
+  const labels = (registry.get(id)?.children ?? []).filter(c => c.tagName === "label");
+  if (labels.length !== n)
+    fail.push(`#${id}: ${n} options but ${labels.length} labels`);
+  if (labels.some(l => !l._text))
+    fail.push(`#${id}: an option has no label text`);
+}
+if (htmlSrc.includes('id="conf-slider"') || htmlSrc.includes('id="unmeas-slider"'))
+  fail.push("a confounding range input is back in index.html; the axes are discrete");
 
 let combos = 0;
 for (let si = 0; si < shapes.length; si++) {
@@ -94,8 +129,11 @@ for (let si = 0; si < shapes.length; si++) {
       const label = `${shapes[si]} g=${confs[ci]} G=${unmeas[ui]}`;
       try {
         api.state.shape = shapes[si];
-        api.state.confIdx = ci;
-        api.state.unmeasIdx = ui;
+        // Go through the controls' own handlers rather than assigning the index
+        // directly: this is what proves the segmented options are wired to
+        // render(), which assigning state would hide.
+        pick("conf-buttons", ci);
+        pick("unmeas-buttons", ui);
         api.render();
       } catch (e) {
         fail.push(`render(${label}) threw: ${e.message}`);
@@ -124,6 +162,35 @@ for (let si = 0; si < shapes.length; si++) {
   }
 }
 
+// ---- the cards are grouped, and their prose is collapsible (comment 5) -----
+// Structure checks on index.html itself: the layout is CSS, so the only thing a
+// DOM shim can prove is that the markup the CSS targets is actually there.
+const groups = [...htmlSrc.matchAll(/<section class="card-group">([\s\S]*?)<\/section>/g)];
+if (groups.length < 2)
+  fail.push(`cards: ${groups.length} card-group section(s); the cards are meant to be grouped`);
+for (const [i, g] of groups.entries()) {
+  if (!/<h2>/.test(g[1])) fail.push(`card group ${i + 1} has no heading, so its cards have no label`);
+}
+const cardBlocks = [...htmlSrc.matchAll(/<div class="card" id="(card-[\w-]+)"([\s\S]*?)\n        <\/div>/g)];
+if (cardBlocks.length !== 7)
+  fail.push(`matched ${cardBlocks.length} cards, expected 7`);
+for (const [, id, body] of cardBlocks) {
+  if (!body.includes('<ul class="brief">'))
+    fail.push(`#${id} has no brief bullet list, so it opens as a wall of text`);
+  if (!body.includes('<details class="more">'))
+    fail.push(`#${id} does not collapse its prose behind a <details>`);
+  if (!/<summary>[^<]+<\/summary>/.test(body))
+    fail.push(`#${id} has a <details> with no summary to click`);
+  // The live numbers must stay OUTSIDE the disclosure: they are what the card is
+  // for, and a reader should not have to expand it to see them.
+  const detailsAt = body.indexOf("<details");
+  const liveIds = [...body.matchAll(/id="([\w-]+(?:-text|-hr|-ph))"/g)];
+  for (const m of liveIds)
+    if (m.index > detailsAt) fail.push(`#${id}: live value #${m[1]} is hidden inside the disclosure`);
+  if (id === "card-rmse" && body.indexOf('class="rmse-bars"') > detailsAt)
+    fail.push("#card-rmse: the bars are hidden inside the disclosure");
+}
+
 const nButtons = registry.get("shape-buttons")?.children.length ?? 0;
 if (nButtons !== shapes.length)
   fail.push(`shape buttons: ${nButtons}, expected ${shapes.length}`);
@@ -132,7 +199,7 @@ if (nToggles !== 8) fail.push(`method toggles: ${nToggles}, expected 8`);
 if (!registry.get("gen-stamp")?._text) fail.push("generation stamp never set");
 
 console.log(`render smoke: ${jsonPath}`);
-console.log(`  drove ${combos} slider combinations, ${plotCalls} plot calls`);
+console.log(`  drove ${combos} control combinations, ${plotCalls} plot calls`);
 fail.forEach(f => console.log("  FAIL  " + f));
 console.log(fail.length ? `  => ${fail.length} FAILURES` : "  => PASS");
 process.exit(fail.length ? 1 : 0);

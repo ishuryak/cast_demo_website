@@ -1,6 +1,6 @@
 // CAST demo front-end. Loads precomputed scenarios.json and renders an
-// interactive ATE-vs-horizon figure with a measured-confounding slider, an
-// unmeasured-confounding slider, an effect-shape selector, and per-method
+// interactive ATE-vs-horizon figure with a measured-confounding selector, an
+// unmeasured-confounding selector, an effect-shape selector, and per-method
 // toggles, plus accuracy / Cox / balance / overlap / trajectory / shrinkage /
 // unmeasured-confounding cards.
 
@@ -18,13 +18,13 @@ const METHODS = [
   { key: "cast",     label: "CAST trajectory",  color: COLORS.cast },
   { key: "castci",   label: "CAST 95% band", color: COLORS.cast }
 ];
-// Keyed to the VALUE of gamma, not to a slider position, so a change to the
+// Keyed to the VALUE of gamma, not to a control's position, so a change to the
 // exported grid can never silently relabel a panel.
 const CONF_WORDS   = { "0": "none", "0.5": "mild", "1": "moderate", "2": "strong" };
 const UNMEAS_WORDS = { "0": "none", "0.75": "moderate", "1.5": "strong" };
 const SHAPE_TOOLTIPS = {
   plateau: "Treatment is protective throughout (constant hazard ratio ≈ 0.54); on the survival-probability scale the survival gap rises, peaks, then slowly narrows as both arms approach low survival.",
-  reversal: "Treatment helps early (HR ≈ 0.39) but harms late (HR ≈ 2.05), with a smooth transition around 48 months; the survival curves cross, so the survival-probability difference rises, peaks, then turns negative. A stylized teaching curve, not an empirical one."
+  reversal: "Treatment helps early (HR ≈ 0.39) but harms late (HR ≈ 2.05), with a smooth transition around 48 months; the survival curves cross, so the survival-probability difference rises, peaks, then turns negative. Simulated, like the plateau shape, and drawn sharper than most real crossings so each estimator's response to it is easy to see."
 };
 
 let DATA = null;
@@ -69,6 +69,35 @@ function grid(name, fallback) {
   return fallback;             // tolerate an older / reduced export
 }
 
+// Both confounding axes are exported as a short list of discrete levels, so they
+// are rendered as one option per level rather than as a range input: a slider
+// with four stops promises a continuum the precomputed scenario grid does not
+// have, which is exactly how it read to a reviewer. Real radio inputs, so
+// arrow-key navigation and screen-reader semantics come from the platform; the
+// CSS hides the input and styles its label to match the effect-shape buttons.
+function buildLevels(containerId, name, values, words, sym, onPick) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  box.innerHTML = "";
+  values.forEach((v, i) => {
+    const id = `${name}-opt-${i}`;
+    const input = document.createElement("input");
+    input.type = "radio"; input.name = name; input.id = id;
+    input.value = String(i);
+    input.checked = (i === 0);
+    // Keyed to the VALUE, like the label text, so a change to the exported grid
+    // cannot silently relabel an option.
+    input.title = `${sym} = ${v}`;
+    input.onchange = () => onPick(i);
+    const lab = document.createElement("label");
+    lab.htmlFor = id;
+    lab.textContent = word(words, v, sym);
+    lab.title = input.title;
+    box.appendChild(input);
+    box.appendChild(lab);
+  });
+}
+
 function init() {
   state.shape = grid("shapes", ["plateau"])[0];
 
@@ -88,21 +117,17 @@ function init() {
     sb.appendChild(b);
   });
 
-  // measured-confounding slider
-  const sl = document.getElementById("conf-slider");
-  sl.max = grid("conf_grid", [0]).length - 1;
-  sl.value = 0;
-  sl.oninput = () => { state.confIdx = +sl.value; render(); };
+  // measured-confounding options
+  buildLevels("conf-buttons", "conf", grid("conf_grid", [0]), CONF_WORDS, "γ",
+              i => { state.confIdx = i; render(); });
 
-  // unmeasured-confounding slider. Hidden entirely when the export carries only
+  // unmeasured-confounding options. Hidden entirely when the export carries only
   // the single Gamma_u = 0 slice, so a reduced run does not show a dead control.
   const ug = grid("unmeas_grid", [0]);
   const uctrl = document.getElementById("unmeas-ctrl");
   if (ug.length > 1) {
-    const us = document.getElementById("unmeas-slider");
-    us.max = ug.length - 1;
-    us.value = 0;
-    us.oninput = () => { state.unmeasIdx = +us.value; render(); };
+    buildLevels("unmeas-buttons", "unmeas", ug, UNMEAS_WORDS, "Γ",
+                i => { state.unmeasIdx = i; render(); });
   } else {
     uctrl.style.display = "none";
   }
@@ -135,10 +160,11 @@ function init() {
 function render() {
   const conf   = grid("conf_grid", [0])[state.confIdx];
   const unmeas = grid("unmeas_grid", [0])[state.unmeasIdx];
-  document.getElementById("conf-label").textContent =
-    `${word(CONF_WORDS, conf, "γ")} (γ = ${conf})`;
+  // The selected option already shows the word ("none", "strong"), so the label
+  // carries the numeric value rather than repeating it.
+  document.getElementById("conf-label").textContent = `γ = ${conf}`;
   const ulab = document.getElementById("unmeas-label");
-  if (ulab) ulab.textContent = `${word(UNMEAS_WORDS, unmeas, "Γ")} (Γ = ${unmeas})`;
+  if (ulab) ulab.textContent = `Γ = ${unmeas}`;
 
   const k = key(state.shape, conf, unmeas);
   const s = DATA.scenarios[k];
@@ -226,16 +252,20 @@ function renderCards(s) {
 
   // Cox
   const cox = s.cox;
-  document.getElementById("cox-hr").textContent =
-    `HR ${cox.hr} (${cox.lo}–${cox.hi})`;
+  // The hazard ratio and its interval on separate lines: in a card column the
+  // combined string wrapped in the middle of the interval, splitting "(0.478-"
+  // from "0.593)".
+  document.getElementById("cox-hr").textContent = `HR ${cox.hr}`;
   const php = cox.ph_p;
   // ph_p is rounded to 4 dp in scenarios.json, so a tiny p-value arrives as 0;
   // show "p < 0.0001" rather than the misleading "p = 0".
   const phpTxt = php === 0 ? "p < 0.0001" : `p = ${php}`;
+  const ci = `95% CI ${cox.lo}–${cox.hi}`;
   document.getElementById("cox-ph").textContent =
-    php == null ? "" :
-    `PH test ${phpTxt}` + (php < 0.05 ? ", proportional-hazards assumption violated" :
-                                        ", no strong PH violation here");
+    php == null ? ci :
+    `${ci} · PH test ${phpTxt}` +
+      (php < 0.05 ? ", proportional-hazards assumption violated"
+                  : ", no strong PH violation here");
 
   // Balance
   document.getElementById("smd-text").innerHTML =
