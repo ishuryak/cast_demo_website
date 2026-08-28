@@ -221,6 +221,84 @@ revisited a day later:
   horizontal overflow, and the 900px breakpoint collapses to a single column
   cleanly. `./tests/run_tests.sh` -> 7 suites passed, 0 failed.
 
+## 2026-08-28 · The one number the pipeline could not reproduce
+
+**Moves published numbers: YES, sixteen of them, in a field nothing reads.**
+`docs/data/scenarios.json` changes in exactly 17 leaves out of roughly 1,900: the
+16 `autoc.se` values that moved and the `generated` timestamp. All nine figures
+are **byte-identical**. No average treatment effect, confidence interval, RMSE,
+hazard ratio, PH p-value, standardized mean difference, overlap or shrinkage
+diagnostic changes, and neither does the AUTOC point estimate.
+
+Verification environment for this pass: R 4.5.1, `grf` 2.5.0, `survival` 3.8.3,
+`jsonlite` 2.0.0, node v18.19.1, on 2026-08-28.
+
+Reasoning, options considered and what was dismissed:
+[`development/2026_08_28_autoc-bootstrap-seed.md`](development/2026_08_28_autoc-bootstrap-seed.md).
+
+### 24. The shipped scenarios.json was not what the shipped code produces
+
+- **Moves published numbers: YES**, as itemized above.
+- **What was wrong.** `grf::rank_average_treatment_effect()` returns a
+  deterministic point estimate and a standard error formed from `R = 200`
+  half-sample bootstrap replicates drawn with R's **global** RNG. Every forest in
+  `R/02_fit_methods.R` carries an explicit `seed =` and is therefore
+  stream-independent; that one call was not. Any edit anywhere earlier in the run
+  that drew a random number silently re-rolled every `autoc$se` in the exported
+  grid, leaving the estimate, every other exported field and all nine figures
+  untouched. The 2026-08-26 restructuring around the `DEMO_SOURCE_ONLY` guards
+  was such an edit, and the grid was not regenerated after it, so the committed
+  `scenarios.json` (stamped `2026-08-25 23:09`) predated the fit script beside it.
+- **The proof it was real.** The whole pipeline was re-run from a clean extract of
+  the committed tree and compared byte for byte: nine figures identical,
+  `scenarios.json` differing in 20 leaves, every one of them `autoc.se`. The
+  mechanism was then confirmed directly on one fixed forest, rather than inferred:
+  the same RNG state gives `se=0.691754` twice, and an advanced stream gives
+  `se=0.635089`, while `est=-0.851334` never moves.
+- **Why no auditor caught it.** None of them compares a shipped artifact to a
+  re-run. `pipeline-audit` asks whether outputs are fresher than the code,
+  `manuscript-audit` whether quoted numbers match their source file,
+  `stale-constant-audit` whether a hard-coded bound still describes its artifact.
+  All three pass on an artifact the current code would no longer produce.
+- **What it actually broke.** `autoc` is read by nothing: it appears in
+  `docs/data/scenarios.json` and in no other file. No figure plots it, no card
+  shows it, no test asserts it. What it broke is the claim `docs/index.html` makes
+  to every visitor, that the numbers are "reproduced by the R pipeline at" this
+  repository.
+- **The fix.** `set.seed(FOREST_SEED)` immediately before the call, bringing the
+  last stream-dependent number in the pipeline under the seed everything else
+  already uses. The alternative of deleting the unused field was rejected:
+  removing an output to make a reproducibility problem go away is the wrong
+  instinct, and the statistic is named in the README as part of what
+  `02_fit_methods.R` computes.
+- **The test that now pins it.** Three assertions in
+  `tests/test_source_guards.R`, and the guard was broken three ways and confirmed
+  to report each: the seed removed (the original defect); the seed set but a
+  `runif` draw placed between it and the call, which a naive "is `set.seed`
+  present" check would pass; and `set.seed(42)` instead of `set.seed(FOREST_SEED)`.
+- **Verified.** The defect was reproduced on demand and the fix shown to hold
+  against it, end to end through `run_all.sh` on the subsample grid, using a
+  simulated upstream edit of three extra `runif` draws:
+
+  | build | `autoc.se`, both smoke scenarios |
+  |:--|:--|
+  | unfixed | 0.044, 0.040 |
+  | unfixed + upstream edit | **0.046, 0.041** |
+  | fixed | 0.044, 0.042 |
+  | fixed + upstream edit | **0.044, 0.042** |
+
+  Then the full 24-scenario pipeline (33 min, R 4.5.1): the regenerated tree
+  differs from the committed one in `docs/data/scenarios.json` alone, and within
+  it in 16 `autoc.se` values and the timestamp alone, with all nine figures
+  byte-identical. `./tests/run_tests.sh` -> 9 suites passed, 0 failed against the
+  regenerated export.
+- **What is NOT claimed.** The fix is proven on the two-scenario smoke grid, where
+  the defect was reproduced and then shown not to occur. It was not re-proven by a
+  second full 24-scenario run, which would cost another 33 minutes to demonstrate
+  a per-call property already demonstrated per call.
+
+---
+
 ## 2026-08-26 (third pass) · Claims a stranger can check
 
 **Moves published numbers: YES, in the README only, and no analysis result

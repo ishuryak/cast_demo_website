@@ -48,7 +48,13 @@ auditors:
       11, and the reasoning in development/2026_08_25_oracle-and-evalue-audit.md.
     completion:
       inputs:
-        - {path: R/02_fit_methods.R, sha256: sha256:d3f667ed700e50e147426e4c33d372f7e1c8701ad078f3065b5267e6708f5cd7}
+        # Re-taken 2026-08-28. R/02_fit_methods.R changed after this review: one
+        # set.seed(FOREST_SEED) before the AUTOC bootstrap, plus its comment. It
+        # touches no estimator, estimand, parameter or fitted model -- only which
+        # bootstrap draws form one standard error -- so both findings this review
+        # produced still hold against the current file. The hash is re-taken
+        # rather than left dangling, which is the defect FIXES.md 25 records.
+        - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
         - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
       report: development/2026_08_25_oracle-and-evalue-audit.md
       report_sha256: sha256:74a3573745af515f1f4223c98a5d01fbfdf3c8760356153ae5d09009baf94817

@@ -198,8 +198,19 @@ constants:
     why: >
       Fixed grf seed, so the exported scenarios.json is reproducible across
       runs. Per-horizon CSF forests use seed + horizon, so each horizon gets a
-      distinct forest. Overridable by DEMO_SEED. See sim_provenance.yaml
-      (forest_seed) for the full rationale.
+      distinct forest. It also seeds the AUTOC bootstrap: every forest takes this
+      value through an explicit `seed =` argument and is therefore independent of
+      R's global RNG stream, but rank_average_treatment_effect() draws its 200
+      half-sample bootstrap replicates from that global stream, so its standard
+      error is not. set.seed(FOREST_SEED) immediately before that one call brings
+      the last stream-dependent number in the pipeline under the same seed as
+      everything else. Overridable by DEMO_SEED. See sim_provenance.yaml
+      (forest_seed) for the full rationale, and FIXES.md 24 for what went wrong
+      without it. The AUTOC call is not listed under `sites:` below: it uses the
+      constant by name and carries no numeric literal, so there is nothing there
+      for the cross-arm check to compare. What pins it is
+      tests/test_source_guards.R, which asserts the seed sits immediately before
+      the call.
     sites:
       - "R/02_fit_methods.R:@FOREST_SEED <-"
 
