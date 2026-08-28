@@ -34,7 +34,7 @@ prose behind a `<details>` disclosure removed the height spread that made a grid
 unattractive. The layout moved back to a grid then, which is also what lets the
 group headings stay attached to their cards -- a multi-column flow can break a
 heading away from the card beneath it. See
-`2026_08_27_everest-yang-feedback.md`. Both decisions were right at the time they
+`2026_08_27_site-review-comments.md`. Both decisions were right at the time they
 were taken; the second became available only because the first change's successor
 removed the constraint.)
 

@@ -5,9 +5,150 @@ that now pins it, the verification, and whether it moved any published number.
 The reasoning behind these changes is in [`development/`](development/).
 
 Verification environment for everything below: R 4.5.1, `grf` 2.5.0, `survival`
-3.8.3, `jsonlite` 2.0.0, node v18.19.1, on 2026-08-25.
+3.8.3, `jsonlite` 2.0.0, node v18.19.1, on 2026-08-25, and the same toolchain
+re-run on 2026-08-27 for the entries dated that day. Headless renders use Chrome
+via `--headless=new --screenshot` against `python3 -m http.server`.
 
 Entries are newest first.
+
+---
+
+## 2026-08-27 (review) · A colleague's five comments
+
+**Moves published numbers: no.** `docs/`, `README.md`, `tests/` and `.gitignore`
+only. No R script, no `scenarios.json`, no figure and no registry entry is
+touched, and all eight test suites pass. The reasoning, including the costing
+that decided comment 1, is in
+[`development/2026_08_27_site-review-comments.md`](development/2026_08_27_site-review-comments.md).
+
+### 18. Every RMSE bar was an empty grey rail, in every state, since the card was written
+
+- **What was wrong.** The accuracy card drew six labeled bars whose numbers
+  updated correctly and whose bars never appeared at all. The reviewer read this
+  as "these blue bars do not appear to change no matter how much measured or
+  unmeasured confounding is set". They were not failing to change; they were
+  never being drawn.
+- **The proof it was real.** A 1440x2600 headless render of the published site at
+  the default state shows all six rows as bare `#eef1f5` tracks with no colored
+  fill, matching the reviewer's screenshot. At that state `app.js:222` emitted
+  `<span class="rmse-fill" style="width:100.0%">` for the S-learner, the largest
+  of the six, and `width:5.9%` for Cox, so the markup and the widths were both
+  correct and neither was visible.
+- **The cause.** `.rmse-fill` is a `<span>` inside `.rmse-track`, which is a plain
+  block, so the fill stayed a non-replaced **inline** element. `width` and
+  `height` do not apply to those (CSS 2.1 10.3.1 / 10.6.1), so the declared
+  `width: NN%` and `height: 100%` were both ignored. `.rmse-track` escaped the
+  same fate only because it is a grid item of `.rmse-row` and was blockified.
+- **Why no suite caught it.** `test_render_smoke.mjs:113` asserted the row markup
+  contains `rmse-fill`, which it did. The defect was entirely in whether the CSS
+  let that markup take a size, which nothing looked at.
+- **The fix.** `.rmse-fill { display: block; min-width: 2px; }`, the `min-width`
+  so a method whose RMSE rounds near zero (Cox at 0.003) still shows a sliver.
+- **The test that now pins it.** `tests/test_style_contract.mjs`, a new suite:
+  anything `app.js` sizes with a percentage width, or `style.css` gives a
+  percentage height, must declare a display that can take a size. **Confirmed to
+  fail against the unfixed CSS** before the fix landed, and again afterwards by
+  reverting the `display: block` (mutation M2).
+- **Verified.** `./tests/run_tests.sh` -> 8 suites passed, 0 failed (2026-08-27).
+  Re-rendered headless at 1440 px: the six bars are drawn in method colors,
+  their lengths tracking the values 0.027 / 0.051 / 0.028 / 0.003 / 0.026 / 0.015
+  at 52.9 / 100 / 54.9 / 5.9 / 51.0 / 29.4 % of the track.
+
+### 19. The measured-confounding label rendered γ as Γ, the other axis's symbol
+
+- **What was wrong.** `.ctrl label` sets `text-transform: uppercase`, which
+  applied to the axis symbol inside it, so the **measured** axis's lowercase γ
+  was displayed as Γ. Both controls therefore read "Γ = 0", and Γ is the symbol
+  this page uses for the *unmeasured* axis.
+- **The proof it was real.** The 1440 px render of the control row before the fix
+  reads "MEASURED CONFOUNDING: Γ = 0" beside "UNMEASURED CONFOUNDING: Γ = 0". The
+  defect predates this review: the old label text was "none (γ = 0)", which
+  uppercased to "NONE (Γ = 0)" the same way, and was less conspicuous only
+  because the word carried the meaning.
+- **The fix.** `#conf-label, #unmeas-label { text-transform: none; }`.
+- **Verified.** Re-rendered headless at 1440 px: the two labels now read
+  "MEASURED CONFOUNDING: γ = 0" and "UNMEASURED CONFOUNDING: Γ = 0".
+
+### 20. Two four-stop sliders promised a continuum the data does not have
+
+- **What was wrong.** Measured and unmeasured confounding were `<input
+  type="range">` elements over four and three precomputed levels. A slider is a
+  continuous affordance, so it invites a drag it cannot honour.
+- **The proof it was real.** The reviewer's first comment, unprompted: "there are
+  only discrete values selectable (3 for unmeasured, 4 for measured)".
+- **The fix.** One option per exported level, as radio inputs styled to match the
+  existing effect-shape selector. Real radios rather than ARIA-annotated buttons,
+  so arrow-key navigation and screen-reader semantics come from the platform.
+  The alternative the reviewer offered, 50 steps per axis, was costed and
+  rejected: at 19 s per scenario it is 5000 scenarios and about 26 h of pipeline
+  time for a ~16 MB JSON that every visitor downloads before first paint, and it
+  would move every published number. The costing is in the development record.
+- **The tests that now pin it.** `tests/test_render_smoke.mjs` asserts one option
+  per exported level on each axis, that every option carries label text and an
+  `onchange`, and that no `id="conf-slider"` / `id="unmeas-slider"` range input
+  returns; and it now drives all 24 combinations **through the controls' own
+  handlers** rather than by assigning state, so a control that never wires up
+  fails. Confirmed to fail by mutation: emitting one option (M3), dropping the
+  `onchange` (M4), and reinstating a range input (M7).
+- **Verified.** `./tests/run_tests.sh` -> 8 suites passed, 0 failed. Rendered
+  headless at 1440, 820 and 420 px: both controls sit on one row at 1440 with
+  dividers between options and the selected option filled.
+
+### 21. The intro led with the formal statement and buried the plain one
+
+- **What was wrong.** One 300-word lead paragraph that stated each idea formally
+  and then explained it in a parenthesis, which is the opposite of the order a
+  reader needs. Two of its sentences were flagged as reading like generated text,
+  one of them also self-contradicting: "The reversal is a stylized teaching
+  curve, not an empirical one" implies the plateau might be empirical, three
+  sentences after the text says both are simulated.
+- **The fix.** Five short paragraphs, plain statement first and precision second.
+  The estimand sentence is the reviewer's own wording. The reversal paragraph now
+  opens by saying both shapes are simulated and then says what "stylized" meant:
+  drawn sharper than most real crossings so each estimator's response is visible.
+  "...to see which estimators recover the truth, and which cannot" becomes a
+  plain instruction. The same flagged sentence was carried by the reversal hover
+  tooltip in `app.js` and by `README.md`, and both were rewritten to match.
+- **Verified.** Read back in the 1440 px render. `grep` for the two flagged
+  sentences across `docs/`, `README.md` and `R/` returns nothing.
+
+### 22. Seven cards, no stated reading order, and a wall of text in each
+
+- **What was wrong.** Seven cards in an unlabeled CSS multi-column flow. The
+  flow does read top-to-bottom then across, so an order existed, but nothing on
+  the page said so, and each card opened with several hundred words of
+  explanation ahead of its own numbers.
+- **The fix.** Four numbered groups in the order the story section already tells:
+  is this cohort confounded, how close is each method, what adjustment cannot
+  reach, inside the CAST layer. Each card keeps its live numbers visible, gains
+  two or three bullets saying what the concept is in this model, and moves its
+  full prose behind a `<details>` disclosure. No explanatory text was deleted;
+  a word-level diff of the card block before and after shows only insertions plus
+  the two "slider" wording ripples. `<details>` rather than a click handler on the
+  card: keyboard-reachable, screen-reader-announced, works with JavaScript off,
+  and still found by the browser's in-page search when closed.
+- **The layout.** Back to a grid, which the 2026-08-26 entry below had rejected
+  because the cards then differed several-fold in height. Collapsing the prose
+  removed that spread, and a grid is what keeps a group heading attached to its
+  cards. The 16.5rem column minimum is chosen so all four groups fit across the
+  1132 px content width; at 17rem the fourth wrapped to a second row and left two
+  empty columns beside it.
+- **The tests that now pin it.** `tests/test_render_smoke.mjs` asserts every card
+  has brief bullets, a `<details>` with a summary, and its live values **outside**
+  the disclosure, and that every group carries a heading. Confirmed to fail by
+  mutation: removing a card's bullets (M5), moving a live value inside the
+  disclosure (M6), and demoting a group heading (M8).
+- **Verified.** `./tests/run_tests.sh` -> 8 suites passed, 0 failed. Rendered
+  headless at 1440, 820 and 420 px and read back: four groups in four columns at
+  1440, one column below 900.
+
+### Known, pre-existing, not fixed here
+
+The page overflows its viewport horizontally below about 720 px, so a phone gets
+a sideways scroll. This is **not** new: rendered headless at 620, 720 and 820 px,
+the pre-change build at `HEAD` and the post-change build clip identically (22
+body rows reaching the right edge at 620 px in both, 0 at 720 px in both). It is
+outside the five comments answered here and is left for a separate pass.
 
 ---
 

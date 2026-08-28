@@ -40,7 +40,7 @@ for (const f of ["horizons", "shapes", "conf_grid", "unmeas_grid"])
 const K = (d.horizons || []).length;
 if (!K) F("horizons is empty");
 
-// ---- 2. every slider position resolves to a scenario ---------------------
+// ---- 2. every reachable control setting resolves to a scenario -----------
 let reachable = 0;
 for (const sh of d.shapes || [])
   for (const c of d.conf_grid || [])
@@ -184,7 +184,7 @@ if (total > reachable)
 
 // ---- 4. the R and JS confounding vocabularies must agree ------------------
 // Both sides key their labels to the value of gamma; if they drift, the static
-// figures and the live slider disagree about what "moderate" means.
+// figures and the live controls disagree about what "moderate" means.
 const m = appjs.match(/const CONF_WORDS\s*=\s*\{([^}]*)\}/);
 if (!m) F("could not find CONF_WORDS in docs/app.js");
 else {
@@ -196,7 +196,7 @@ else {
   else if (JSON.stringify(js) !== JSON.stringify(r))
     F(`CONF_WORDS disagree: app.js ${JSON.stringify(js)} vs R ${JSON.stringify(r)}`);
   for (const c of d.conf_grid || [])
-    if (!(String(c) in js)) W(`gamma = ${c} has no word in CONF_WORDS; slider shows the raw value`);
+    if (!(String(c) in js)) W(`gamma = ${c} has no word in CONF_WORDS; the control shows the raw value`);
 }
 
 // ---- report ---------------------------------------------------------------

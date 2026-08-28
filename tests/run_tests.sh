@@ -39,6 +39,7 @@ fi
 if command -v node >/dev/null 2>&1; then
   run "site data contract" node tests/test_data_contract.mjs "$JSON"
   run "site render smoke"  node tests/test_render_smoke.mjs  "$JSON"
+  run "site style contract" node tests/test_style_contract.mjs
 else
   echo "--- SKIP: node not found; the site data contract was not checked"
   echo
