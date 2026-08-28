@@ -142,13 +142,45 @@ that decided comment 1, is in
   headless at 1440, 820 and 420 px and read back: four groups in four columns at
   1440, one column below 900.
 
+### 23. A defect recorded here did not exist: the instrument was wrong
+
+- **Moves published numbers: no.** This entry withdraws a claim and adds a test.
+  Nothing under `docs/` changes.
+- **What was wrong.** The paragraph that stood here said "the page overflows its
+  viewport horizontally below about 720 px, so a phone gets a sideways scroll",
+  and put the figure at 22 clipped body rows at 620 px. Rewritten here, and in
+  `development/2026_08_27_site-review-comments.md`, because it is false. The
+  page fits every width tested. What was measured was a headless SCREENSHOT, and
+  a screenshot is not a measurement of layout: Chrome on Windows will not open a
+  window narrower than about 500 px, so `--window-size=420,H --screenshot` lays
+  the page out at ~497 px and crops the image to 420. The crop looks exactly like
+  a page overflowing its viewport, and reading it that way is how a defect that
+  was never in the stylesheet came to be written into two records as measured
+  fact.
+- **The proof it was real.** Measured inside an iframe of the requested width --
+  a real viewport at any size -- at 345, 405, 605, 705, 1009 and 1425 CSS px:
+  zero elements whose right edge passes the viewport's, and
+  `scrollWidth === clientWidth` at every one. The 420 px screenshot that produced
+  the original claim reports `clientWidth = 497` when the page is asked for its
+  own width, which is the artifact itself, visible in the instrument's own
+  output.
+- **The test that now pins it.** `tests/test_viewport_overflow.mjs`, a new suite
+  measuring six widths in one browser launch. Because it asserts the ABSENCE of
+  something, it carries its own negative control and runs it every time: a second
+  iframe loads the same page with one deliberately 1600 px-wide element appended,
+  and the suite fails if that does not report an overflow, rather than reporting
+  a pass the measurement cannot support. Confirmed to fail against a mutated
+  page: appending a 1600 px element to `docs/index.html` turned all twelve
+  assertions red and exited 1. Confirmed to skip, not fail, with `CHROME` set to
+  a path that does not exist.
+- **Verified.** `./tests/run_tests.sh` -> 9 suites passed, 0 failed (2026-08-28),
+  against a baseline of 8 before this entry. The new suite also runs in CI, along
+  with the style contract added in entry 18, which CI had not been running.
+
 ### Known, pre-existing, not fixed here
 
-The page overflows its viewport horizontally below about 720 px, so a phone gets
-a sideways scroll. This is **not** new: rendered headless at 620, 720 and 820 px,
-the pre-change build at `HEAD` and the post-change build clip identically (22
-body rows reaching the right edge at 620 px in both, 0 at 720 px in both). It is
-outside the five comments answered here and is left for a separate pass.
+Nothing outstanding from this pass. The one item previously recorded here was
+the mobile-overflow claim, withdrawn in entry 23 above.
 
 ---
 

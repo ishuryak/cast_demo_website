@@ -93,7 +93,7 @@ cast_demo_website/
     04_replicate_seeds.R re-draw one scenario at N seeds; what replicates
     install_packages.R   one-time dependency install
   tests/
-    run_tests.sh             one command; runs the eight suites below
+    run_tests.sh             one command; runs the nine suites below
     test_data_contract.mjs   every field the site reads exists and lines up
     test_render_smoke.mjs    app.js actually runs at all 24 control settings
     test_export_labels.R     figure labels track gamma, not control position
@@ -102,6 +102,8 @@ cast_demo_website/
     test_source_guards.R     the sourcing contract 04 reuses 01 and 02 through
     test_sim_provenance.R    every registered parameter still sits in the code
     test_style_contract.mjs  the CSS lets the markup take a size (bar fills)
+    test_viewport_overflow.mjs the page fits a phone, measured in a real
+                             viewport rather than read off a screenshot
   docs/                              <- the published static site (GitHub Pages root)
     index.html  app.js  style.css      static site (Plotly, no build step)
     data/scenarios.json                aggregate results (safe to publish)
@@ -114,7 +116,7 @@ cast_demo_website/
   References/README.md   the same two sources, with licences (no PDFs committed)
   FIXES.md               landed fixes, with the evidence for each
   development/           the audits and decisions behind those fixes
-  .github/workflows/     CI: the two node suites + a docs/ completeness check
+  .github/workflows/     CI: the four node suites + a docs/ completeness check
   output/                R intermediates, output/preview/ for smoke-test exports,
                          and replicate_seeds.csv (all gitignored)
 ```
@@ -456,7 +458,7 @@ re-run it rather than trusting this table if the numbers matter to you.
 ./tests/run_tests.sh
 ```
 
-Eight suites, all runnable without a full pipeline run (pass a different
+Nine suites, all runnable without a full pipeline run (pass a different
 `scenarios.json` as the first argument to check another export, e.g.
 `./tests/run_tests.sh output/preview/data/scenarios.json` after a smoke test):
 
@@ -477,6 +479,19 @@ Eight suites, all runnable without a full pipeline run (pass a different
   as empty grey rails: they were inline spans, and an inline non-replaced element
   ignores `width` and `height`. Every other suite passed throughout, because the
   markup was never the problem.
+- **`test_viewport_overflow.mjs`** (node) loads the published page in an iframe of
+  each width and asks the page for its own geometry: no element's right edge may
+  pass the viewport's, and `scrollWidth` must equal `clientWidth`, at 360, 420,
+  620, 720, 1024 and 1440 px. It replaces a headless *screenshot* check, which is
+  not a measurement of layout: Chrome will not open a window narrower than about
+  500 px, so a 420 px screenshot lays the page out at ~497 px and crops the
+  image, which looks exactly like an overflow. Reading that crop is how this
+  repository briefly recorded a mobile-overflow defect that was never in the
+  stylesheet. Because the suite asserts an *absence*, it carries a negative
+  control and runs it every time: a second iframe loads the same page with one
+  deliberately 1600 px-wide element appended, and the suite fails if that does
+  not report an overflow. It needs a Chrome or Edge and skips, rather than fails,
+  without one.
 - **`test_export_labels.R`** checks that a confounding-strength label is derived
   from the value of γ, never from a position in the grid, so a change to
   `CONF_GRID` cannot silently retitle a figure.

@@ -1,12 +1,13 @@
 # Run the site-facing test suites on every push and pull request.
 #
-# Scope is deliberate: the two node suites need no R and no pipeline run, so
-# they execute in seconds on a stock runner and cover the failure that has
+# Scope is deliberate: the four node suites need no R and no pipeline run, so
+# they execute in seconds on a stock runner and cover the failures that have
 # actually broken this site before -- the front end and the exported
-# scenarios.json drifting apart. The R suites (cast_core math, export labels,
-# fit contract, source guards) need R plus grf, which would turn a
-# ten-second job into a multi-minute one; run those locally with
-# ./tests/run_tests.sh, which runs all six.
+# scenarios.json drifting apart, and CSS that silently refuses to size an
+# element the markup sizes. The five R suites (cast_core math, export labels,
+# fit contract, source guards, sim provenance) need R plus grf, which would turn
+# a ten-second job into a multi-minute one; run those locally with
+# ./tests/run_tests.sh, which runs all nine.
 name: tests
 
 on:
@@ -30,8 +31,16 @@ jobs:
       - name: Site data contract (every field app.js reads exists and lines up)
         run: node tests/test_data_contract.mjs docs/data/scenarios.json
 
-      - name: Site render smoke (app.js runs at all 24 slider positions)
+      - name: Site render smoke (app.js runs at all 24 control positions)
         run: node tests/test_render_smoke.mjs docs/data/scenarios.json
+
+      - name: Site style contract (CSS actually sizes what the markup sizes)
+        run: node tests/test_style_contract.mjs
+
+      # The runner image ships Chrome; the suite skips cleanly if a future one
+      # does not, so this step can never fail for the absence of a browser.
+      - name: Viewport overflow (the page fits a phone, measured not screenshotted)
+        run: node tests/test_viewport_overflow.mjs
 
       - name: Shipped site is complete
         run: |
