@@ -6,9 +6,10 @@
 #   python3 ~/.claude/routing/audit_gate.py --project .            # draft
 #   python3 ~/.claude/routing/audit_gate.py --project . --release  # hard gate
 #
-# The stale-constant audit is NOT one of the gate's twelve (it has its own
-# engine and rule); it was run separately on 2026-08-26 and passed in REGISTRY
-# STRICT mode, 10 constants, 0 errors, 0 warnings.
+# The stale-constant audit IS one of the routed auditors -- the thirteenth. It
+# has its own engine, and the gate enumerates it, requires this manifest to
+# account for it, and runs the engine itself under --release. It is recorded
+# below like any other rather than in this header.
 #
 # NOTE ON SCOPE. This project's deliverable is a static teaching WEBSITE plus the
 # R pipeline that generates it. It is not a manuscript, grant, LOI, poster or
@@ -57,7 +58,10 @@ auditors:
         - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
         - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
       report: development/2026_08_25_oracle-and-evalue-audit.md
-      report_sha256: sha256:74a3573745af515f1f4223c98a5d01fbfdf3c8760356153ae5d09009baf94817
+      report_sha256: sha256:d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7
+      # Re-taken 2026-08-28. The hash recorded on 2026-08-25 bound the
+      # pre-em-dash-cleanup text of the report; the cleanup edited the file and
+      # the attestation was never re-taken, so it had been dangling since.
       reviewed_on: 2026-08-25
       findings_count: 3
       core_rubric_confirmed: true
@@ -127,6 +131,26 @@ auditors:
       inputs:
         - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
         - {path: sim_provenance.yaml, sha256: sha256:6c7b3805925e064d97144ddf17cfd0e5244e1ada0f74f1b0ad12cfe47ae0ea2a}
+
+  stale-constant-audit:
+    status: RUN
+    justification: >-
+      The project performs analysis computation, so a hard-coded bound that was
+      true of an earlier parameterization is exactly the failure this auditor
+      exists to catch, and every other auditor is blind to it: a stale constant
+      produces a FRESH output that a freshness check then certifies. Twelve
+      constants are registered in constant_registry.yaml -- the horizon grid, the
+      two confounding axes, the cohort size, the censoring bound, the seed base
+      and the estimation-side thresholds -- each with what keeps it true.
+      `--strict` reports REGISTRY (12 constants) STRICT, 0 errors, 0 warnings as
+      of 2026-08-28. It runs BEFORE any freshness check, per the rule.
+    run:
+      project: "."
+      registry: constant_registry.yaml
+      inputs:
+        - {path: constant_registry.yaml, sha256: sha256:e08fb6dfd0080000bc63b48843f4150689711adc511d6269d33e84f563f341e3}
+        - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
+        - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
 
   radiation-oncology-reviewer:
     status: N/A

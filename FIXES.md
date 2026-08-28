@@ -221,6 +221,59 @@ revisited a day later:
   horizontal overflow, and the 900px breakpoint collapses to a single column
   cleanly. `./tests/run_tests.sh` -> 7 suites passed, 0 failed.
 
+## 2026-08-28 (routing) · The audit record, checked by running it
+
+**Moves published numbers: no.** `audit_manifest.yaml`, `FIXES.md` and
+`development/` only. No R script, no `scenarios.json`, no figure is touched.
+
+Verification environment for this pass: node v18.19.1, R 4.5.1, on 2026-08-28.
+
+Reasoning, options considered and what was dismissed:
+[`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
+
+### 25. The routing manifest attested to a report it had not read
+
+- **Moves published numbers: no.** `audit_manifest.yaml` only.
+- **What was wrong.** The methods-audit entry's `completion.report_sha256` did not
+  match the report it names. A content-bound attestation exists so a manifest
+  cannot claim a review of text nobody reviewed; one that does not bind is worse
+  than none, because it reads as proof. Two further defects in the same file: the
+  header stated that the stale-constant audit "is NOT one of the gate's twelve",
+  and the manifest carried no entry for it, so the gate was supplying the auditor
+  itself and warning that it had nothing to execute.
+- **The proof it was real.** `audit_gate.py --project .` reported
+  `methods-audit: completion.report_sha256 is stale (the report changed since it
+  was recorded)` and
+  `stale-constant-audit ... [SUPPLIED BY GATE] FAIL: RUN executable auditor needs
+  a typed run: block`. The recorded hash is
+  `74a3573745af515f1f4223c98a5d01fbfdf3c8760356153ae5d09009baf94817`; the file
+  hashes to `d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7`.
+  The cause is recoverable rather than guessed: a pre-cleanup copy of the report
+  hashes to exactly the recorded value and differs in the two lines the 2026-08-26
+  em-dash cleanup edited. The hash was taken on 2026-08-25 and never re-taken.
+  Both recorded *input* hashes still match, so the review was of the code that
+  ships; only its report drifted.
+- **The fix.** Hash re-taken, with a note in the file saying why it moved.
+  `stale-constant-audit` recorded as a full entry with a typed `run:` block
+  (project, registry, inputs), and the header corrected: it is the thirteenth
+  routed auditor, which the gate enumerates and executes under `--release`.
+- **The test that now pins it.** The gate itself, which is the point: this defect
+  is invisible to prose review and was found only by running the tool the manifest
+  exists to satisfy. Re-run after the fix, the two warnings are gone.
+- **Verified.** `audit_gate.py --project .` no longer warns on either;
+  `stale_constant_audit.py --project . --project-root . --strict` reports
+  `REGISTRY (12 constants) STRICT, 0 errors, 0 warnings`, now resolved through the
+  manifest rather than by hand; `sim_provenance.py validate` -> `registry OK`;
+  `./tests/run_tests.sh` -> 9 suites passed, 0 failed (2026-08-28).
+- **Not fixed, and deliberately.** The gate still routes five auditors the
+  manifest marks N/A, because it reads `is_grant` from the word "resubmission" in
+  a development record and `has_radiation` from the *titles* of the two cited
+  papers. The only available fix is rewording a reference list until a keyword
+  detector stops matching. Reasoning:
+  [`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
+
+---
+
 ## 2026-08-28 · The one number the pipeline could not reproduce
 
 **Moves published numbers: YES, sixteen of them, in a field nothing reads.**
