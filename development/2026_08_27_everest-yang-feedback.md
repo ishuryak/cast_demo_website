@@ -246,8 +246,37 @@ run; the exported payload is unchanged at 76 KB).
 
 ### Not fixed, and why
 
-The page overflows its viewport horizontally below about 720 px. Measured at 620,
-720 and 820 px against both the pre-change build at `HEAD` and the post-change
-build: identical in both (22 body rows reach the right edge at 620 px, 0 at
-720 px). Pre-existing, outside the five comments, and left for a separate pass
-rather than folded into a review response.
+Nothing outstanding. A sixth item was recorded here on 2026-08-27 and is
+withdrawn on 2026-08-28.
+
+### Withdrawn on 2026-08-28: the mobile-overflow finding was an instrument error
+
+What stood here said the page overflows its viewport horizontally below about
+720 px, with 22 body rows reaching the right edge at 620 px, measured against
+both the pre- and post-change builds. It is false, and the way it became false is
+worth keeping rather than deleting, because the same mistake is available to
+anyone who checks a layout the same way.
+
+The measurement was a headless SCREENSHOT read by eye. Chrome on Windows will not
+open a window narrower than about 500 px, so `--window-size=420,H --screenshot`
+lays the page out at roughly 497 px and then crops the resulting image to 420.
+The crop is visually indistinguishable from a page whose content runs off the
+right edge, and both builds "clipped identically" for the good reason that
+neither was clipping at all. That the two builds agreed was read as evidence the
+defect was pre-existing; it was in fact evidence that the instrument, not the
+page, produced the result.
+
+Measured properly -- the page loaded in an iframe of the requested width, which
+is a real viewport at any size, then asked for its own `clientWidth`,
+`scrollWidth` and the bounding box of every element -- the page reports zero
+overflowing elements and `scrollWidth === clientWidth` at 345, 405, 605, 705,
+1009 and 1425 CSS px. The segmented confounding controls wrap to a second row at
+phone width, the method checkboxes wrap, the card grid collapses to one column
+and the plot resizes inside its container, all as intended.
+
+The check is now `tests/test_viewport_overflow.mjs` rather than a note, and it
+carries its own negative control on every run: a second iframe loads the same
+page with one deliberately 1600 px-wide element appended, and the suite fails if
+that does not report an overflow. A test that asserts the absence of something
+and has only ever been seen passing is indistinguishable from a test that is not
+looking, which is precisely the failure recorded above, one level up.
