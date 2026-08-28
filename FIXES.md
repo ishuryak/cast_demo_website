@@ -17,6 +17,10 @@ Entries are newest first.
 data, figure, estimate or caption is touched, and all seven test suites pass
 unchanged.
 
+Reasoning, including the two alternatives rejected and why the decision was
+revisited a day later:
+[`development/2026_08_26_card-layout.md`](development/2026_08_26_card-layout.md).
+
 ### 17. Two thirds of the page below the figure was empty
 
 - **What was wrong.** The plot sat in a `1fr` column with the seven cards in a
