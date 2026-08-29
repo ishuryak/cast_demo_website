@@ -13,6 +13,122 @@ Entries are newest first.
 
 ---
 
+## 2026-08-29 (reader) · An introduction for a reader who is not in this field
+
+**Moves published numbers: no.** `docs/index.html`, `docs/style.css`, one line of
+`docs/app.js`, `tests/`, the CI workflow and `README.md` only. No R script, no
+`scenarios.json`, no figure and no registry file is touched, and every quantity
+on the page is bit-identical to the previous commit.
+
+The request, the two design decisions Igor made before any file was touched, the
+defect introduced and caught during the work, and the findings investigated and
+deliberately not acted on are in
+[`development/2026_08_29_reader-first-introduction.md`](development/2026_08_29_reader-first-introduction.md).
+
+### 28. The page had no introduction a non-specialist could read
+
+- **What was wrong.** The page opened with a heading reading "From confounding to
+  trajectories", a subtitle naming a Causal Survival Forest and a
+  treatment-effect trajectory, and five lead paragraphs. A reader outside causal
+  inference, which includes most of the clinicians and researchers this demo is
+  built for, could not tell from any of it what the demo is for, what data it
+  applies to, what it delivers, or why they should prefer it to the tools they
+  already use. Entry 21 below had rewritten that lead once, plain-statement-first,
+  and that fix is not withdrawn here: it improved the block, but the block assumes
+  a reader who has already accepted the framing, and never asks why anyone outside
+  the field should care.
+- **The proof it was real.** The second paragraph a reader met was "We estimate
+  the between-group difference in the probability of surviving past each fixed
+  time horizon, i.e. the **survival-probability difference**, formally
+  P(T&gt;t | treated) − P(T&gt;t | control)", and the page's own first
+  non-specialist reader reported exactly this: "the website has no introduction
+  that explains to a non causal inference specialist [...] what the problem being
+  studied actually is". Ten suites were green at that moment, because every one of
+  them checks whether the page is *correct* and none checks whether it is
+  *readable*.
+- **The fix.** A `<section class="intro">` above the controls: a lead paragraph
+  stating the problem with **confounding** defined in the sentence that first uses
+  it, four blocks laid out 2x2 (what the demo is for, what it analyzes and what it
+  delivers, why the familiar tools fall short, what no method can fix), and a
+  glossary giving one plain-language line to each method drawn on the figure. 796
+  words. The header subtitle was rewritten in the same pass, since it is the first
+  line on the page and leaving it in the old register would have undone the change
+  three inches below it. **The existing technical lead was folded, not deleted**:
+  all five paragraphs move verbatim inside `<details class="lead-detail">` under
+  the summary "The simulated cohorts in detail", so the formal estimand is one
+  click away rather than in front of the reader.
+- **The test that now pins it.** `tests/test_intro_contract.mjs`, registered in
+  `tests/run_tests.sh` and in the CI workflow. It asserts the introduction exists
+  and precedes the controls, that it carries a lead paragraph and four blocks
+  answering the four questions, that **every method key in `app.js` has a line in
+  the glossary** (a method added to the figure with no introduction line fails
+  here), that it stays within a 900-word cap, that "confounding" is defined where
+  it first appears, that a blocklist of 29 specialist terms stays out of it, and
+  that the folded technical lead is still present with its estimand statement
+  intact. **Confirmed failing by six mutations**: the introduction moved below the
+  controls, "estimand" inserted into it, a block deleted, a method added to
+  `app.js` with no glossary line, the technical lead deleted rather than folded,
+  and the introduction padded past the word cap. The suite also caught a bug in
+  itself on its first run, where a case-insensitive search for the acronym `ATE`
+  fired on the word "treated"; acronyms are now matched case-sensitively on word
+  boundaries.
+- **Verified.** `./tests/run_tests.sh` -> **11 suites passed, 0 failed** on
+  2026-08-29, against `docs/data/scenarios.json`. The baseline is the 10 suites
+  passing before this change; the eleventh is the new one. `README.md` was updated
+  in the same pass (the "What you see" section, the suite counts from ten to
+  eleven and five node suites to six, and an entry for the new suite) per the
+  README-parity rule.
+
+### 29. A card's own title was not what opened it
+
+- **What was wrong.** Entry 22 below collapsed each card's prose behind a
+  `<details class="more">` disclosure whose summary read "Full explanation" and
+  sat at the bottom of the card. That was an improvement and it is not withdrawn.
+  But the card face still carried its title, its live numbers **and** three
+  bullets, so seven cards still presented seven paragraphs at once, and the
+  control that opened a card was a separate small link rather than the card's own
+  heading. Reaching one card's explanation took two clicks in a page that already
+  asks the reader to hold six methods and two confounding axes in mind.
+- **The proof it was real.** Measured in a 1440 px viewport, reading
+  `.cards` back from the page's own `getBoundingClientRect()` rather than off a
+  screenshot: the seven closed cards occupied **912 px** before the change and
+  **450 px** after it, a 51% reduction with no word removed from the page. Total
+  visible text moved from 2024 to 2200 words, so the introduction's 796 words are
+  largely paid for by the prose that folding puts one click away.
+- **The fix.** Each card is now ONE `<details class="card">` whose `<summary>`
+  contains its own `<h3>` title and its live-value elements. Closed, a card shows
+  its title and its numbers, which is what a card is for. Clicking the title opens
+  the bullets and the full prose together. The nested "Full explanation"
+  disclosure is gone, so one card is one click. `<details>` rather than a click
+  handler on the title, for the reasons entry 22 gives and which still hold:
+  keyboard-reachable, announced by screen readers, works with JavaScript off, and
+  the browser's in-page search still finds text inside a closed card. A modal
+  popup was offered and Igor chose expansion in place.
+- **The ripple.** `<summary>` takes phrasing content plus headings, so the
+  live-value containers that ride on the closed face became `<span>`s, and the one
+  line of `docs/app.js` that built an RMSE row as a `<div>` now builds a `<span>`.
+  A span is inline by default, so `.hint`, `.big` and `.rmse-bars` were given
+  explicit block displays. That is load-bearing, not tidiness: without them the
+  card face collapses into a single run of text, which is the same class of defect
+  as entry 18 below.
+- **The tests that now pin it.** `tests/test_render_smoke.mjs` asserts each card
+  is a single `<details>` with an `<h3>` inside its `<summary>`, with its live
+  values **inside** the summary (the inverse of the assertion it made before, when
+  they had to be outside), with brief bullets, with no nested second disclosure,
+  with prose after the summary, and with no `<p>`, `<div>` or `<ul>` inside the
+  summary, which its content model forbids. `tests/test_style_contract.mjs` gains
+  a check that every class appearing on a `<span>` inside a `<summary>` declares a
+  non-inline display. **Confirmed failing by seven mutations**: a live value moved
+  out of a summary, a `<p>` put back inside one, a second disclosure nested in a
+  card, a card title demoted from `<h3>` to `<b>`, a card's prose deleted rather
+  than collapsed, and `display: block` removed from `.hint` and from
+  `.rmse-bars`.
+- **Verified.** Same run as entry 28: 11 suites passed, 0 failed, including the
+  viewport suite at 360, 420, 620, 720, 1024 and 1440 px. Rendered headless at
+  1440 px in both states, closed and with two cards forced open, and read back.
+
+---
+
 ## 2026-08-28 (record) · The evidence record disagreed with itself
 
 **Moves published numbers: no.** `FIXES.md`, `README.md`, `.gitignore`,

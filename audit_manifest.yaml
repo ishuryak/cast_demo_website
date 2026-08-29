@@ -178,7 +178,17 @@ auditors:
       Methods / Discussion section found". The equivalent reader-facing checks
       for this deliverable -- can a visitor see the design, is each method
       explained, is every panel labeled by the protocol that produced it -- are
-      covered by the site's own explanatory cards and failure-mode section.
+      covered by the site's own introduction, explanatory cards and failure-mode
+      section, and are pinned mechanically by tests/test_intro_contract.mjs.
+      CORRECTED 2026-08-29: this justification previously rested on the cards and
+      the failure-mode section alone, and that was not sufficient. Both explain
+      each method to a reader who has already accepted the framing, and neither
+      gave a reader outside causal inference any way to tell what the demo is
+      for. Requirement 7 of the reader-first rule (a non-specialist in the
+      SPECIFIC area must be able to follow the main message) was therefore not
+      met while this entry asserted it was, which is the failure recorded as
+      FIXES.md entry 28. The introduction added that day is what now carries it,
+      and test_intro_contract.mjs is what stops it drifting back.
 
   tough-reviewer:
     status: N/A

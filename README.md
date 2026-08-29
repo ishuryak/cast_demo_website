@@ -24,7 +24,15 @@ with real data.
 
 ## What you see
 
-A single ATE-vs-horizon figure with two level selectors – **measured-confounding
+A plain-language **introduction** first, written for a reader who is not a
+causal-inference specialist: what the demo is for, what data it is meant to
+analyze and what it delivers, why the familiar tools (a direct comparison, a
+single Cox hazard ratio, a survival-prediction model) fall short of the
+question, what none of them can fix, and one line on each method drawn on the
+figure. The formal statement of the estimand and the confounder taxonomy sit
+one click below it, under *The simulated cohorts in detail*.
+
+Then a single ATE-vs-horizon figure with two level selectors – **measured-confounding
 strength** (γ, four levels) and **unmeasured-confounding strength** (Γ, three
 levels) – an **effect-shape** selector, and per-method **toggles**, plus live
 cards for
@@ -32,7 +40,9 @@ accuracy (RMSE vs. truth), the Cox hazard ratio and proportional-hazards test,
 confounder imbalance (SMD, including the latent factor's own imbalance),
 propensity overlap, the unmeasured-confounding oracle gap with its E-value, the
 CAST trajectory summary, and the Ledoit–Wolf shrinkage intensity and covariance
-condition number.
+condition number. Each card shows its live numbers on its face and opens its
+bullets and full explanation when its title is clicked, so seven cards read as
+seven headline numbers rather than seven essays.
 
 The **effect-shape** selector switches between two trajectories: a **plateau**,
 where treatment is protective throughout (constant hazard ratio ≈ 0.54), so on
@@ -93,7 +103,7 @@ cast_demo_website/
     04_replicate_seeds.R re-draw one scenario at N seeds; what replicates
     install_packages.R   one-time dependency install
   tests/
-    run_tests.sh             one command; runs the ten suites below
+    run_tests.sh             one command; runs the eleven suites below
     test_data_contract.mjs   every field the site reads exists and lines up
     test_render_smoke.mjs    app.js actually runs at all 24 control settings
     test_export_labels.R     figure labels track gamma, not control position
@@ -102,6 +112,7 @@ cast_demo_website/
     test_source_guards.R     the sourcing contract 04 reuses 01 and 02 through
     test_sim_provenance.R    every registered parameter still sits in the code
     test_style_contract.mjs  the CSS lets the markup take a size (bar fills)
+    test_intro_contract.mjs  the page opens with something a non-specialist reads
     test_viewport_overflow.mjs the page fits a phone, measured in a real
                              viewport rather than read off a screenshot
   docs/                              <- the published static site (GitHub Pages root)
@@ -116,7 +127,7 @@ cast_demo_website/
   References/README.md   the same two sources, with licences (no PDFs committed)
   FIXES.md               landed fixes, with the evidence for each
   development/           the audits and decisions behind those fixes
-  .github/workflows/     CI: the five node suites + a docs/ completeness check
+  .github/workflows/     CI: the six node suites + a docs/ completeness check
   output/                R intermediates, output/preview/ for smoke-test exports,
                          and replicate_seeds.csv (all gitignored)
 ```
@@ -458,7 +469,7 @@ re-run it rather than trusting this table if the numbers matter to you.
 ./tests/run_tests.sh
 ```
 
-Ten suites, all runnable without a full pipeline run (pass a different
+Eleven suites, all runnable without a full pipeline run (pass a different
 `scenarios.json` as the first argument to check another export, e.g.
 `./tests/run_tests.sh output/preview/data/scenarios.json` after a smoke test):
 
@@ -479,6 +490,15 @@ Ten suites, all runnable without a full pipeline run (pass a different
   as empty grey rails: they were inline spans, and an inline non-replaced element
   ignores `width` and `height`. Every other suite passed throughout, because the
   markup was never the problem.
+- **`test_intro_contract.mjs`** (node) checks that the page still opens with an
+  introduction a non-specialist can read: that it comes before the controls,
+  that it answers the goal / data-and-deliverable / what-the-familiar-tools-miss
+  / what-nothing-fixes questions, that every method drawn by `app.js` has a line
+  in it (a method added to the figure with no introduction line fails here),
+  that it stays inside a word cap, and that a blocklist of specialist terms
+  stays out of it. It exists because every other suite passed on a page whose
+  first words were "the estimand is the RMST difference": correctness and
+  legibility are different properties, and only one of them had a test.
 - **`test_viewport_overflow.mjs`** (node) loads the published page in an iframe of
   each width and asks the page for its own geometry: no element's right edge may
   pass the viewport's, and `scrollWidth` must equal `clientWidth`, at 360, 420,

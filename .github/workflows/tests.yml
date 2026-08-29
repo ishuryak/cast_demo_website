@@ -37,6 +37,9 @@ jobs:
       - name: Site style contract (CSS actually sizes what the markup sizes)
         run: node tests/test_style_contract.mjs
 
+      - name: Introduction contract (the page opens with something a non-specialist can read)
+        run: node tests/test_intro_contract.mjs
+
       - name: FIXES.md order (the evidence record matches its own claim)
         run: node tests/test_fixes_order.mjs
 

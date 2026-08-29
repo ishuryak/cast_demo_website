@@ -30,6 +30,49 @@ main { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
 em { font-style: italic; }
 code { background: #eef1f5; padding: .08em .35em; border-radius: 4px; font-size: .92em; }
 
+/* The plain-language introduction: goal, data in, answer out, why the familiar
+   tools fall short, and one line on each method. It is the first thing on the
+   page because a reader who is not a causal-inference specialist cannot read the
+   figure until they have it. Deliberately the calmest block here, plain cards
+   with no accent bars, so it reads as prose rather than as another instrument
+   panel. */
+.intro { margin-bottom: 1.3rem; }
+.intro > h2 { margin: 0 0 .6rem; font-size: 1.45rem; letter-spacing: -0.01em; }
+.intro-lead { margin: 0 0 1rem; max-width: 62rem; font-size: 1.06rem; color: #2c3440; }
+/* Two columns, not `auto-fit` at 18rem. Four blocks across a 1132px content
+   width give three plus a stranded fourth with two empty columns beside it,
+   which is the same dead space the card grid below was rebuilt to remove.
+   24rem admits exactly two columns there and one on a phone, so the four
+   blocks read as a 2x2 with no orphan row. */
+/* `min(24rem, 100%)`, not a bare 24rem: `auto-fit` never shrinks a track below
+   its stated minimum, so a flat 24rem forced a 408px column onto a 345px
+   phone and pushed the whole page sideways. Caught by
+   tests/test_viewport_overflow.mjs. */
+.intro-grid { display: grid; gap: .9rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr)); }
+.intro-block { background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: .9rem 1.1rem; }
+.intro-block h3 { margin: 0 0 .35rem; font-size: .95rem; color: var(--accent); }
+.intro-block p { margin: 0; font-size: .92rem; color: #2c3440; }
+.intro-methods { margin-top: .9rem; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: .9rem 1.2rem 1rem; }
+.intro-methods h3 { margin: 0 0 .7rem; font-size: .95rem; color: var(--accent); }
+.intro-methods dl { margin: 0; display: grid; grid-template-columns: 13rem 1fr; gap: .55rem 1.2rem; }
+.intro-methods dt { margin: 0; font-weight: 800; font-size: .92rem; }
+.intro-methods dd { margin: 0; font-size: .92rem; color: #2c3440; }
+
+/* The technical lead: one click away, rather than in front of the introduction. */
+.lead-detail { margin: 0 0 1.2rem; }
+.lead-detail > summary { display: inline-block; cursor: pointer; list-style: none;
+  font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--accent); }
+.lead-detail > summary::-webkit-details-marker { display: none; }
+.lead-detail > summary::before { content: "\25B8\00A0"; }
+.lead-detail[open] > summary::before { content: "\25BE\00A0"; }
+.lead-detail > summary:focus-visible { outline: 2px solid var(--accent);
+  outline-offset: 2px; border-radius: 3px; }
+.lead-detail .lead { margin-top: .6rem; }
+
 .controls {
   display: flex; flex-wrap: wrap; align-items: flex-start;
   gap: 1.2rem 2rem; background: var(--card); border: 1px solid var(--line);
@@ -99,24 +142,31 @@ code { background: #eef1f5; padding: .08em .35em; border-radius: 4px; font-size:
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
   padding: .9rem 1rem; margin: 0; }
 .card h3 { margin: 0 0 .6rem; font-size: .9rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
-.card .big { font-size: 1.5rem; font-weight: 800; margin: .1rem 0; }
-.hint { font-size: .8rem; color: var(--muted); margin: .35rem 0 0; }
+.card .big { display: block; font-size: 1.5rem; font-weight: 800; margin: .1rem 0; }
+.hint { display: block; font-size: .8rem; color: var(--muted); margin: .35rem 0 0; }
 
-/* Each card leads with its live numbers, then two or three bullets saying what
-   the concept is in this model, then a disclosure holding the full prose.
-   <details> rather than a click handler on the card: keyboard-reachable,
+/* Each card is ONE disclosure whose control is its own title. The closed face
+   carries the title and the card's live numbers, which is what the card is for;
+   the bullets and the full prose open on a click. A reader meeting seven cards
+   at once therefore sees seven headlines rather than seven essays.
+   <details> rather than a click handler on the title: keyboard-reachable,
    announced by screen readers, works with JavaScript off, and the browser's own
-   in-page search still finds text inside a closed one. */
-.card .brief { margin: .5rem 0 0; padding-left: 1.05rem; font-size: .8rem; color: var(--muted); }
+   in-page search still finds text inside a closed one.
+   The live-value containers are <span>s because <summary> takes phrasing
+   content, not <p> or <div>; the block displays below restore the layout they
+   had as <p>/<div>, so they are load-bearing rather than tidiness. */
+.card > summary { cursor: pointer; list-style: none; display: block; }
+.card > summary::-webkit-details-marker { display: none; }
+.card > summary h3 { margin: 0 0 .5rem; padding-left: 1.05em; text-indent: -1.05em; }
+.card > summary h3::before { content: "\25B8"; display: inline-block; width: 1.05em;
+  text-indent: 0; color: var(--accent); }
+.card[open] > summary h3::before { content: "\25BE"; }
+.card > summary:hover h3 { color: var(--accent); }
+.card > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px;
+  border-radius: 8px; }
+.card[open] > summary { border-bottom: 1px solid var(--line); padding-bottom: .5rem; }
+.card .brief { margin: .7rem 0 0; padding-left: 1.05rem; font-size: .8rem; color: var(--muted); }
 .card .brief li { margin: .22rem 0; }
-.card .more { margin-top: .6rem; border-top: 1px solid var(--line); padding-top: .45rem; }
-.card .more > summary { cursor: pointer; list-style: none; font-size: .74rem;
-  font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
-.card .more > summary::-webkit-details-marker { display: none; }
-.card .more > summary::before { content: "\25B8\00A0"; }
-.card .more[open] > summary::before { content: "\25BE\00A0"; }
-.card .more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
-.card .more[open] > summary { margin-bottom: .25rem; }
 .rmse-bars { display: flex; flex-direction: column; gap: .4rem; }
 .rmse-row { display: grid; grid-template-columns: 64px 1fr 52px; align-items: center; gap: .5rem; font-size: .85rem; }
 .rmse-row .name { font-weight: 700; }
@@ -153,5 +203,7 @@ code { background: #eef1f5; padding: .08em .35em; border-radius: 4px; font-size:
   .story { grid-template-columns: 1fr; }
   .fm-grid { grid-template-columns: 1fr; }
   .cards { grid-template-columns: 1fr; }
+  .intro-methods dl { grid-template-columns: 1fr; gap: .1rem; }
+  .intro-methods dt { margin-top: .7rem; }
   #plot { height: 420px; }
 }

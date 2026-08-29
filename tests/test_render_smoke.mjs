@@ -162,7 +162,7 @@ for (let si = 0; si < shapes.length; si++) {
   }
 }
 
-// ---- the cards are grouped, and their prose is collapsible (comment 5) -----
+// ---- the cards are grouped, and each one opens from its own title ---------
 // Structure checks on index.html itself: the layout is CSS, so the only thing a
 // DOM shim can prove is that the markup the CSS targets is actually there.
 const groups = [...htmlSrc.matchAll(/<section class="card-group">([\s\S]*?)<\/section>/g)];
@@ -171,24 +171,39 @@ if (groups.length < 2)
 for (const [i, g] of groups.entries()) {
   if (!/<h2>/.test(g[1])) fail.push(`card group ${i + 1} has no heading, so its cards have no label`);
 }
-const cardBlocks = [...htmlSrc.matchAll(/<div class="card" id="(card-[\w-]+)"([\s\S]*?)\n        <\/div>/g)];
+// Each card is ONE <details> whose control is its own <h3> title. The live
+// numbers ride INSIDE the <summary>, which is what a closed card shows: a reader
+// scanning seven cards sees seven headline numbers, not seven essays, and
+// reaches the prose by clicking the title.
+const cardBlocks = [...htmlSrc.matchAll(
+  /<details class="card" id="(card-[\w-]+)">([\s\S]*?)\n *<\/details>/g)];
 if (cardBlocks.length !== 7)
   fail.push(`matched ${cardBlocks.length} cards, expected 7`);
 for (const [, id, body] of cardBlocks) {
+  const sum = body.match(/<summary>([\s\S]*?)<\/summary>/);
+  if (!sum) { fail.push(`#${id} has no <summary>, so its title is not a control`); continue; }
+  if (!/<h3>[^<]+<\/h3>/.test(sum[1]))
+    fail.push(`#${id}: the <summary> carries no <h3>, so the card title is not what opens it`);
   if (!body.includes('<ul class="brief">'))
     fail.push(`#${id} has no brief bullet list, so it opens as a wall of text`);
-  if (!body.includes('<details class="more">'))
-    fail.push(`#${id} does not collapse its prose behind a <details>`);
-  if (!/<summary>[^<]+<\/summary>/.test(body))
-    fail.push(`#${id} has a <details> with no summary to click`);
-  // The live numbers must stay OUTSIDE the disclosure: they are what the card is
-  // for, and a reader should not have to expand it to see them.
-  const detailsAt = body.indexOf("<details");
-  const liveIds = [...body.matchAll(/id="([\w-]+(?:-text|-hr|-ph))"/g)];
-  for (const m of liveIds)
-    if (m.index > detailsAt) fail.push(`#${id}: live value #${m[1]} is hidden inside the disclosure`);
-  if (id === "card-rmse" && body.indexOf('class="rmse-bars"') > detailsAt)
-    fail.push("#card-rmse: the bars are hidden inside the disclosure");
+  if (/<details/.test(body))
+    fail.push(`#${id} nests a second disclosure; one card is one click`);
+  // The live numbers must be INSIDE the summary: they are what the card is for,
+  // and a reader should not have to open it to see them.
+  const summaryEnd = body.indexOf("</summary>");
+  for (const m of body.matchAll(/id="([\w-]+(?:-text|-hr|-ph))"/g))
+    if (m.index > summaryEnd)
+      fail.push(`#${id}: live value #${m[1]} is hidden until the card is opened`);
+  if (id === "card-rmse" && body.indexOf('class="rmse-bars"') > summaryEnd)
+    fail.push("#card-rmse: the bars are hidden until the card is opened");
+  // <summary> takes phrasing content plus headings. A <p> or <div> there is
+  // invalid, and is exactly what a careless re-edit would reintroduce.
+  for (const bad of ["<p ", "<p>", "<div ", "<div>", "<ul"])
+    if (sum[1].includes(bad))
+      fail.push(`#${id}: <summary> contains ${bad.trim()}>, which its content model does not allow`);
+  // ...and the prose has to be somewhere, namely after the summary.
+  if (!/<p class="hint">/.test(body.slice(summaryEnd)))
+    fail.push(`#${id} has no prose after its summary; the explanation was lost, not collapsed`);
 }
 
 const nButtons = registry.get("shape-buttons")?.children.length ?? 0;
