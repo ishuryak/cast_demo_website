@@ -43,7 +43,7 @@ Reviewer: a colleague. Plan written and executed 2026-08-27 by Igor Shuryak.
 
 The reviewer read the symptom as "the bars do not respond to the sliders". The
 numbers beside the bars **do** respond (0.251 for Naive against 0.081 for Cox in
-his own screenshot). What does not respond is that **the bars were never drawn at
+the reviewer's own screenshot). What does not respond is that **the bars were never drawn at
 all**, in any state, since the card was written.
 
 `docs/app.js:222` emits `<span class="rmse-track"><span class="rmse-fill"
@@ -111,7 +111,7 @@ gloss naming a term.
 
 - The estimand sentence is replaced with the reviewer's own wording.
 - "The reversal is a stylized teaching curve, not an empirical one" is replaced
-  by text that resolves the confusion he identifies: the new shapes paragraph
+  by text that resolves the confusion the reviewer identifies: the new shapes paragraph
   opens by saying both shapes are simulated, and then says what "stylized"
   actually meant, i.e. that the reversal is drawn sharper than most real
   crossings so each estimator's response to it is visible.

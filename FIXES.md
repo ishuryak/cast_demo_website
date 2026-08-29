@@ -20,6 +20,11 @@ Entries are newest first.
 and no registry file is touched. Found while re-auditing the repository from a
 clean checkout rather than from the previous audit's conclusions.
 
+The audit that found both items, its full thirteen-auditor triage, the claims it
+re-derived rather than trusted, the findings it investigated and dismissed, and
+the one mistake it made along the way are in
+[`development/2026_08_28_independent-re-audit.md`](development/2026_08_28_independent-re-audit.md).
+
 ### 26. FIXES.md told the reader entries were newest first, and they were not
 
 - **What was wrong.** The preamble states "Entries are newest first." A reader
