@@ -93,7 +93,7 @@ cast_demo_website/
     04_replicate_seeds.R re-draw one scenario at N seeds; what replicates
     install_packages.R   one-time dependency install
   tests/
-    run_tests.sh             one command; runs the nine suites below
+    run_tests.sh             one command; runs the ten suites below
     test_data_contract.mjs   every field the site reads exists and lines up
     test_render_smoke.mjs    app.js actually runs at all 24 control settings
     test_export_labels.R     figure labels track gamma, not control position
@@ -116,7 +116,7 @@ cast_demo_website/
   References/README.md   the same two sources, with licences (no PDFs committed)
   FIXES.md               landed fixes, with the evidence for each
   development/           the audits and decisions behind those fixes
-  .github/workflows/     CI: the four node suites + a docs/ completeness check
+  .github/workflows/     CI: the five node suites + a docs/ completeness check
   output/                R intermediates, output/preview/ for smoke-test exports,
                          and replicate_seeds.csv (all gitignored)
 ```
@@ -458,7 +458,7 @@ re-run it rather than trusting this table if the numbers matter to you.
 ./tests/run_tests.sh
 ```
 
-Nine suites, all runnable without a full pipeline run (pass a different
+Ten suites, all runnable without a full pipeline run (pass a different
 `scenarios.json` as the first argument to check another export, e.g.
 `./tests/run_tests.sh output/preview/data/scenarios.json` after a smoke test):
 

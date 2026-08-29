@@ -13,6 +13,199 @@ Entries are newest first.
 
 ---
 
+## 2026-08-28 (record) · The evidence record disagreed with itself
+
+**Moves published numbers: no.** `FIXES.md`, `README.md`, `.gitignore`,
+`tests/` and the CI workflow only. No R script, no `scenarios.json`, no figure
+and no registry file is touched. Found while re-auditing the repository from a
+clean checkout rather than from the previous audit's conclusions.
+
+### 26. FIXES.md told the reader entries were newest first, and they were not
+
+- **What was wrong.** The preamble states "Entries are newest first." A reader
+  who trusts that sentence and stops at the top section believes they are looking
+  at the most recent change. They were not: the two newest sections, both dated
+  2026-08-28, sat third and fourth, below 2026-08-27 and 2026-08-26. The two
+  changes that landed that day were appended after the section that was already
+  open rather than above it, which is what happens whenever a day's work lands
+  while an earlier day's section is still the one being edited.
+- **The proof it was real.** Reading the seven `## YYYY-MM-DD` headings in file
+  order gave `2026-08-27, 2026-08-26, 2026-08-28, 2026-08-28, 2026-08-26,
+  2026-08-25, 2026-08-25`. The third heading is newer than the two above it, so
+  the stated contract was false at the third section of a seven-section file.
+- **The fix.** The sections were reordered newest-first, ties keeping their
+  existing relative order so the two 2026-08-28 entries stay in the sequence they
+  landed (25 the routing record, then 24 the AUTOC seed). Nothing was reworded:
+  a sorted-line comparison of the file before and after reports an identical line
+  multiset, so only section order changed.
+- **The test that now pins it.** `tests/test_fixes_order.mjs`, registered in
+  `tests/run_tests.sh` and in the CI workflow. It asserts the section dates are
+  non-increasing, that every `development/` link in the file resolves, and that
+  no entry number is used twice. **Confirmed failing against the unfixed file**,
+  where it reported `line 224: 2026-08-28 appears after an older section`. It
+  also asserts the "Entries are newest first." sentence is still present, so the
+  ordering check cannot be made to pass by deleting the claim it enforces --
+  removing the sentence fails the suite instead, which forces the question.
+- **Verified.** `./tests/run_tests.sh` -> **10 suites passed, 0 failed** on
+  2026-08-28 against `docs/data/scenarios.json`, on the tree at this commit. The
+  baseline it is compared against is the 9 suites passing before this change; the
+  tenth is the new one. `README.md` was updated in the same pass from "nine
+  suites" to ten and from "four node suites" to five, per the README-parity rule.
+
+### 27. Three regenerable artifacts were untracked and unignored at once
+
+- **What was wrong.** `.stale_constant_record.json`, `development/*.docx` and a
+  `web/` directory sat in `git status` as untracked and matched no ignore rule,
+  which is the one state that is neither tracked nor deliberately excluded. Each
+  is committable by a single `git add -A`, and each would be wrong to commit:
+  the attestation binds to a sha256 of `constant_registry.yaml` and reads as
+  proof after the registry moves, the DOCX files are conversions of committed
+  markdown that would let two copies of the same prose disagree, and `web/` is a
+  superseded 2026-08-10 snapshot of an earlier build of the site that nothing
+  references.
+- **The proof it was real.** `git status --short` listed nine `??` entries across
+  the three classes, and `git check-ignore -v` matched no rule for any of them.
+- **The fix.** Ignore rules for all three, each carrying the reason it is
+  excluded rather than the pattern alone.
+- **The verification.** `git check-ignore -q` now matches all three; a clean
+  `git status --short` shows only the files this change edits. `web/` is left on
+  disk and is safe to delete; it is referenced by no script, workflow, test or
+  document, which was checked by grep across `R/`, `tests/`, `*.md`, `*.yaml` and
+  `*.sh`.
+
+---
+
+## 2026-08-28 (routing) · The audit record, checked by running it
+
+**Moves published numbers: no.** `audit_manifest.yaml`, `FIXES.md` and
+`development/` only. No R script, no `scenarios.json`, no figure is touched.
+
+Verification environment for this pass: node v18.19.1, R 4.5.1, on 2026-08-28.
+
+Reasoning, options considered and what was dismissed:
+[`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
+
+### 25. The routing manifest attested to a report it had not read
+
+- **Moves published numbers: no.** `audit_manifest.yaml` only.
+- **What was wrong.** The methods-audit entry's `completion.report_sha256` did not
+  match the report it names. A content-bound attestation exists so a manifest
+  cannot claim a review of text nobody reviewed; one that does not bind is worse
+  than none, because it reads as proof. Two further defects in the same file: the
+  header stated that the stale-constant audit "is NOT one of the gate's twelve",
+  and the manifest carried no entry for it, so the gate was supplying the auditor
+  itself and warning that it had nothing to execute.
+- **The proof it was real.** `audit_gate.py --project .` reported
+  `methods-audit: completion.report_sha256 is stale (the report changed since it
+  was recorded)` and
+  `stale-constant-audit ... [SUPPLIED BY GATE] FAIL: RUN executable auditor needs
+  a typed run: block`. The recorded hash is
+  `74a3573745af515f1f4223c98a5d01fbfdf3c8760356153ae5d09009baf94817`; the file
+  hashes to `d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7`.
+  The cause is recoverable rather than guessed: a pre-cleanup copy of the report
+  hashes to exactly the recorded value and differs in the two lines the 2026-08-26
+  em-dash cleanup edited. The hash was taken on 2026-08-25 and never re-taken.
+  Both recorded *input* hashes still match, so the review was of the code that
+  ships; only its report drifted.
+- **The fix.** Hash re-taken, with a note in the file saying why it moved.
+  `stale-constant-audit` recorded as a full entry with a typed `run:` block
+  (project, registry, inputs), and the header corrected: it is the thirteenth
+  routed auditor, which the gate enumerates and executes under `--release`.
+- **The test that now pins it.** The gate itself, which is the point: this defect
+  is invisible to prose review and was found only by running the tool the manifest
+  exists to satisfy. Re-run after the fix, the two warnings are gone.
+- **Verified.** `audit_gate.py --project .` no longer warns on either;
+  `stale_constant_audit.py --project . --project-root . --strict` reports
+  `REGISTRY (12 constants) STRICT, 0 errors, 0 warnings`, now resolved through the
+  manifest rather than by hand; `sim_provenance.py validate` -> `registry OK`;
+  `./tests/run_tests.sh` -> 9 suites passed, 0 failed (2026-08-28).
+- **Not fixed, and deliberately.** The gate still routes five auditors the
+  manifest marks N/A, because it reads `is_grant` from the word "resubmission" in
+  a development record and `has_radiation` from the *titles* of the two cited
+  papers. The only available fix is rewording a reference list until a keyword
+  detector stops matching. Reasoning:
+  [`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
+
+---
+
+## 2026-08-28 · The one number the pipeline could not reproduce
+
+**Moves published numbers: YES, sixteen of them, in a field nothing reads.**
+`docs/data/scenarios.json` changes in exactly 17 leaves out of roughly 1,900: the
+16 `autoc.se` values that moved and the `generated` timestamp. All nine figures
+are **byte-identical**. No average treatment effect, confidence interval, RMSE,
+hazard ratio, PH p-value, standardized mean difference, overlap or shrinkage
+diagnostic changes, and neither does the AUTOC point estimate.
+
+Verification environment for this pass: R 4.5.1, `grf` 2.5.0, `survival` 3.8.3,
+`jsonlite` 2.0.0, node v18.19.1, on 2026-08-28.
+
+Reasoning, options considered and what was dismissed:
+[`development/2026_08_28_autoc-bootstrap-seed.md`](development/2026_08_28_autoc-bootstrap-seed.md).
+
+### 24. The shipped scenarios.json was not what the shipped code produces
+
+- **Moves published numbers: YES**, as itemized above.
+- **What was wrong.** `grf::rank_average_treatment_effect()` returns a
+  deterministic point estimate and a standard error formed from `R = 200`
+  half-sample bootstrap replicates drawn with R's **global** RNG. Every forest in
+  `R/02_fit_methods.R` carries an explicit `seed =` and is therefore
+  stream-independent; that one call was not. Any edit anywhere earlier in the run
+  that drew a random number silently re-rolled every `autoc$se` in the exported
+  grid, leaving the estimate, every other exported field and all nine figures
+  untouched. The 2026-08-26 restructuring around the `DEMO_SOURCE_ONLY` guards
+  was such an edit, and the grid was not regenerated after it, so the committed
+  `scenarios.json` (stamped `2026-08-25 23:09`) predated the fit script beside it.
+- **The proof it was real.** The whole pipeline was re-run from a clean extract of
+  the committed tree and compared byte for byte: nine figures identical,
+  `scenarios.json` differing in 20 leaves, every one of them `autoc.se`. The
+  mechanism was then confirmed directly on one fixed forest, rather than inferred:
+  the same RNG state gives `se=0.691754` twice, and an advanced stream gives
+  `se=0.635089`, while `est=-0.851334` never moves.
+- **Why no auditor caught it.** None of them compares a shipped artifact to a
+  re-run. `pipeline-audit` asks whether outputs are fresher than the code,
+  `manuscript-audit` whether quoted numbers match their source file,
+  `stale-constant-audit` whether a hard-coded bound still describes its artifact.
+  All three pass on an artifact the current code would no longer produce.
+- **What it actually broke.** `autoc` is read by nothing: it appears in
+  `docs/data/scenarios.json` and in no other file. No figure plots it, no card
+  shows it, no test asserts it. What it broke is the claim `docs/index.html` makes
+  to every visitor, that the numbers are "reproduced by the R pipeline at" this
+  repository.
+- **The fix.** `set.seed(FOREST_SEED)` immediately before the call, bringing the
+  last stream-dependent number in the pipeline under the seed everything else
+  already uses. The alternative of deleting the unused field was rejected:
+  removing an output to make a reproducibility problem go away is the wrong
+  instinct, and the statistic is named in the README as part of what
+  `02_fit_methods.R` computes.
+- **The test that now pins it.** Three assertions in
+  `tests/test_source_guards.R`, and the guard was broken three ways and confirmed
+  to report each: the seed removed (the original defect); the seed set but a
+  `runif` draw placed between it and the call, which a naive "is `set.seed`
+  present" check would pass; and `set.seed(42)` instead of `set.seed(FOREST_SEED)`.
+- **Verified.** The defect was reproduced on demand and the fix shown to hold
+  against it, end to end through `run_all.sh` on the subsample grid, using a
+  simulated upstream edit of three extra `runif` draws:
+
+  | build | `autoc.se`, both smoke scenarios |
+  |:--|:--|
+  | unfixed | 0.044, 0.040 |
+  | unfixed + upstream edit | **0.046, 0.041** |
+  | fixed | 0.044, 0.042 |
+  | fixed + upstream edit | **0.044, 0.042** |
+
+  Then the full 24-scenario pipeline (33 min, R 4.5.1): the regenerated tree
+  differs from the committed one in `docs/data/scenarios.json` alone, and within
+  it in 16 `autoc.se` values and the timestamp alone, with all nine figures
+  byte-identical. `./tests/run_tests.sh` -> 9 suites passed, 0 failed against the
+  regenerated export.
+- **What is NOT claimed.** The fix is proven on the two-scenario smoke grid, where
+  the defect was reproduced and then shown not to occur. It was not re-proven by a
+  second full 24-scenario run, which would cost another 33 minutes to demonstrate
+  a per-call property already demonstrated per call.
+
+---
+
 ## 2026-08-27 (review) · A colleague's five comments
 
 **Moves published numbers: no.** `docs/`, `README.md`, `tests/` and `.gitignore`
@@ -220,137 +413,6 @@ revisited a day later:
   rather than one screenshot of the default. No dead column at any width, no
   horizontal overflow, and the 900px breakpoint collapses to a single column
   cleanly. `./tests/run_tests.sh` -> 7 suites passed, 0 failed.
-
-## 2026-08-28 (routing) · The audit record, checked by running it
-
-**Moves published numbers: no.** `audit_manifest.yaml`, `FIXES.md` and
-`development/` only. No R script, no `scenarios.json`, no figure is touched.
-
-Verification environment for this pass: node v18.19.1, R 4.5.1, on 2026-08-28.
-
-Reasoning, options considered and what was dismissed:
-[`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
-
-### 25. The routing manifest attested to a report it had not read
-
-- **Moves published numbers: no.** `audit_manifest.yaml` only.
-- **What was wrong.** The methods-audit entry's `completion.report_sha256` did not
-  match the report it names. A content-bound attestation exists so a manifest
-  cannot claim a review of text nobody reviewed; one that does not bind is worse
-  than none, because it reads as proof. Two further defects in the same file: the
-  header stated that the stale-constant audit "is NOT one of the gate's twelve",
-  and the manifest carried no entry for it, so the gate was supplying the auditor
-  itself and warning that it had nothing to execute.
-- **The proof it was real.** `audit_gate.py --project .` reported
-  `methods-audit: completion.report_sha256 is stale (the report changed since it
-  was recorded)` and
-  `stale-constant-audit ... [SUPPLIED BY GATE] FAIL: RUN executable auditor needs
-  a typed run: block`. The recorded hash is
-  `74a3573745af515f1f4223c98a5d01fbfdf3c8760356153ae5d09009baf94817`; the file
-  hashes to `d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7`.
-  The cause is recoverable rather than guessed: a pre-cleanup copy of the report
-  hashes to exactly the recorded value and differs in the two lines the 2026-08-26
-  em-dash cleanup edited. The hash was taken on 2026-08-25 and never re-taken.
-  Both recorded *input* hashes still match, so the review was of the code that
-  ships; only its report drifted.
-- **The fix.** Hash re-taken, with a note in the file saying why it moved.
-  `stale-constant-audit` recorded as a full entry with a typed `run:` block
-  (project, registry, inputs), and the header corrected: it is the thirteenth
-  routed auditor, which the gate enumerates and executes under `--release`.
-- **The test that now pins it.** The gate itself, which is the point: this defect
-  is invisible to prose review and was found only by running the tool the manifest
-  exists to satisfy. Re-run after the fix, the two warnings are gone.
-- **Verified.** `audit_gate.py --project .` no longer warns on either;
-  `stale_constant_audit.py --project . --project-root . --strict` reports
-  `REGISTRY (12 constants) STRICT, 0 errors, 0 warnings`, now resolved through the
-  manifest rather than by hand; `sim_provenance.py validate` -> `registry OK`;
-  `./tests/run_tests.sh` -> 9 suites passed, 0 failed (2026-08-28).
-- **Not fixed, and deliberately.** The gate still routes five auditors the
-  manifest marks N/A, because it reads `is_grant` from the word "resubmission" in
-  a development record and `has_radiation` from the *titles* of the two cited
-  papers. The only available fix is rewording a reference list until a keyword
-  detector stops matching. Reasoning:
-  [`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
-
----
-
-## 2026-08-28 · The one number the pipeline could not reproduce
-
-**Moves published numbers: YES, sixteen of them, in a field nothing reads.**
-`docs/data/scenarios.json` changes in exactly 17 leaves out of roughly 1,900: the
-16 `autoc.se` values that moved and the `generated` timestamp. All nine figures
-are **byte-identical**. No average treatment effect, confidence interval, RMSE,
-hazard ratio, PH p-value, standardized mean difference, overlap or shrinkage
-diagnostic changes, and neither does the AUTOC point estimate.
-
-Verification environment for this pass: R 4.5.1, `grf` 2.5.0, `survival` 3.8.3,
-`jsonlite` 2.0.0, node v18.19.1, on 2026-08-28.
-
-Reasoning, options considered and what was dismissed:
-[`development/2026_08_28_autoc-bootstrap-seed.md`](development/2026_08_28_autoc-bootstrap-seed.md).
-
-### 24. The shipped scenarios.json was not what the shipped code produces
-
-- **Moves published numbers: YES**, as itemized above.
-- **What was wrong.** `grf::rank_average_treatment_effect()` returns a
-  deterministic point estimate and a standard error formed from `R = 200`
-  half-sample bootstrap replicates drawn with R's **global** RNG. Every forest in
-  `R/02_fit_methods.R` carries an explicit `seed =` and is therefore
-  stream-independent; that one call was not. Any edit anywhere earlier in the run
-  that drew a random number silently re-rolled every `autoc$se` in the exported
-  grid, leaving the estimate, every other exported field and all nine figures
-  untouched. The 2026-08-26 restructuring around the `DEMO_SOURCE_ONLY` guards
-  was such an edit, and the grid was not regenerated after it, so the committed
-  `scenarios.json` (stamped `2026-08-25 23:09`) predated the fit script beside it.
-- **The proof it was real.** The whole pipeline was re-run from a clean extract of
-  the committed tree and compared byte for byte: nine figures identical,
-  `scenarios.json` differing in 20 leaves, every one of them `autoc.se`. The
-  mechanism was then confirmed directly on one fixed forest, rather than inferred:
-  the same RNG state gives `se=0.691754` twice, and an advanced stream gives
-  `se=0.635089`, while `est=-0.851334` never moves.
-- **Why no auditor caught it.** None of them compares a shipped artifact to a
-  re-run. `pipeline-audit` asks whether outputs are fresher than the code,
-  `manuscript-audit` whether quoted numbers match their source file,
-  `stale-constant-audit` whether a hard-coded bound still describes its artifact.
-  All three pass on an artifact the current code would no longer produce.
-- **What it actually broke.** `autoc` is read by nothing: it appears in
-  `docs/data/scenarios.json` and in no other file. No figure plots it, no card
-  shows it, no test asserts it. What it broke is the claim `docs/index.html` makes
-  to every visitor, that the numbers are "reproduced by the R pipeline at" this
-  repository.
-- **The fix.** `set.seed(FOREST_SEED)` immediately before the call, bringing the
-  last stream-dependent number in the pipeline under the seed everything else
-  already uses. The alternative of deleting the unused field was rejected:
-  removing an output to make a reproducibility problem go away is the wrong
-  instinct, and the statistic is named in the README as part of what
-  `02_fit_methods.R` computes.
-- **The test that now pins it.** Three assertions in
-  `tests/test_source_guards.R`, and the guard was broken three ways and confirmed
-  to report each: the seed removed (the original defect); the seed set but a
-  `runif` draw placed between it and the call, which a naive "is `set.seed`
-  present" check would pass; and `set.seed(42)` instead of `set.seed(FOREST_SEED)`.
-- **Verified.** The defect was reproduced on demand and the fix shown to hold
-  against it, end to end through `run_all.sh` on the subsample grid, using a
-  simulated upstream edit of three extra `runif` draws:
-
-  | build | `autoc.se`, both smoke scenarios |
-  |:--|:--|
-  | unfixed | 0.044, 0.040 |
-  | unfixed + upstream edit | **0.046, 0.041** |
-  | fixed | 0.044, 0.042 |
-  | fixed + upstream edit | **0.044, 0.042** |
-
-  Then the full 24-scenario pipeline (33 min, R 4.5.1): the regenerated tree
-  differs from the committed one in `docs/data/scenarios.json` alone, and within
-  it in 16 `autoc.se` values and the timestamp alone, with all nine figures
-  byte-identical. `./tests/run_tests.sh` -> 9 suites passed, 0 failed against the
-  regenerated export.
-- **What is NOT claimed.** The fix is proven on the two-scenario smoke grid, where
-  the defect was reproduced and then shown not to occur. It was not re-proven by a
-  second full 24-scenario run, which would cost another 33 minutes to demonstrate
-  a per-call property already demonstrated per call.
-
----
 
 ## 2026-08-26 (third pass) · Claims a stranger can check
 
