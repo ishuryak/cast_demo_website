@@ -1,0 +1,368 @@
+% Editable educator guide. Compile from this directory with:
+% pdflatex -interaction=nonstopmode -halt-on-error study-guide.tex
+% No external artwork, bibliography processor, or shell escape is required.
+\documentclass[11pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.78in,headheight=14pt,headsep=20pt,footskip=25pt]{geometry}
+\usepackage{xcolor,amsmath,amssymb,booktabs,tabularx,enumitem,fancyhdr,titlesec}
+\usepackage[colorlinks=true,urlcolor=teal,linkcolor=teal]{hyperref}
+\definecolor{teal}{HTML}{087E83}
+\definecolor{ink}{HTML}{193D42}
+\definecolor{muted}{HTML}{58696C}
+\renewcommand{\familydefault}{\sfdefault}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{7pt}
+\renewcommand{\baselinestretch}{1.06}
+\setlist[itemize]{leftmargin=16pt,itemsep=4pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=19pt,itemsep=6pt,topsep=3pt}
+\titleformat{\section}{\Large\bfseries\color{ink}}{}{0pt}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{teal}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{0pt}{11pt}
+\titlespacing*{\subsection}{0pt}{12pt}{3pt}
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\color{muted}CAST\enspace /\enspace Causal educator kit}
+\fancyfoot[L]{\small\color{muted}Synthetic examples \enspace\textperiodcentered\enspace Editable teaching draft}
+\fancyfoot[R]{\small\color{muted}\thepage\,/\,6}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Prb}{\mathbb{P}}
+\newcommand{\ind}{\mathbf{1}}
+\newcommand{\term}[1]{\textbf{\color{ink}#1}}
+\newcommand{\source}[1]{{\small\color{muted}#1}}
+\pdfstringdefDisableCommands{\def\enspace{ }}
+\hypersetup{pdftitle={CAST: Study guide for causal educators},pdfsubject={Potential outcomes, survival effects, causal survival forests and CAST}}
+\begin{document}
+\thispagestyle{fancy}
+{\color{teal}\small STUDY GUIDE \enspace /\enspace 60--90 MINUTES}\par
+\vspace{6pt}
+{\fontsize{29}{34}\selectfont\bfseries\color{ink}One person,\newline two possible paths}\par
+\vspace{5pt}
+{\large A lesson on causal effects across time and people}
+
+Hector receives treatment and improves. What would have happened without it?
+That missing comparison is the starting point. A survival study then asks what
+can be learned about an \emph{average} effect, at a specified time, for a specified
+population.
+
+\subsection{Learning goals}
+By the end, learners should be able to distinguish a before--after change from
+a causal contrast; name a survival estimand and its assumptions; interpret
+horizon estimates and a fitted trajectory; and explain why a conditional
+average is not an observed individual treatment effect.
+
+\subsection{A suggested class sequence}
+\renewcommand{\arraystretch}{1.28}
+\begin{tabularx}{\linewidth}{@{}p{0.85in}X@{}}
+\toprule
+\term{Minutes} & \term{Activity} \\
+\midrule
+0--10 & Describe Hector's missing outcome. Ask which comparison a before--after plot actually makes. \\
+10--25 & Define the survival snapshot and separate individual, sample and population effects. \\
+25--40 & Discuss treatment assignment, censoring and overlap. Identify what adjustment must assume. \\
+40--55 & Explore the five horizons. Compare the CSF points, CAST curve and simulated answer key. \\
+55--70 & Run or inspect the small R lab. Use the frozen results if class time or computing access is limited. \\
+70--90 & Optional: critique the fit, discuss heterogeneity and write a causal roadmap for a proposed study. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{Before class}
+Learners need basic probability and a distinction between association and
+causation. R is optional. The kit includes editable slides, code, a synthetic
+cohort and separate answer key. Its README gives run and compilation commands.
+
+\subsection{The question comes before the method}
+Define the population, baseline strategies, outcome and follow-up. State how
+the data and assumptions connect to that question. Then estimate and interpret
+with uncertainty. In this teaching adaptation of the causal roadmap, CSF and
+CAST belong at the estimation step.
+
+\source{Roadmap: Petersen \& van der Laan (2014),
+\href{https://doi.org/10.1097/EDE.0000000000000078}{doi:10.1097/EDE.0000000000000078}.
+Implementation authority: \href{https://github.com/ishuryak/cast_demo_website}{Igor Shuryak's demo repository}.}
+
+\newpage
+\section{1\enspace The missing outcome and the snapshot}
+\term{Potential outcomes} describe what would occur under specified alternative
+treatment choices. Let $W_i\in\{0,1\}$ be person $i$'s baseline treatment and
+$T_i(w)$ their potential event time under choice $w$. At horizon $t$, define
+\[
+ A_i^w(t)=\ind\{T_i(w)>t\},\qquad
+ \delta_i(t)=A_i^1(t)-A_i^0(t).
+\]
+$A_i^w(t)$ is a survival indicator: 1 means alive beyond $t$, 0 means the event
+has occurred by $t$. The individual effect $\delta_i(t)$ is $-1$, 0 or $1$.
+We cannot observe both potential outcomes for the same person at the same
+horizon. Randomization does not fill in that missing value.
+
+Under \term{consistency}, the event time on the assigned path is
+$T_i=T_i(W_i)$. An observed improvement before versus after treatment compares
+different times on that one path. It does not compare treatment choices at
+the same time.
+
+\subsection{Three averages that should not be conflated}
+\renewcommand{\arraystretch}{1.48}
+\begin{tabularx}{\linewidth}{@{}p{1.24in}X@{}}
+\toprule
+\term{Realized sample} &
+$\displaystyle\Delta_{\mathrm{SATE}}(t)=\frac1n\sum_{i=1}^n
+ [A_i^1(t)-A_i^0(t)]$\newline
+The average of the realized, paired potential outcomes in this sample; some are unobserved. \\
+\term{Population} &
+$\displaystyle\Delta(t)=\Prb\{T(1)>t\}-\Prb\{T(0)>t\}$\newline
+The survival-probability difference in a stated target population. \\
+\term{Conditional} &
+$\displaystyle\tau(t,x)=\E[A^1(t)-A^0(t)\mid X=x]$\newline
+The average contrast for people with baseline profile $x$; it is not $\delta_i(t)$. \\
+\bottomrule
+\end{tabularx}
+
+\subsection{What the simulation's answer key means}
+The generator supplies conditional survival probabilities $S_w(t\mid x)$.
+The answer key averages their contrast over the generated baseline profiles:
+\[
+ \Delta_{\mathrm{oracle},X}(t)=\frac1n\sum_{i=1}^n
+ \{S_1(t\mid X_i)-S_0(t\mid X_i)\}.
+\]
+This is a sample-standardized \emph{probability} contrast, also interpretable
+as the expected SATE given these profiles under the generating model. It is
+not the realized SATE and does not reveal whose outcome treatment changed.
+For simulations with a hidden baseline factor, the oracle also uses that
+factor; the fitted models do not. The supplied small cohort has no hidden
+confounding.
+
+\subsection{Read the units before reading the direction}
+A difference of $0.10$ is \term{10 percentage points} (pp). It is neither a
+10\% relative increase nor a hazard ratio. Positive values favor treatment
+on this survival scale. Hector's opening sketch uses symptom burden, where
+lower is better; that vertical direction does not carry over to survival.
+
+\source{Potential outcomes and average effects:
+Hern\'an \& Robins, \href{https://miguelhernan.org/whatifbook}{Causal Inference: What If}, chapters 1--3.}
+
+\newpage
+\section{2\enspace What makes a comparison causal?}
+\term{Confounding} occurs when treatment groups differ in causes of the
+outcome. In this simulation, baseline health affects both treatment assignment
+and survival. Comparing the observed groups without adjustment can therefore
+mix treatment effects with pre-existing differences.
+
+\subsection{Observed survival data}
+Let $C_i$ be a censoring time. The recorded data include baseline covariates
+$X_i$, treatment $W_i$, observed follow-up $Y_i$ and event indicator $D_i$:
+\[
+ Y_i=\min\{T_i,C_i\},\qquad D_i=\ind\{T_i\le C_i\}.
+\]
+If $D_i=0$ and $Y_i<t$, survival at $t$ is unknown even on the assigned path.
+Censoring and the missing counterfactual are different sources of missing
+information. Censored people are not automatically events or survivors at
+every later horizon.
+
+\subsection{Identification assumptions to discuss}
+\begin{description}[leftmargin=0pt,labelsep=0pt,itemsep=8pt,style=nextline]
+\item[\term{Well-defined strategies and consistency}]
+Treatment has a specified meaning; the observed outcome follows the assigned
+strategy. Interference between people must be absent or explicitly modeled.
+\item[\term{Conditional exchangeability}]
+Given adequate baseline covariates $X$, treatment assignment carries no
+remaining information about potential event times:
+$\{T(0),T(1)\}\perp W\mid X$.
+Measuring many variables does not establish this assumption.
+\item[\term{Treatment positivity / overlap}]
+For relevant profiles, both treatment choices are possible:
+$0<e(x)<1$, where $e(x)=\Prb(W=1\mid X=x)$ is the
+\term{propensity score}. Sparse overlap makes adjustment unstable.
+\item[\term{Censoring assumptions and follow-up support}]
+A sufficient working assumption is $T\perp C\mid X,W$, with positive
+probability of remaining uncensored through the horizons of interest.
+Relevant common causes of censoring and the event must be handled.
+\end{description}
+
+\subsection{Identification is separate from estimation}
+These assumptions connect a causal target to the distribution of observed
+data. An estimator then learns that distribution with finite data and modeling
+error. Flexible forests cannot repair unmeasured confounding or create support
+where a treatment is never observed. Generalizing to a different population
+also needs a defensible sampling or transport argument.
+
+\term{Challenge prompt.} A model fits the observed data very well and its
+confidence interval is narrow. What evidence would still be needed before
+calling the estimate causal? Name one plausible unmeasured common cause and
+one overlap check for your proposed study.
+
+\source{CSF assumptions: Cui et al. (2023),
+\href{https://doi.org/10.1093/jrsssb/qkac001}{doi:10.1093/jrsssb/qkac001}.
+Software target: \href{https://grf-labs.github.io/grf/reference/causal_survival_forest.html}{grf causal\_survival\_forest reference}.}
+
+\newpage
+\section{3\enspace Effects across time and people}
+\term{Causal survival forests (CSF)} estimate conditional average effects with
+right-censored outcomes. This demo uses the survival-probability target,
+evaluated at five horizons, then reports a cohort average at each horizon.
+A \term{horizon} is a chosen evaluation time; it is not a bin for event times.
+
+\subsection{What CAST adds}
+CAST (Causal Analysis for Survival Trajectories) models how the horizon
+estimates vary over follow-up. In this demo, a quadratic is fitted to the CSF
+estimates:
+\[
+ \widehat\Delta_{\mathrm{CAST}}(t)=\widehat\beta_0+
+ \widehat\beta_1t+\widehat\beta_2t^2.
+\]
+More points drawn along this curve are predictions from that fit, not new
+observations or additional forest estimates. Keep the original horizon points
+visible: smoothing can miss a peak, a crossing or another feature.
+
+\subsection{Optional math: correlated estimates and the band}
+Let $\widehat{\boldsymbol d}$ contain the horizon estimates, $B$ have rows
+$b(t_j)^\top=(1,t_j,t_j^2)$, and $\widehat\Sigma$ estimate their joint
+covariance. With fitting weights $Q$,
+\begin{align*}
+ \widehat{\boldsymbol\beta}
+   &=(B^\top QB)^{-1}B^\top Q\widehat{\boldsymbol d},\\
+ \widehat V_\beta
+   &=(B^\top QB)^{-1}B^\top Q\widehat\Sigma QB(B^\top QB)^{-1}.
+\end{align*}
+The shared people induce dependence across horizons. This implementation
+forms $\widehat\Sigma$ from patient-aligned influence scores and applies
+covariance shrinkage. It uses generalized least squares (GLS),
+$Q=\widehat\Sigma^{-1}$, when conditioning and fit checks pass; otherwise it
+uses weighted least squares (WLS) with inverse-variance diagonal weights.
+A reported 95\% pointwise band at $t$ is
+\[
+ b(t)^\top\widehat{\boldsymbol\beta}\ \pm\
+ 1.96\sqrt{b(t)^\top\widehat V_\beta b(t)}.
+\]
+\term{Pointwise} does not mean 95\% coverage of the whole trajectory at once.
+The calculation also does not account for all uncertainty from choosing the
+fit or from a misspecified quadratic. The full procedure's coverage needs
+separate validation. These implementation choices belong to the demo code;
+they are not all specified in the original CAST preprint.
+
+\subsection{Heterogeneity and the meaning of time}
+\term{Treatment-effect heterogeneity} means $\tau(t,x)$ varies across profiles
+$x$, on a stated outcome scale and at a stated horizon. Averaging over a
+target population gives $\Delta(t)=\E_X[\tau(t,X)]$. The website plots cohort
+averages; it does not display a subgroup analysis or identify Hector's effect.
+
+A falling positive survival difference still favors treatment at that horizon.
+Following the effect of a \emph{baseline} treatment is different from deciding
+when to switch or stop it. A fitted peak is not a treatment rule.
+
+\source{CAST framework: \href{https://arxiv.org/abs/2505.06367}{Yang et al. (2025)}.
+Exact covariance, weighting and band:
+\href{https://github.com/ishuryak/cast_demo_website/blob/43a00101100801eb6c048800d24788455fac0f8b/R/cast_core.R}{versioned R/cast\_core.R}.}
+
+\newpage
+\section{4\enspace Class exercises}
+\subsection{A. A contrast is not a count of identifiable beneficiaries}
+In a hypothetical population of 10 people, suppose the average survival
+effect at one horizon is $+0.20$. Let $H$ count people with
+$\delta_i(t)=+1$ and $L$ count people with $\delta_i(t)=-1$.
+\begin{enumerate}
+\item Write the relationship among $H$, $L$ and the average effect.
+\item Give two different pairs $(H,L)$ that produce $+0.20$.
+\item Does this average tell you that a particular two people were saved?
+Explain what remains unobserved.
+\end{enumerate}
+
+\subsection{B. Read a frozen website example}
+These values come from the 2,000-person \emph{reversal} scenario with measured
+confounding strength 1 and hidden-confounding strength 0. All entries are
+survival-probability differences in pp, rounded from the frozen export.
+\renewcommand{\arraystretch}{1.28}
+\begin{center}
+\begin{tabular}{@{}rrrrr@{}}
+\toprule
+\term{Month} & \term{Unadjusted} & \term{CSF} & \term{CAST} & \term{Oracle} \\
+\midrule
+12  & 13.49 & 6.51 & 6.39 & 7.51 \\
+36  & 32.35 & 18.09 & 10.34 & 16.38 \\
+60  & 28.56 & 11.42 & 9.96 & 9.15 \\
+84  & 14.51 & $-0.12$ & 5.28 & $-1.59$ \\
+108 & 6.81 & $-4.38$ & $-3.72$ & $-5.60$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\begin{enumerate}[resume]
+\item At 108 months, which comparisons favor treatment? Interpret the CSF
+estimate in words. Does its sign tell you when treatment should be stopped?
+\item At which of the five horizons is the absolute CAST--oracle gap largest?
+Compute it. What does this example show about smoothing?
+\end{enumerate}
+
+\subsection{C. Inspect or run the supplied cohort}
+The kit's \texttt{data/demo-cohort.csv} contains \term{600 synthetic people},
+generated with seed 20260905, reversal effects, measured confounding strength
+1 and no hidden confounding. It is a distinct sample from the frozen website
+export. Baseline columns are \texttt{age, stage, ps, comorb, smoke, sex,
+ethnicity}; treatment is \texttt{W}, follow-up in months is \texttt{Y}, and
+the event indicator is \texttt{D}. Read category coding in the kit README.
+
+Run \texttt{class-lab.R} from the extracted kit as described in its README.
+It fits Igor's bundled implementation to the cohort. Compare the five horizon
+estimates with \texttt{data/answer-key.csv}, which contains the generating
+model's probability contrasts for these same profiles. An estimate is not
+expected to equal the answer key in one finite sample.
+
+\term{Discuss.} Describe one baseline imbalance and the fraction censored.
+Choose a clinically meaningful horizon \emph{before} examining its result.
+Then state the population, comparison, assumptions and uncertainty in a
+two-sentence interpretation. Use \texttt{data/frozen-horizons.csv} for a
+no-compute comparison across the website's 24 scenarios.
+
+\newpage
+\section{5\enspace Answer notes and further reading}
+\subsection{Answers to the numbered exercises}
+\begin{enumerate}
+\item The realized average is $(H-L)/10$, so $H-L=2$.
+\item $(2,0)$ and $(4,2)$ both give $+0.20$, with different numbers helped
+and harmed.
+\item No. Even an exact average would not identify the missing potential
+outcomes. An estimated probability difference also has sampling and modeling
+uncertainty.
+\item At 108 months the unadjusted comparison is positive; CSF, CAST and the
+oracle are negative. CSF estimates survival under baseline treatment to be
+4.38 pp lower than under control for the cohort target. This is a horizon
+contrast, not a comparison of continuing versus stopping treatment then.
+\item At 84 months: $|5.28-(-1.59)|=6.87$ pp. The gap at 36 months is
+6.04 pp. A smooth fit can miss the generating trajectory even if it looks
+plausible; it need not improve on the separate horizon estimates.
+\end{enumerate}
+
+\subsection{Facilitator notes for the lab and discussion}
+The cohort has one row per person, not paired potential outcomes. The answer
+key averages known model probabilities; do not use it as fitting data.
+The fraction with $D=0$ describes recorded censoring, not whether survival is
+known at every horizon.
+
+An interpretation should state the baseline choices, target profiles, horizon,
+units and uncertainty. Separate identification failures, such as hidden
+confounding, from estimation problems, such as poor fit. For a new population,
+revisit the averaging distribution. For changing treatment over time, define
+a new longitudinal question and revisit identification.
+
+\subsection{A compact vocabulary recap}
+\term{Estimand}: the quantity we want to learn. \term{Identification}: relating
+that quantity to observed-data distributions under assumptions.
+\term{Estimator}: the procedure used to learn it from a sample.
+\term{Counterfactual}: an outcome under an alternative specified treatment.
+\term{Censoring}: incomplete event-time observation.
+\term{Overlap}: support for both treatment choices within relevant profiles.
+\term{CSF}: a forest for conditional average effects with censored outcomes.
+\term{CAST}: a model for an effect trajectory across horizons.
+\term{Pointwise interval}: uncertainty at one specified time.
+\term{Heterogeneity}: variation in a conditional average effect across profiles.
+
+\subsection{Sources and editable materials}
+{\small
+\begin{itemize}[itemsep=3pt]
+\item Hern\'an \& Robins (2020). \href{https://miguelhernan.org/whatifbook}{\emph{Causal Inference: What If}}. Potential outcomes, identification and generalization.
+\item Cui et al. (2023). \href{https://doi.org/10.1093/jrsssb/qkac001}{\emph{Estimating heterogeneous treatment effects with right-censored data via causal survival forests}}. JRSS B 85:179--211.
+\item Yang et al. (2025). \href{https://arxiv.org/abs/2505.06367}{\emph{CAST: Time-Varying Treatment Effects}}. Methods preprint, arXiv:2505.06367.
+\item Petersen \& van der Laan (2014). \href{https://doi.org/10.1097/EDE.0000000000000078}{\emph{Causal models and learning from data}}. Epidemiology 25:418--426.
+\item \href{https://grf-labs.github.io/grf/reference/causal_survival_forest.html}{grf CSF reference} and \href{https://github.com/ishuryak/cast_demo_website}{Igor Shuryak's demo repository}: target definitions, source code and implementation details.
+\end{itemize}}
+\end{document}

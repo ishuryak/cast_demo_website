@@ -61,3 +61,10 @@ jobs:
           n=$(ls docs/figs/*.png | wc -l)
           test "$n" -eq 9 || { echo "::error::expected 9 figures, found $n"; exit 1; }
           echo "docs/ complete: 9 figures, all site assets present"
+
+      - name: Walkthrough tests and GitHub Pages build
+        run: |
+          npm test
+          npm run build:pages
+          git diff --exit-code -- docs/tutorial tutorial/class-kit tutorial/downloads
+          test -z "$(git ls-files --others --exclude-standard -- docs/tutorial)"

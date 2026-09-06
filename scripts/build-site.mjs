@@ -11,7 +11,7 @@ const existing=await lstat(output).catch(error=>{
 });
 // Only replace this repository's generated dist directory, never a linked path.
 if(path.dirname(output)!==path.resolve(root)||path.basename(output)!=='dist'||existing?.isSymbolicLink()){
-  throw new Error('Unsafe Sites output directory.');
+  throw new Error('Unsafe static output directory.');
 }
 await rm(output,{recursive:true,force:true});
 await cp(path.join(root,'tutorial/dist'),output,{recursive:true});

@@ -1,5 +1,7 @@
 # CAST demo website: causal survival trajectories on simulated oncology data
 
+[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/)
+
 An interactive teaching demo that shows, on **simulated** cancer-survival
 cohorts where the true treatment effect is known:
 
@@ -197,6 +199,12 @@ cd docs && python3 -m http.server 8000   # open http://localhost:8000
 
 The site lives in `docs/`, which GitHub Pages can serve directly:
 
+The illustrated walkthrough is at `/tutorial/`. Its editable source is in
+`tutorial/`; run `npm test` and `npm run build:pages` from the repository root,
+then commit and push the source and generated `docs/tutorial/` together to
+`main`. The build includes all interactions, animations, illustrations and
+educator downloads. See [the editing guide](design/COPY_EDITING.md).
+
 1. Push this repo to GitHub.
 2. Repo **Settings → Pages**.
 3. Under **Build and deployment**, set **Source = Deploy from a branch**, then
@@ -205,7 +213,8 @@ The site lives in `docs/`, which GitHub Pages can serve directly:
    `https://ishuryak.github.io/cast_demo_website/`
    (or `https://<your-username>.github.io/<repo-name>/` for a fork).
 
-Only aggregate artifacts ship. The per-patient simulated intermediates in
+The methods page ships aggregate artifacts. The tutorial class kit also includes
+an explicitly synthetic teaching cohort. Per-patient simulation intermediates in
 `output/` are gitignored.
 
 ## For collaborators

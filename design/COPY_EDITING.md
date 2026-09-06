@@ -35,8 +35,8 @@ the original demo.
 Keep HTML IDs and `data-*` attributes intact when editing prose. The two
 counterfactual completions encode numerical examples; their counts, outcomes
 and tests must agree. The simulation export in `tutorial/data/` is frozen
-research output, not a copy-editing file. Igor's original `R/` and `docs/`
-remain separate from the teaching-site edits.
+research output, not a copy-editing file. The original `R/` and root `docs/`
+methods page are preserved; `docs/tutorial/` contains the generated walkthrough.
 
 For document edits, compile the LaTeX twice, put compiler intermediates under
 the ignored `tutorial/labs/output/`, and visually inspect the PDFs before
@@ -44,10 +44,14 @@ replacing the final PDFs. Then run:
 
 ```powershell
 npm --prefix tutorial test
-npm --prefix tutorial run build
+npm run build:pages
 ```
 
 The build refreshes the class-kit ZIP and the public allowlist in
-`tutorial/dist/`. It excludes internal art notes, generators and consultation
-files. Edit source files, not `dist/` or the ZIP. For code changes, also run
+`tutorial/dist/`, then stages it in `docs/tutorial/`. It excludes internal art
+notes, generators and consultation files. Edit source files, not generated
+`docs/tutorial/`, `dist/` or the ZIP. Commit the source and generated changes
+together and push `main` to publish on GitHub Pages. For code changes, also run
 the relevant R exercise checks described in `tutorial/README.md`.
+
+Share: https://ishuryak.github.io/cast_demo_website/tutorial/

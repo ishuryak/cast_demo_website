@@ -1,8 +1,8 @@
 # CAST learning tutorial
 
-The teaching interface for Igor Shuryak's CAST demo. Source lives in `tutorial/`; the existing `docs/` build, R code, frozen data and Pages configuration are preserved. Review branch: `codex/cast-tutorial`.
+The teaching interface for Igor Shuryak's CAST demo. Source lives in `tutorial/`; the complete public build is tracked in `docs/tutorial/` on `main`. GitHub Pages serves it alongside the existing methods and diagnostics page. The R code and frozen data are preserved.
 
-[Open the hosted walkthrough](https://cast-survival-trajectories.andystats.chatgpt.site/).
+[Open the walkthrough on GitHub Pages](https://ishuryak.github.io/cast_demo_website/tutorial/).
 
 ```powershell
 cd tutorial
@@ -14,9 +14,9 @@ Rscript tests/exercise.test.R
 npm run build
 ```
 
-No npm dependencies or installation step are required. Node 20+ serves and builds the page. The tutorial build writes `tutorial/dist/`, which is gitignored. It copies an explicit allowlist and validates the frozen export's SHA-256. Run `npm run build` from the repository root to also stage the validated output in root `dist/` for Sites. These build commands do not publish. Sites uses the root `.openai/hosting.json`; the existing GitHub Pages configuration is unchanged.
+No npm dependencies or installation step are required. Node 20+ serves and builds the page. The tutorial build writes `tutorial/dist/`, which is gitignored. It copies an explicit allowlist and validates the frozen export's SHA-256. From the repository root, `npm run build:pages` stages the same output in `docs/tutorial/`. GitHub Pages publishes `main:/docs`, so committing and pushing that output to `main` publishes the walkthrough. `npm run build` remains available for a portable static build in root `dist/`.
 
-For manual wording changes, see [the editing guide](../design/COPY_EDITING.md). After edits, run the tests and build, commit and push the reviewed branch, then save and deploy a Sites version from that exact source commit. Keep local notes and lab outputs out of the deployment archive.
+For manual wording changes, see [the editing guide](../design/COPY_EDITING.md). Edit `tutorial/index.html`, then run `npm test` and `npm run build:pages` from the repository root. Commit the source and generated `docs/tutorial/` changes together and push `main`. GitHub's checks rebuild the walkthrough and reject stale published files. Local notes and lab outputs are excluded from the build.
 
 ## This milestone
 
@@ -75,4 +75,4 @@ loads preserve the default artwork. Coordinate asset and caption changes togethe
 
 Original simulation and CAST implementation: Igor Shuryak, MIT. See `LICENSE`, `data/provenance.json`, and the repository's `CITATION.cff`. `data/scenarios.json` is an exact copy of the current published aggregate export. The build verifies its hash rather than regenerating it.
 
-The comprehensive design is stored locally at `design/CAST_TUTORIAL_DESIGN.local.md` and intentionally ignored. Hosting decisions are documented in `design/R_EXECUTION_OPTIONS.md`. Preserve the current original site throughout the alternate deployment process.
+The comprehensive design is stored locally at `design/CAST_TUTORIAL_DESIGN.local.md` and intentionally ignored. GitHub Pages is the publishing destination; the earlier Sites mirror is not part of this release workflow.

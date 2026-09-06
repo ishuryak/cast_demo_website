@@ -6,3 +6,5 @@
 # Preserve the byte hashes recorded in the teaching kit's provenance.
 tutorial/class-kit/data/*.csv -text whitespace=trailing-space,space-before-tab,cr-at-eol
 tutorial/data/scenarios.json -text
+docs/tutorial/class-kit/data/*.csv -text whitespace=trailing-space,space-before-tab,cr-at-eol
+docs/tutorial/data/scenarios.json -text
