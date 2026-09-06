@@ -2,7 +2,7 @@
 
 The teaching interface for Igor Shuryak's CAST demo. Source lives in `tutorial/`; the existing `docs/` build, R code, frozen data and Pages configuration are preserved. Review branch: `codex/cast-tutorial`.
 
-[Open the hosted walkthrough](https://cast-survival-trajectories.blue-goby-9251.chatgpt.site/).
+[Open the hosted walkthrough](https://cast-survival-trajectories.andystats.chatgpt.site/).
 
 ```powershell
 cd tutorial
