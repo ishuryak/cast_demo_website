@@ -60,3 +60,14 @@ development/*.docx
 # during the docs/ migration and referenced by nothing. Ignored so it cannot be
 # committed by accident; safe to delete.
 web/
+
+# Local planning documents and generated tutorial output.
+/design/*.local.md
+/tutorial/.cache/
+/tutorial/labs/output/
+/tutorial/dist/
+/dist/
+cast-lab-output/
+
+# Local agent consultation prompts, responses, and diagnostics.
+/design/collaboration-runs/

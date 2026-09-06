@@ -95,7 +95,7 @@ cast_demo_website/
   R/
     cast_core.R          Ledoit–Wolf shrinkage, cross-horizon influence-function
                          covariance, covariance-aware quadratic trajectory fit,
-                         true/KM survival-probability helpers (ported from the glioma CAST pipeline)
+                         true/KM survival-probability helpers (adapted CAST implementation)
     01_simulate.R        simulate confounded cohorts + known true ATE(t)
     02_fit_methods.R     Naive / Cox / RSF S- and T-learner / CSF / CAST, plus the
                          oracle CSF refit and AUTOC, all scored vs truth
@@ -601,8 +601,11 @@ suppressed.
 
 CAST was developed by Yang et al. (see [Citation](#citation)). This repository
 demonstrates that method on simulated data and is not the analysis code for
-either paper. `R/cast_core.R` is ported from the production pipeline used in the
-lower-grade glioma study.
+either paper. The preprint describes weighted quadratic and spline trajectories;
+the applied glioma study describes bootstrap covariance, shrinkage and GLS/WLS.
+The current `R/cast_core.R` adapts the trajectory approach using patient-aligned
+influence-score covariance. The versioned code is the source for these exact
+implementation choices; the papers do not establish a verbatim code match.
 
 The CSF fits use `grf::causal_survival_forest` (survival.probability target,
 propensity from a `grf::regression_forest`). The CAST layer builds the
@@ -636,7 +639,7 @@ Effects with Application to Chemotherapy and Radiotherapy on Head and Neck
 Squamous Cell Carcinoma*. arXiv:2505.06367.
 https://arxiv.org/abs/2505.06367
 
-The applied study whose pipeline `R/cast_core.R` is ported from:
+An applied CAST study informing this demonstration's trajectory approach:
 
 Yang, E., Agrawal, S., Kinslow, C. J., Cheng, S. K., Yang, L., Wang, E.,
 Wang, T. J., Kachnic, L. A., Brenner, D. J., & Shuryak, I. (2026). Estimating

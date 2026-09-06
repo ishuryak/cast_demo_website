@@ -72,7 +72,9 @@ references:
     number: 23659
     doi: 10.1038/s41598-026-54656-0
     notes: >-
-      The applied study whose production pipeline R/cast_core.R is ported from.
+      Applied CAST study using bootstrap covariance, shrinkage and GLS/WLS.
+      The current demo adapts this approach using patient-aligned influence-score
+      covariance; the versioned repository documents that implementation.
     authors:
       - family-names: Yang
         given-names: Everest

@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Paths Through Time</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Libre+Caslon+Display&display=swap">
+<style>
+:root{--bg:#ffffff;--ink:#242a29;--muted:#6b716c;--graphite:#8a8c84;--line:#e3e4dd;--paper-2:#f6f6f2;--teal:#087e8b;--teal-deep:#075d65;--teal-wash:rgba(8,126,139,.14);--rust:#b56746;--rust-wash:rgba(181,103,70,.16);--serif:'Libre Caslon Display',Georgia,serif;--sans:'DM Sans',system-ui,Arial,sans-serif;color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141918;--ink:#ece9e0;--muted:#a3a9a2;--graphite:#8f958e;--line:#2b3230;--paper-2:#1b2120;--teal:#3dbcc7;--teal-deep:#8fd8de;--teal-wash:rgba(61,188,199,.18);--rust:#d68a68;--rust-wash:rgba(214,138,104,.2)}}
+:root[data-theme="dark"]{--bg:#141918;--ink:#ece9e0;--muted:#a3a9a2;--graphite:#8f958e;--line:#2b3230;--paper-2:#1b2120;--teal:#3dbcc7;--teal-deep:#8fd8de;--teal-wash:rgba(61,188,199,.18);--rust:#d68a68;--rust-wash:rgba(214,138,104,.2)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6}
+.wrap{max-width:1120px;margin:0 auto;padding:40px 28px 56px}
+header{max-width:62ch}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);font-weight:600;margin:0 0 14px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,4.5vw,54px);line-height:1.05;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+.lede{color:var(--muted);font-size:17px;margin:0}
+.show{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:32px;align-items:start;margin-top:36px}
+.stage-wrap{margin:0;border:1px solid var(--line);border-radius:4px;background:var(--bg);overflow:hidden}
+#stage{display:block;width:100%;height:auto}
+.caption h2{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.15;margin:10px 0 12px;text-wrap:balance}
+.caption p{margin:0 0 12px;font-size:15px}
+.caption a{color:var(--teal-deep)}
+.caption .note,.caption .method-links{font-size:14px;color:var(--muted)}
+.caption .method-links{border-top:1px solid var(--line);padding-top:12px}
+.badge{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--line);border-radius:2px;color:var(--muted)}
+.badge.data{border-color:var(--teal);color:var(--teal-deep)}
+.stepper{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.steps{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+.steps button{font:inherit;font-size:13px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:2px;padding:8px 10px;min-height:44px;cursor:pointer;display:inline-flex;gap:8px;align-items:baseline}
+.steps button span{font-family:var(--serif);color:var(--teal);font-size:15px}
+.steps button[aria-current="step"]{border-color:var(--teal-deep);background:var(--paper-2)}
+.controls{display:flex;gap:8px}
+.controls button{font:inherit;font-size:14px;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:2px;padding:8px 14px;cursor:pointer;min-width:44px;min-height:44px}
+.controls button.primary{background:var(--teal-deep);border-color:var(--teal-deep);color:#fff}
+button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+.export-evidence{margin-top:18px;font-size:14px}
+.export-evidence[hidden]{display:none}
+.scene-reading{font-size:14px;line-height:1.5;margin-top:18px}
+.scene-reading:empty{display:none}
+.scene-reading p{margin:10px 0}
+.scene-reading .clock{font-variant-numeric:tabular-nums;color:var(--teal-deep)}
+.model-values{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:12px 0 0}
+.model-values dt{font-size:14px;color:var(--muted)}
+.model-values dd{font-size:20px;font-variant-numeric:tabular-nums;margin:3px 0 0}
+.model-values .teal{color:var(--teal-deep)}.model-values .rust{color:var(--rust)}
+.chart-legend{list-style:none;margin:0 0 16px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:14px;line-height:1.4}
+.chart-legend li{display:flex;align-items:center;gap:8px}
+.key{flex:none;display:inline-block;width:22px;height:0;border-top:2px solid var(--teal-deep)}
+.key.forest{width:10px;height:10px;border:2px solid var(--teal);border-radius:50%;margin:0 6px}
+.key.truth{width:9px;height:9px;border:0;background:var(--ink);transform:rotate(45deg);margin:0 6.5px}
+.key.raw{border-top:2px dashed var(--rust)}
+.key.control{border-color:var(--graphite)}
+.key.lower{border-top:2px dashed var(--teal-deep)}
+.key.population{border-top:2px dotted var(--ink)}
+.key.event{border-color:var(--graphite);border-top-style:dashed;opacity:.6}
+.export-evidence label{font-weight:500}
+.export-evidence select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:2px;min-height:44px;padding:6px 10px;margin-left:6px}
+.export-values{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0 0}
+.export-values dt{font-size:14px;color:var(--muted)}
+.export-values dd{font-size:18px;font-variant-numeric:tabular-nums;margin:0;color:var(--teal-deep)}
+.export-values .raw dd{color:var(--rust)}
+.export-values .truth dd{color:var(--ink)}
+.export-evidence .units{color:var(--muted);font-size:14px;margin:8px 0 0}
+footer{margin-top:40px;font-size:12px;color:var(--muted);max-width:70ch;line-height:1.7}
+footer a{color:var(--teal-deep)}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+/* Stage drawing */
+#stage text{font-family:var(--sans);fill:var(--ink);paint-order:stroke;stroke:var(--bg);stroke-width:3px;stroke-linejoin:round}
+.tick{font-size:14px;fill:var(--muted)}.label{font-size:14px}.mid{text-anchor:middle}.end{text-anchor:end}.tab{font-variant-numeric:tabular-nums}
+.teal{fill:var(--teal-deep)}.muted{fill:var(--muted)}.rust{fill:var(--rust)}
+.grid{stroke:var(--line);stroke-width:.8}.zero{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 4}
+.s{fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:opacity .6s,stroke .6s}
+.person.treated .s{stroke:var(--teal)}.person.event .s{opacity:.28;stroke-dasharray:2 3}
+.s.treated{stroke:var(--teal)}.s.control{stroke:var(--graphite)}
+.curve{fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:opacity .6s}
+.c1{stroke:var(--teal)}.c0{stroke:var(--graphite)}.thin{stroke:var(--teal-deep);stroke-width:1.7;stroke-dasharray:7 4}.cpop{stroke:var(--ink);stroke-width:1.8;stroke-dasharray:2 5}
+.cast{stroke:var(--teal-deep);stroke-width:2.4}.naive{stroke:var(--rust);stroke-width:1.5;stroke-dasharray:6 4}
+.band{fill:var(--teal-wash)}.gap-pos{fill:var(--teal-wash)}.gap-neg{fill:var(--rust-wash)}
+.whisker{stroke:var(--teal);stroke-width:1.5}.csf{fill:var(--bg);stroke:var(--teal);stroke-width:2}.truth{fill:var(--ink)}
+.dot.c1{fill:var(--teal);stroke:none}.dot.c0{fill:var(--graphite);stroke:none}
+.horizon{stroke:var(--teal);stroke-width:1;stroke-dasharray:2 4;opacity:.75}
+.unobserved .curve,.unobserved .s{opacity:.32}.unobserved .curve{stroke-dasharray:5 6}
+.draw{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset var(--dur,1.2s) cubic-bezier(.45,0,.2,1)}.draw.on{stroke-dashoffset:0}
+.fade{opacity:0;transition:opacity .6s ease}.fade.on{opacity:1}
+.unobserved .fade.on{opacity:.32}
+@media(max-width:820px){.show{grid-template-columns:1fr;gap:24px}.wrap{padding:28px 18px 40px}}
+@media(max-width:420px){.export-values{grid-template-columns:1fr 1fr}.chart-legend{gap:10px}.steps button{font-size:12px}.wrap{padding-inline:14px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <p class="eyebrow">A sketch of the fundamentals</p>
+    <h1>Two paths through time</h1>
+    <p class="lede">Estimating a treatment's benefit means respecting two things at once: the path we can never see, and the clock that keeps running.</p>
+  </header>
+  <div class="show">
+    <div class="visual">
+      <figure class="stage-wrap">
+        <svg id="stage" viewBox="0 0 960 560" role="img" aria-labelledby="scene-title" aria-describedby="scene-text"></svg>
+      </figure>
+      <nav class="stepper" aria-label="Scenes">
+        <div class="controls">
+          <button type="button" id="prev" aria-label="Previous scene">← Previous</button>
+          <button type="button" id="play" class="primary" aria-pressed="false">Play</button>
+          <button type="button" id="next" aria-label="Next scene">Next →</button>
+        </div>
+        <ol class="steps" id="steps"></ol>
+      </nav>
+      <div class="scene-reading" id="scene-reading"></div>
+      <div class="export-evidence" id="export-evidence" hidden>
+        <ul class="chart-legend" aria-label="Chart legend">
+          <li><span class="key forest" aria-hidden="true"></span>Forest estimate + 95% interval</li>
+          <li><span class="key truth" aria-hidden="true"></span>Simulated truth</li>
+          <li><span class="key" aria-hidden="true"></span>CAST fit + pointwise band</li>
+          <li><span class="key raw" aria-hidden="true"></span>Unadjusted comparison</li>
+        </ul>
+        <label for="export-horizon">Read the snapshot at</label>
+        <select id="export-horizon">
+          <option value="0">12 months</option><option value="1" selected>36 months</option>
+          <option value="2">60 months</option><option value="3">84 months</option><option value="4">108 months</option>
+        </select>
+        <dl class="export-values" aria-live="polite">
+          <div><dt>Forest estimate</dt><dd id="value-forest"></dd></div>
+          <div><dt>CAST fit</dt><dd id="value-cast"></dd></div>
+          <div class="truth"><dt>Simulated truth</dt><dd id="value-truth"></dd></div>
+          <div class="raw"><dt>Unadjusted</dt><dd id="value-raw"></dd></div>
+        </dl>
+        <p class="units">Survival-probability differences, in percentage points (pp).</p>
+      </div>
+    </div>
+    <section class="caption" aria-live="polite">
+      <span class="badge" id="badge"></span>
+      <h2 id="scene-title"></h2>
+      <p id="scene-text"></p>
+      <p class="note" id="scene-note"></p>
+      <p class="method-links">Read the methods in the <a href="https://github.com/ishuryak/cast_demo_website">CAST repository</a> and the <a href="https://github.com/ishuryak/cast_demo_website/blob/43a00101100801eb6c048800d24788455fac0f8b/R/cast_core.R">versioned R implementation</a>.</p>
+    </section>
+  </div>
+  <p id="status" class="sr-only" aria-live="polite"></p>
+  <footer>
+    Scene 4 shows this demo's exported simulation results (reversal scenario, moderate measured confounding, no hidden confounding). <a href="https://github.com/ishuryak/cast_demo_website">Igor Shuryak's CAST repository</a> contains the implementation and MIT licence. Scenes 1, 2, 3 and 5 use an illustrative hazard model to explain the concepts. Method background: Yang et al., <a href="https://arxiv.org/abs/2505.06367">CAST</a> (preprint); Cui et al., <a href="https://doi.org/10.1093/jrsssb/qkac001">causal survival forests</a>; Hernán and Robins, <a href="https://miguelhernan.org/whatifbook"><em>Causal Inference: What If</em></a>.
+  </footer>
+</main>
+<script>
+(()=>{
+const NS='http://www.w3.org/2000/svg';
+let W=960,H=560;
+const el=(n,a={},t)=>{const e=document.createElementNS(NS,n);for(const [k,v] of Object.entries(a))e.setAttribute(k,String(v));if(t!=null)e.textContent=t;return e;};
+const $=id=>document.getElementById(id);
+const stage=$('stage'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
+let timers=[],raf=0;
+const later=(fn,ms)=>{if(reduced.matches){fn();return;}timers.push(setTimeout(fn,ms));};
+const on=node=>{if(reduced.matches){node.classList.add('on');return;}requestAnimationFrame(()=>requestAnimationFrame(()=>node.classList.add('on')));};
+function sweep(ms,frame,done){if(reduced.matches){frame(1);if(done)done();return;}const t0=performance.now();const step=now=>{const f=Math.min(1,(now-t0)/ms);frame(f);if(f<1)raf=requestAnimationFrame(step);else if(done)done();};raf=requestAnimationFrame(step);}
+function clearStage(){timers.forEach(clearTimeout);timers=[];cancelAnimationFrame(raf);stage.replaceChildren();}
+const pp=v=>Number.isFinite(v)?`${v>0?'+':v<0?'−':''}${Math.abs(v*100).toFixed(1)} pp`:'Not estimable';
+const poly=pts=>pts.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+function drawPath(parent,d,cls,dur=1.2){const p=el('path',{d,class:`draw ${cls}`,pathLength:1,style:`--dur:${dur}s`});parent.append(p);on(p);later(()=>{p.classList.remove('draw');p.removeAttribute('pathLength');},dur*1000+80);return p;}
+
+/* Hand-drawn strokes: seeded wobble, same language as the tutorial's illustrations. */
+function rng(seed){let a=seed>>>0;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function wave(r){const k=[.5,1,1.7,2.6].map(f=>({f,a:(r()*2-1)/f,p:r()*Math.PI*2}));return t=>k.reduce((s,{f,a,p})=>s+a*Math.sin(Math.PI*2*f*t+p),0)/1.4;}
+function sketch(fn,{n=24,wobble=1.6,r,over=.02}){const w=wave(r),w2=wave(r),eps=1e-3;const at=t=>{if(t>=0&&t<=1)return fn(t);const c=t<0?0:1,p=fn(c),q=fn(c+(t<0?eps:-eps));const k=(t<0?-t:t-1)/eps;return[p[0]+(p[0]-q[0])*k,p[1]+(p[1]-q[1])*k];};const pts=[];for(let i=0;i<=n;i++){const t=-over+(1+2*over)*i/n,p=at(t),q=at(t+eps);let dx=q[0]-p[0],dy=q[1]-p[1];const len=Math.hypot(dx,dy)||1;dx/=len;dy/=len;const off=wobble*w(t),along=wobble*.35*w2(t);pts.push([p[0]-dy*off+dx*along,p[1]+dx*off+dy*along]);}let d=`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;for(let i=1;i<pts.length-1;i++){const m=[(pts[i][0]+pts[i+1][0])/2,(pts[i][1]+pts[i+1][1])/2];d+=`Q${pts[i][0].toFixed(1)},${pts[i][1].toFixed(1)} ${m[0].toFixed(1)},${m[1].toFixed(1)}`;}const l=pts.at(-1);return d+`L${l[0].toFixed(1)},${l[1].toFixed(1)}`;}
+const line=(a,b)=>t=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+const bez=(p0,p1,p2,p3)=>t=>{const u=1-t;return[u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]];};
+const circle=(cx,cy,rad,start=0,turns=1.06)=>t=>{const a=start+t*Math.PI*2*turns;return[cx+rad*Math.cos(a),cy+rad*Math.sin(a)];};
+function person(parent,x,y,s,idx,r,cls=''){const shape=rng(1000+idx);const h=.85+shape()*.3,wd=.85+shape()*.3,tilt=(shape()-.5)*3,headR=6.5*s*(.9+shape()*.2),start=shape()*Math.PI*2;const g=el('g',{class:`person ${cls}`});g.append(el('path',{class:'s',d:sketch(circle(x+tilt*s,y-22*s*h,headR,start),{n:22,wobble:.5*s,r,over:0}),'stroke-width':(1.6*s).toFixed(2)}));const l=x-9*s*wd,rt=x+9*s*wd,top=y-12*s*h,bot=y+8*s*h;g.append(el('path',{class:'s',d:sketch(bez([l,bot],[l-1.5*s,top-4*s],[rt+1.5*s,top-4*s],[rt,bot]),{n:26,wobble:.8*s,r,over:.03}),'stroke-width':(1.6*s).toFixed(2)}));parent.append(g);return g;}
+function cross(parent,x,y,r,cls){for(const [a,b] of [[[x-6,y-6],[x+6,y+6]],[[x-6,y+6],[x+6,y-6]]])parent.append(el('path',{class:`s ${cls}`,d:sketch(line(a,b),{n:6,wobble:.6,r,over:.05})}));}
+
+/* Illustrative hazard model: constant baseline hazard per risk group, one shared time-varying hazard multiplier r(t). */
+const TOY={a:-1.2,c:.019,groups:[{h:.006,w:.5,p:.7,name:'Lower baseline risk'},{h:.02,w:.5,p:.3,name:'Higher baseline risk'}]};
+const cum=t=>(Math.exp(TOY.a+TOY.c*t)-Math.exp(TOY.a))/TOY.c;
+const S0=(h,t)=>Math.exp(-h*t),S1=(h,t)=>Math.exp(-h*cum(t)),delta=(h,t)=>S1(h,t)-S0(h,t);
+const pop=(f,t)=>TOY.groups.reduce((s,g)=>s+g.w*f(g.h,t),0);
+const T0=(h,u)=>-Math.log(u)/h,T1=(h,u)=>(Math.log(TOY.c*(-Math.log(u)/h)+Math.exp(TOY.a))-TOY.a)/TOY.c;
+const TS=[];for(let t=0;t<=120;t+=2)TS.push(t);
+
+/* Exported results: Igor Shuryak's demo, scenario reversal, conf 1.00, unmeas 0.00, n = 2,000. */
+const REAL={h:[12,36,60,84,108],ate:[.0651,.1809,.1142,-.0012,-.0438],lo:[.0388,.1402,.0695,-.0422,-.0815],hi:[.0914,.2216,.1588,.0398,-.0061],truth:[.0751,.1638,.0915,-.0159,-.056],naive:[.1349,.3235,.2856,.1451,.0681],cast:[.0639,.1034,.0996,.0528,-.0372],
+ ct:[12,16,20,24,28,32,36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96,100,104,108],
+ cfit:[.0639,.0735,.0819,.089,.095,.0998,.1034,.1057,.1069,.1069,.1057,.1033,.0996,.0948,.0888,.0816,.0732,.0636,.0528,.0408,.0276,.0132,-.0024,-.0192,-.0372],
+ clo:[.0375,.0485,.0572,.0639,.0686,.0718,.0737,.0744,.074,.0726,.0702,.0669,.0626,.0574,.0512,.044,.0359,.0267,.0164,.0049,-.0079,-.0222,-.038,-.0555,-.0749],
+ chi:[.0904,.0985,.1065,.1142,.1214,.1277,.133,.1371,.1398,.1412,.1412,.1397,.1367,.1323,.1265,.1192,.1105,.1005,.0892,.0767,.0631,.0485,.0331,.0171,.0004]};
+
+function chart({left=44,right=24,top=40,bottom=60,yMin,yMax,tMin=0,tMax=120,yTicks,yLabel,tTicks=[0,24,48,72,96,120],xLabel='Follow-up (months)'}){
+  const g=el('g');stage.append(g);
+  const x=t=>left+(t-tMin)/(tMax-tMin)*(W-left-right),y=v=>H-bottom-(v-yMin)/(yMax-yMin)*(H-top-bottom);
+  for(const v of yTicks){g.append(el('line',{x1:left,x2:W-right,y1:y(v),y2:y(v),class:Math.abs(v)<1e-9?'zero':'grid'}));g.append(el('text',{x:left-10,y:y(v)+4,class:'tick end tab'},Math.round(v*100)));}
+  for(const t of tTicks)g.append(el('text',{x:x(t),y:H-bottom+20,class:'tick mid tab'},t));
+  if(xLabel)g.append(el('text',{x:(left+W-right)/2,y:H-bottom+40,class:'label mid'},xLabel));
+  g.append(el('text',{x:left,y:top-18,class:'label'},yLabel));
+  return{g,x,y};
+}
+
+/* Scene 1: one person, two potential paths, one observed. */
+function scene1(){
+  const r=rng(11),g=el('g');stage.append(g);
+  const x=t=>64+t/120*(W-88),axisY=H-62;
+  g.append(el('line',{x1:x(0),x2:x(120),y1:axisY,y2:axisY,class:'grid'}));
+  for(const t of [0,24,48,72,96,120]){g.append(el('line',{x1:x(t),x2:x(t),y1:axisY-4,y2:axisY+4,class:'grid'}));g.append(el('text',{x:x(t),y:axisY+24,class:'tick mid tab'},t));}
+  g.append(el('text',{x:(x(0)+x(120))/2,y:axisY+48,class:'label mid'},'Follow-up (months)'));
+  const rows=[{y:108,cls:'c1',mark:'treated',lab:'Received treatment',T:T1(.02,.449),text:'teal'},{y:220,cls:'c0',mark:'control',lab:'Unobserved alternative',T:T0(.02,.449),text:'muted'}];
+  rows.forEach((row,i)=>{
+    const rg=el('g',{class:i?'row ctrl':'row trt'});g.append(rg);
+    g.append(el('text',{x:24,y:row.y-58,class:`label ${row.text}`},row.lab));
+    person(rg,29,row.y,1.3,0,r,i?'':'treated');
+    rg.append(el('line',{x1:x(0),x2:x(120),y1:row.y,y2:row.y,class:'grid'}));
+    later(()=>drawPath(rg,sketch(line([x(0),row.y],[x(row.T),row.y]),{n:20,wobble:1.3,r}),`curve ${row.cls}`,1.4),300+i*500);
+    later(()=>{cross(rg,x(row.T),row.y,r,row.mark);const lab=el('text',{x:x(row.T),y:row.y+30,class:`label mid ${row.text} fade tab`},`event ≈ ${Math.round(row.T)} mo`);g.append(lab);on(lab);},1700+i*500);
+  });
+  later(()=>g.querySelector('.row.ctrl').classList.add('unobserved'),3300);
+  later(()=>{
+    const hg=el('g',{class:'fade'});g.append(hg);
+    rows.forEach(row=>hg.append(el('line',{x1:x(60),x2:x(60),y1:row.y-18,y2:row.y+14,class:'horizon'})));
+    on(hg);
+  },4300);
+  $('scene-reading').innerHTML='<p><strong>Snapshot at 60 months.</strong> In this hypothetical pair, the person is alive under treatment and not alive under control. Only the treated path could enter their record.</p>';
+}
+
+/* Scene 2: a sample of forty, one observed path each, compared at one horizon. */
+function scene2(){
+  const r=rng(119),rs=rng(7),g=el('g');stage.append(g);
+  const columns=W<640?10:20,groupHeight=columns===10?196:152,people=[];
+  for(let i=0;i<40;i++){const gi=i<20?0:1,G=TOY.groups[gi];const A=r()<G.p?1:0,u=r(),T=A?T1(G.h,u):T0(G.h,u);people.push({g:gi,A,T,alive:T>36,x:24+((i%20)%columns+.5)*(W-48)/columns,y:gi*groupHeight+116+Math.floor((i%20)/columns)*44});}
+  TOY.groups.forEach((G,gi)=>{const y=gi*groupHeight;
+    g.append(el('text',{x:24,y:y+26,class:'label'},G.name));
+    g.append(el('text',{x:24,y:y+48,class:'tick'},`Baseline hazard: ${G.h.toFixed(3)} / month`));
+    g.append(el('text',{x:24,y:y+70,class:'tick'},`${Math.round(G.p*100)}% treatment chance`));
+  });
+  people.forEach((p,i)=>{p.node=person(g,p.x,p.y,1,i%9,rs,'fade');later(()=>on(p.node),i*22);});
+  const m=f=>{const s=people.filter(f);return s.length?s.filter(p=>p.alive).length/s.length:NaN;};
+  const naive=m(p=>p.A===1)-m(p=>p.A===0);
+  const adj=TOY.groups.reduce((s,G,gi)=>s+G.w*(m(p=>p.g===gi&&p.A===1)-m(p=>p.g===gi&&p.A===0)),0);
+  $('scene-reading').innerHTML=`<ul class="chart-legend" aria-label="Study key"><li><span class="key" aria-hidden="true"></span>Treatment received</li><li><span class="key control" aria-hidden="true"></span>Control received</li></ul><p class="clock" id="study-clock">Month 0</p><p>Faded, dashed figures have had the event. This illustration has no censoring.</p><dl class="model-values fade" id="study-values"><div><dt>Unadjusted</dt><dd class="rust">${pp(naive)}</dd></div><div><dt>Standardised</dt><dd class="teal">${pp(adj)}</dd></div><div><dt>Model truth</dt><dd>${pp(pop(delta,36))}</dd></div></dl><p>Three comparisons at 36 months, in percentage points. Standardisation gives the two risk groups equal weight.</p>`;
+  later(()=>people.forEach(p=>{if(p.A)p.node.classList.add('treated');}),1400);
+  later(()=>{const cursor=$('study-clock');sweep(2200,f=>{const t=f*36;cursor.textContent=`Month ${Math.round(t)}`;people.forEach(p=>{if(p.T<=t)p.node.classList.add('event');});},()=>on($('study-values')));},2400);
+}
+
+/* Scene 3: survival under each arm through time, and the difference between them. */
+function scene3(){
+  const top=chart({top:42,bottom:H-204,yMin:0,yMax:1,yTicks:[0,.5,1],yLabel:'Survival probability (%)',tTicks:[],xLabel:false});
+  const bot=chart({top:274,bottom:60,yMin:-.06,yMax:.2,yTicks:[-.05,0,.1,.2],yLabel:'Survival difference (pp)'});
+  $('scene-reading').innerHTML='<ul class="chart-legend" aria-label="Survival curve key"><li><span class="key" aria-hidden="true"></span>Under treatment</li><li><span class="key control" aria-hidden="true"></span>Under control</li></ul><p>The lower curve is treatment survival minus control survival, at the same time point.</p><p class="clock" id="time-reading">Month 0: no survival difference.</p>';
+  const s0=TS.map(t=>[top.x(t),top.y(pop(S0,t))]),s1=TS.map(t=>[top.x(t),top.y(pop(S1,t))]);
+  const gapPos=el('polygon',{class:'gap-pos'}),gapNeg=el('polygon',{class:'gap-neg'});top.g.append(gapPos,gapNeg);
+  later(()=>{drawPath(top.g,poly(s0),'curve c0',2.2);drawPath(top.g,poly(s1),'curve c1',2.2);},200);
+  later(()=>{
+    const vtop=el('line',{class:'horizon',y1:top.y(1),y2:top.y(0)}),vbot=el('line',{class:'horizon',y1:bot.y(.2),y2:bot.y(-.06)}),d1=el('circle',{r:4,class:'dot c1'}),d0=el('circle',{r:4,class:'dot c0'}),dpath=el('path',{class:'curve c1'}),read=$('time-reading');
+    bot.g.append(dpath);stage.append(vtop,vbot,d1,d0);
+    sweep(4200,f=>{const t=f*120,pts=TS.filter(v=>v<=t);if(pts.at(-1)!==t)pts.push(t);
+      for(const vline of [vtop,vbot]){vline.setAttribute('x1',top.x(t));vline.setAttribute('x2',top.x(t));}
+      d1.setAttribute('cx',top.x(t));d1.setAttribute('cy',top.y(pop(S1,t)));d0.setAttribute('cx',top.x(t));d0.setAttribute('cy',top.y(pop(S0,t)));
+      read.textContent=`At ${Math.round(t)} months: ${pp(pop(delta,t))} survival difference.`;
+      dpath.setAttribute('d',poly(pts.map(v=>[bot.x(v),bot.y(pop(delta,v))])));
+      const pos=pts.filter(v=>pop(delta,v)>=0),neg=pts.filter(v=>pop(delta,v)<0);
+      const ring=(vs)=>vs.length>1?[...vs.map(v=>[top.x(v),top.y(pop(S1,v))]),...vs.slice().reverse().map(v=>[top.x(v),top.y(pop(S0,v))])].map(p=>p.map(c=>c.toFixed(1)).join(',')).join(' '):'';
+      gapPos.setAttribute('points',ring(pos));if(neg.length)gapNeg.setAttribute('points',ring([pos.at(-1),...neg].filter(v=>v!=null)));
+    },()=>{
+      let peak=0;for(const t of TS)if(pop(delta,t)>pop(delta,peak))peak=t;
+      const pk=el('g',{class:'fade'});bot.g.append(pk);pk.append(el('circle',{cx:bot.x(peak),cy:bot.y(pop(delta,peak)),r:4,class:'dot c1'}));
+      read.textContent+=` The model’s largest gap is near ${peak} months; it later reverses.`;
+      on(pk);
+    });
+  },2600);
+}
+
+/* Scene 4: the exported estimates, then the CAST trajectory through them. */
+let exportCursor=null,exportChart=null;
+function updateExportValues(){
+  const i=Number($('export-horizon').value);
+  for(const [id,values] of [['forest',REAL.ate],['cast',REAL.cast],['truth',REAL.truth],['raw',REAL.naive]])$('value-'+id).textContent=pp(values[i]);
+  if(exportCursor&&exportChart){const x=exportChart.x(REAL.h[i]);exportCursor.setAttribute('x1',x);exportCursor.setAttribute('x2',x);}
+}
+function scene4(){
+  const c=chart({left:44,right:24,top:40,bottom:60,yMin:-.1,yMax:.35,yTicks:[-.1,0,.1,.2,.3],yLabel:'Survival difference (pp)',tMin:12,tMax:108,tTicks:REAL.h});
+  exportChart=c;
+  const band=el('path',{d:poly(REAL.ct.map((t,i)=>[c.x(t),c.y(REAL.clo[i])]))+REAL.ct.map((t,i)=>[c.x(t),c.y(REAL.chi[i])]).reverse().map(p=>`L${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('')+'Z',class:'band fade'});
+  c.g.append(band);
+  REAL.h.forEach((t,i)=>later(()=>{const pg=el('g',{class:'fade'});c.g.append(pg);pg.append(el('line',{x1:c.x(t),x2:c.x(t),y1:c.y(REAL.lo[i]),y2:c.y(REAL.hi[i]),class:'whisker'}));for(const v of [REAL.lo[i],REAL.hi[i]])pg.append(el('line',{x1:c.x(t)-4,x2:c.x(t)+4,y1:c.y(v),y2:c.y(v),class:'whisker'}));pg.append(el('circle',{cx:c.x(t),cy:c.y(REAL.ate[i]),r:5,class:'csf'}));on(pg);},300+i*380));
+  later(()=>{REAL.h.forEach((t,i)=>{const d=el('path',{d:`M${c.x(t)},${c.y(REAL.truth[i])-5} l5,5 l-5,5 l-5,-5 Z`,class:'truth fade'});c.g.append(d);later(()=>on(d),i*120);});},2500);
+  later(()=>{on(band);drawPath(c.g,poly(REAL.ct.map((t,i)=>[c.x(t),c.y(REAL.cfit[i])])),'curve cast',1.6);},3400);
+  later(()=>{drawPath(c.g,poly(REAL.h.map((t,i)=>[c.x(t),c.y(REAL.naive[i])])),'curve naive',1.2);},4800);
+  exportCursor=el('line',{y1:c.y(.35),y2:c.y(-.1),class:'horizon'});c.g.append(exportCursor);
+  updateExportValues();
+}
+
+/* Scene 5: one shared multiplier, different absolute benefits by baseline risk. */
+function scene5(){
+  const c=chart({yMin:-.06,yMax:.3,yTicks:[-.05,0,.1,.2,.3],yLabel:'Survival difference (pp)'});
+  const curves=[{f:t=>delta(.02,t),cls:'curve c1'},{f:t=>delta(.006,t),cls:'curve thin'},{f:t=>pop(delta,t),cls:'curve cpop'}];
+  $('scene-reading').innerHTML=`<ul class="chart-legend" aria-label="Risk group key"><li><span class="key" aria-hidden="true"></span>Higher baseline risk</li><li><span class="key lower" aria-hidden="true"></span>Lower baseline risk</li><li><span class="key population" aria-hidden="true"></span>Population average</li></ul><p><strong>Snapshot at 36 months.</strong> Both risk groups share the same hazard multiplier.</p><dl class="model-values"><div><dt>Higher risk</dt><dd>${pp(delta(.02,36))}</dd></div><div><dt>Lower risk</dt><dd>${pp(delta(.006,36))}</dd></div><div><dt>Population</dt><dd>${pp(pop(delta,36))}</dd></div></dl><p>Absolute survival benefits in percentage points.</p>`;
+  curves.forEach((cv,i)=>later(()=>drawPath(c.g,poly(TS.map(t=>[c.x(t),c.y(cv.f(t))])),cv.cls,1.8),300+i*900));
+  later(()=>{const hg=el('g',{class:'fade'});c.g.append(hg);hg.append(el('line',{x1:c.x(36),x2:c.x(36),y1:c.y(.3),y2:c.y(-.06),class:'horizon'}));
+    on(hg);},3400);
+}
+
+const SCENES=[
+  {short:'One person',title:'A person’s alternative outcome remains unobserved.',badge:'Illustrative model',data:false,dur:7000,build:scene1,
+   text:'For a person who receives treatment, we may observe their treated outcome. We never observe their outcome under the alternative choice. Censoring can hide even the treated outcome. The two paths shown here are hypothetical; their difference at 60 months cannot be observed for one person.',
+   note:'The simulation answer key averages conditional survival-probability contrasts over simulated profiles. It does not contain paired realised potential outcomes.'},
+  {short:'A study',title:'A study estimates averages from observed paths.',badge:'Illustrative model · sample of 40',data:false,dur:9000,build:scene2,
+   text:'A study can estimate an average contrast at the same time point. Here healthier people receive treatment more often, so the raw gap mixes prognosis with treatment effect. Compare like with like, then average. A causal interpretation still needs assumptions about treatment assignment, and this small sample has sampling error.',
+   note:'This is one fixed draw of 40 people. The comparison assumes exchangeability within risk groups, treatment positivity and consistency. Actual survival analyses also need assumptions about censoring and follow-up support.'},
+  {short:'Through time',title:'Treatment benefit changes with follow-up time.',badge:'Illustrative model',data:false,dur:8500,build:scene3,
+   text:'In this model, the survival advantage grows and then reverses as follow-up continues. Each contrast refers to a particular horizon after a single baseline treatment decision. Decisions about stopping or switching treatment would require a different analysis.',
+   note:'These are model survival probabilities and their difference in percentage points, not a hazard ratio or extra months of life. The two baseline-risk groups receive equal weight.'},
+  {short:'Estimates and CAST',title:'CAST summarizes estimates from several horizons.',badge:'Exported simulation results',data:true,dur:8500,build:scene4,
+   text:'In this simulated cohort of 2,000 people, CSF estimates the average effect at five horizons and CAST fits a quadratic curve to those estimates. Comparing the curve with the known truth shows a discrepancy at 36 months. Values between horizons depend on the fitted model.',
+   note:'The shaded region is a 95% pointwise band from patient-aligned influence scores and the fitted quadratic, not a simultaneous band across time. It does not account for GLS/WLS selection or quadratic misspecification. Causal interpretation and uncertainty depend on the identification and estimation assumptions; this illustration does not establish coverage.'},
+  {short:'For whom',title:'Survival benefit can differ between groups.',badge:'Illustrative model',data:false,dur:7500,build:scene5,
+   text:'The population curve averages the effects in two risk groups. Compare their benefits at the same horizon and see how each changes during follow-up. Estimating how different doses affect these groups would extend the question beyond the binary treatment comparison shown here.',
+   note:'Both risk groups share the same hazard multiplier in this illustrative model, yet their absolute survival benefits differ. The exported simulation results contain cohort averages; these subgroup trajectories come from the illustrative model. A causal forest can estimate profile averages under assumptions; it cannot reveal one person’s missing alternative.'}
+];
+
+let current=0,playing=false,playTimer=null;
+const steps=$('steps');
+SCENES.forEach((sc,i)=>{const li=document.createElement('li');const b=document.createElement('button');b.type='button';b.innerHTML=`<span>${i+1}</span>${sc.short}`;b.addEventListener('click',()=>{stop();show(i);});li.append(b);steps.append(li);});
+function drawScene(){
+  clearStage();exportCursor=null;exportChart=null;
+  // One SVG unit per CSS pixel in every scene; labels never shrink with the whole drawing.
+  W=Math.max(240,Math.round(stage.clientWidth));
+  H=current===0?360:current===1?(W<640?412:324):current===2?460:Math.min(380,Math.max(330,Math.round(W*.6)));
+  stage.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  $('scene-reading').replaceChildren();
+  SCENES[current].build();
+}
+function show(i){current=(i+SCENES.length)%SCENES.length;const sc=SCENES[current];
+  $('scene-title').textContent=sc.title;$('scene-text').textContent=sc.text;$('scene-note').textContent=sc.note;
+  $('export-evidence').hidden=current!==3;
+  const badge=$('badge');badge.textContent=sc.badge;badge.className=`badge ${sc.data?'data':''}`;
+  steps.querySelectorAll('button').forEach((b,k)=>b.setAttribute('aria-current',k===current?'step':'false'));
+  $('status').textContent=`Scene ${current+1} of ${SCENES.length}: ${sc.title}`;
+  drawScene();if(playing)schedule();}
+function schedule(){clearTimeout(playTimer);playTimer=setTimeout(()=>show(current+1),reduced.matches?6000:SCENES[current].dur);}
+function stop(){playing=false;clearTimeout(playTimer);$('play').textContent='Play';$('play').setAttribute('aria-pressed','false');}
+$('play').addEventListener('click',()=>{if(playing){stop();return;}playing=true;$('play').textContent='Pause';$('play').setAttribute('aria-pressed','true');schedule();});
+$('prev').addEventListener('click',()=>{stop();show(current-1);});
+$('next').addEventListener('click',()=>{stop();show(current+1);});
+$('export-horizon').addEventListener('change',()=>{stop();updateExportValues();});
+addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select'))return;if(e.key==='ArrowRight'){stop();show(current+1);}if(e.key==='ArrowLeft'){stop();show(current-1);}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+show(0);
+let previousWidth=Math.round(stage.clientWidth);
+new ResizeObserver(()=>{const width=Math.round(stage.clientWidth);if(width===previousWidth)return;previousWidth=width;drawScene();}).observe(stage.parentElement);
+})();
+</script>
+</body>
+</html>
