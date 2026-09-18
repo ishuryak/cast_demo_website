@@ -71,3 +71,28 @@ cast-lab-output/
 
 # Local agent consultation prompts, responses, and diagnostics.
 /design/collaboration-runs/
+
+# Accidentally committed in db72206 (2026-09-18) and untracked again the same
+# day. Each is kept on disk and kept OUT of the tree; see development/
+# 2026_09_18_repository-hygiene-and-claim-parity.md for what each one is.
+#
+# A nested WORKING COPY of this same project, carrying its own .git. It was
+# committed as a gitlink (mode 160000) with no .gitmodules, so a fresh clone got
+# a directory git called a submodule with no URL to fetch it from. It also
+# doubles every file for any tool that walks the tree: six of the seven
+# stale-constant sweep warnings resolved into it rather than into real code.
+/cast_demo_website/
+
+# Superseded duplicates of files that are tracked at their real paths. Two were
+# byte-identical to their originals; two had drifted, which is the whole problem
+# with a second copy. Backups are not a version-control layer.
+/.backup_untracked/
+
+# Throwaway console.log scratch from debugging a path-resolution problem. Deleted
+# rather than ignored -- these two names were real files, and the pattern is here
+# so the next pair does not land in tests/ looking like a suite.
+tests/debug_path*.mjs
+
+# Per-machine Claude Code permission grants. Committing it hands every clone a
+# blanket allow-list for git add / git commit / git checkout / gh pr.
+.claude/settings.local.json

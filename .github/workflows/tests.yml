@@ -1,13 +1,19 @@
 # Run the site-facing test suites on every push and pull request.
 #
-# Scope is deliberate: the five node suites need no R and no pipeline run, so
+# Scope is deliberate: the nine node suites need no R and no pipeline run, so
 # they execute in seconds on a stock runner and cover the failures that have
 # actually broken this site before -- the front end and the exported
-# scenarios.json drifting apart, and CSS that silently refuses to size an
-# element the markup sizes. The five R suites (cast_core math, export labels,
-# fit contract, source guards, sim provenance) need R plus grf, which would turn
-# a ten-second job into a multi-minute one; run those locally with
-# ./tests/run_tests.sh, which runs all ten.
+# scenarios.json drifting apart, CSS that silently refuses to size an element the
+# markup sizes, and prose quoting a number the export no longer contains. The
+# five R suites (cast_core math, export labels, fit contract, source guards, sim
+# provenance) need R plus grf, which would turn a ten-second job into a
+# multi-minute one; run those locally with ./tests/run_tests.sh, which runs all
+# fourteen.
+#
+# KNOWN GAP, stated rather than left to be discovered: because the R suites do
+# not run here, the CAST golden-value math is not covered by CI. A change to
+# R/cast_core.R that breaks it goes green on this workflow and is caught only by
+# a local ./tests/run_tests.sh.
 name: tests
 
 on:
@@ -43,6 +49,15 @@ jobs:
       - name: FIXES.md order (the evidence record matches its own claim)
         run: node tests/test_fixes_order.mjs
 
+      - name: Clinical page contract (units, coverage, acronyms, shared data)
+        run: node tests/test_clinical_contract.mjs docs/data/scenarios.json
+
+      - name: README claims (every quoted number recomputed from the export)
+        run: node tests/test_readme_claims.mjs docs/data/scenarios.json
+
+      - name: Repo hygiene (no gitlink, no backups or scratch in the tree)
+        run: node tests/test_repo_hygiene.mjs
+
       # The runner image ships Chrome; the suite skips cleanly if a future one
       # does not, so this step can never fail for the absence of a browser.
       - name: Viewport overflow (the page fits a phone, measured not screenshotted)
@@ -52,7 +67,9 @@ jobs:
         run: |
           set -euo pipefail
           for f in docs/index.html docs/app.js docs/style.css \
-                   docs/data/scenarios.json; do
+                   docs/data/scenarios.json \
+                   docs/clinical/index.html docs/clinical/app.js \
+                   docs/clinical/style.css; do
             test -s "$f" || { echo "::error::missing or empty: $f"; exit 1; }
           done
           # .nojekyll is legitimately EMPTY (its presence is the signal that

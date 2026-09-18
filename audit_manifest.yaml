@@ -17,6 +17,27 @@
 # N/A on the deliverable's nature, which is a permanent property of this project
 # and NOT a deferral on project stage.
 
+# 2026-09-18, ATTESTATION HASHES. Every sha256 in this file was recomputed on
+# this date. Two different problems were found and both are fixed above:
+#
+#   * FOUR values were not sha256 digests at all. They were 63 or 65 hex
+#     characters in hand-typed walking-nibble patterns
+#     (c2d3e4f5a6b7c8d9..., c3d4e5f6a7b8c9d0..., d4e5f6a7b8c9d0e1...,
+#     8a7b6c5d4e3f2a1b...), and the last of those stood as the report_sha256 of
+#     THREE different reports at once. They were never computed from anything,
+#     so the attestations carrying them bound nothing: the file they named could
+#     change freely and no check would notice, because no check compared them to
+#     a file. audit_gate.py reported one of them as merely "stale", which is the
+#     wrong diagnosis and the reason this went unseen.
+#   * FOUR were real digests that had gone stale, because README.md,
+#     docs/index.html, sim_provenance.yaml and constant_registry.yaml were all
+#     edited in the 2026-09-18 audit pass.
+#
+# tests/test_repo_hygiene.mjs now recomputes every hash in this file on each run,
+# so neither form can return silently. Re-taking a hash is only honest when the
+# finding it attests to still holds against the new content; where an edit was
+# prose-only, that is recorded beside the entry.
+
 project: cast_demo_website
 generated_on: 2026-09-18
 
@@ -95,10 +116,10 @@ auditors:
         - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
         - {path: R/03_export.R, sha256: sha256:e42988642d9616705eb012bbf046f4af2dab6f2cb1084ac58b645fad398cb6b6}
         - {path: R/scenario_labels.R, sha256: sha256:f38c9a3e9702a13d736b24a4f6b63663347ebae166e1e0618bb39ae86c10efa1}
-        - {path: README.md, sha256: sha256:0cab925b55775c681f7edc4fd2caf31a5aa64acbefecce0d56f6bc64ae1b7393}
-        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: README.md, sha256: sha256:7947ff1644f5ce46655ea3c48ed083d6b8997ca83058407959562aae31455db8}
+        - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
       report: development/2026_08_25_public-release-audit.md
-      report_sha256: sha256:8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6
+      report_sha256: sha256:e2b73d8908bcf1e2698d39a87b2c55d06e294cbbb52adc6ae4b25a303441acec
       reviewed_on: 2026-08-26
       findings_count: 2
       core_rubric_confirmed: true
@@ -121,7 +142,7 @@ auditors:
         - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
         - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
         - {path: R/03_export.R, sha256: sha256:e42988642d9616705eb012bbf046f4af2dab6f2cb1084ac58b645fad398cb6b6}
-        - {path: R/04_replicate_seeds.R, sha256: sha256:c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d}
+        - {path: R/04_replicate_seeds.R, sha256: sha256:1deed923fd60c1e41febb38d89af554abef1e3853ec2506d38c2cd2930f07a01}
 
   manuscript-audit:
     status: RUN
@@ -138,17 +159,17 @@ auditors:
       ledger: evidence_ledger.yaml
       trace: docs/data/scenarios.json
       inputs:
-        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
         - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
         - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
         - {path: evidence_ledger.yaml, sha256: sha256:7349672b3fb7445a9f8fb30899e85dcecbbc88d0b8a61590d02d0a42aa218d8d}
     completion:
       inputs:
-        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
         - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
         - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
       report: development/2026_08_25_public-release-audit.md
-      report_sha256: sha256:8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6
+      report_sha256: sha256:e2b73d8908bcf1e2698d39a87b2c55d06e294cbbb52adc6ae4b25a303441acec
       reviewed_on: 2026-08-26
       findings_count: 0
       core_rubric_confirmed: true
@@ -182,7 +203,7 @@ auditors:
         - {path: evidence_ledger.yaml, sha256: sha256:7349672b3fb7445a9f8fb30899e85dcecbbc88d0b8a61590d02d0a42aa218d8d}
         - {path: References/README.md, sha256: sha256:fa5e888bec4d8bf6847f3df0df92e5b3eb27addfb86c20c6b8ef707e57b837dc}
       report: development/2026_08_25_public-release-audit.md
-      report_sha256: sha256:8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6
+      report_sha256: sha256:e2b73d8908bcf1e2698d39a87b2c55d06e294cbbb52adc6ae4b25a303441acec
       reviewed_on: 2026-08-26
       findings_count: 0
       core_rubric_confirmed: true
@@ -209,7 +230,7 @@ auditors:
       run_dir: output            # no trace emitted here yet; see justification
       inputs:
         - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
-        - {path: sim_provenance.yaml, sha256: sha256:6c7b3805925e064d97144ddf17cfd0e5244e1ada0f74f1b0ad12cfe47ae0ea2a}
+        - {path: sim_provenance.yaml, sha256: sha256:40c47a75facf55d7192f463b0dc8980366a3648510c77d917e1cd4ade1a2d70d}
 
   stale-constant-audit:
     status: RUN
@@ -227,7 +248,7 @@ auditors:
       project: "."
       registry: constant_registry.yaml
       inputs:
-        - {path: constant_registry.yaml, sha256: sha256:e08fb6dfd0080000bc63b48843f4150689711adc511d6269d33e84f563f341e3}
+        - {path: constant_registry.yaml, sha256: sha256:807a6f06b5128651aea1d2e1aef43584b0c001b6c6100687b359086b482447bf}
         - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
         - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
 
@@ -265,16 +286,16 @@ auditors:
       document: docs/index.html
       config: tests/test_intro_contract.mjs
       inputs:
-        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
         - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
-        - {path: tests/test_intro_contract.mjs, sha256: sha256:c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d}
+        - {path: tests/test_intro_contract.mjs, sha256: sha256:263b46bc6e38e2499b386ef7b28027206b19ac1699a20945898c1085ec4a72a0}
     completion:
       inputs:
-        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
         - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
-        - {path: tests/test_intro_contract.mjs, sha256: sha256:c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d}
+        - {path: tests/test_intro_contract.mjs, sha256: sha256:263b46bc6e38e2499b386ef7b28027206b19ac1699a20945898c1085ec4a72a0}
       report: development/2026_08_29_reader-first-introduction.md
-      report_sha256: sha256:d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e
+      report_sha256: sha256:d3c8c10e9d09f7081fe259500c353fb66f3bdef61c150c70e1e64a6eb2482a8f
       reviewed_on: 2026-08-29
       findings_count: 2
       core_rubric_confirmed: true
@@ -298,11 +319,22 @@ auditors:
         - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
         - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
         - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
-        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
-      report: development/2026_08_25_oracle-and-evalue-audit.md
-      report_sha256: sha256:d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7
-      reviewed_on: 2026-08-25
-      findings_count: 3
+        - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
+      # Re-reviewed 2026-09-18 against the CURRENT R sources, not a hash re-take.
+      # Findings: the CAST band's target is the quadratic projection of ATE(t)
+      # under Sigma-hat with no lack-of-fit term, so it is not a band for ATE(t)
+      # where the truth is not quadratic; the E-value is anchored to the crude
+      # control-arm KM while combined with the AIPW-adjusted ATE, which biases it
+      # toward looking robust, and no CI-limit E-value is computed; the GLS/WLS
+      # branch is selected on the same five estimates the sandwich then treats as
+      # fixed; and no coverage study exists. The band-target finding is now
+      # disclosed in the README, the coverage claim is corrected and pinned by
+      # tests/test_readme_claims.mjs, and the two E-value items are recorded as
+      # open work because fixing them re-runs the pipeline.
+      report: development/2026_09_18_repository-hygiene-and-claim-parity.md
+      report_sha256: sha256:bc776d63f5fb21ed7f1d1bc7e05a13cdd872c4b03cd110df25ccef3a6687da09
+      reviewed_on: 2026-09-18
+      findings_count: 4
       core_rubric_confirmed: true
 
   radiation-epidemiology-review:
@@ -327,10 +359,26 @@ auditors:
       inputs:
         - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
         - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
-      report: development/2026_08_25_oracle-and-evalue-audit.md
-      report_sha256: sha256:d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7
-      reviewed_on: 2026-08-25
-      findings_count: 1
+      # Re-reviewed 2026-09-18 against the CURRENT R sources, not a hash re-take.
+      # Findings: `tune.parameters` never reaches the causal survival forests,
+      # because grf 2.5.0 forwards it only to the propensity forest it fits when
+      # W.hat is NULL and this pipeline supplies W.hat, so CSF runs at defaults
+      # in all 24 scenarios while the propensity and the RSF grid are tuned;
+      # hyperparameters are re-tuned per scenario, so the confounding sweep is
+      # confounded with retuning; the RSF grid is selected by out-of-bag
+      # concordance, a ranking metric, while the estimand is a difference of
+      # absolute survival probabilities; and nothing measures calibration. The
+      # tuning finding is corrected in the README and pinned by
+      # tests/test_readme_claims.mjs. The rest is recorded as open work because
+      # fixing it re-runs the pipeline.
+      #
+      # One claim from that review was checked and REJECTED: that CSF is untuned
+      # because DiceKriging is a missing grf `Suggests`. DiceKriging is a hard
+      # Imports of grf 2.5.0, so install.packages("grf") pulls it.
+      report: development/2026_09_18_repository-hygiene-and-claim-parity.md
+      report_sha256: sha256:bc776d63f5fb21ed7f1d1bc7e05a13cdd872c4b03cd110df25ccef3a6687da09
+      reviewed_on: 2026-09-18
+      findings_count: 4
       core_rubric_confirmed: true
 
   subagent-scan:

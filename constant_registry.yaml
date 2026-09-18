@@ -29,6 +29,13 @@ exclude_paths:
   - "docs/data/**"         # exported results, not source
   - "development/**"       # the committed development record quotes old values
   - "FIXES.md"             # the evidence record quotes the values it retired
+  # A nested WORKING COPY of this project that sat at cast_demo_website/ with its
+  # own .git. It was untracked on 2026-09-18 and gitignored, but this sweep walks
+  # the FILESYSTEM rather than the git tree, so ignoring it does not stop it being
+  # read. Six of the seven sweep warnings that day were this directory's own files
+  # reported as if they were a second arm of the analysis. Excluded here so the
+  # sweep reports real code; delete the directory and this line becomes a no-op.
+  - "cast_demo_website/**"
 
 constants:
 
@@ -41,8 +48,11 @@ constants:
       which the point fit uses GLS (weight = Sigma^-1) rather than falling back
       to WLS. Above roughly 100 the inverse of Sigma amplifies estimation noise
       in the covariance more than correct weighting gains. On the
-      survival-probability scale the realized condition numbers are single
-      digits, so GLS engages in all 24 scenarios; on the cumulative-RMST scale
+      survival-probability scale the realized condition numbers run from 8.1 to
+      17.6 across the 24 shipped scenarios (docs/data/scenarios.json,
+      shrinkage.cond_after), far below the threshold, so GLS engages in all 24;
+      this text read "are single digits" until 2026-09-18, which was true of an
+      earlier export and not of the current one. On the cumulative-RMST scale
       of the production pipeline the horizons are near-collinear and the same
       threshold sends the fit to WLS. Depends on horizon spacing: horizons
       closer together than the current 24 months would raise the condition

@@ -13,6 +13,205 @@ Entries are newest first.
 
 ---
 
+## 2026-09-18 (audit) · Repository hygiene, and four claims the data contradicted
+
+**Moves published numbers: no.** Every estimate in `docs/data/scenarios.json` is
+byte-identical to the previous commit. No R script is edited and the pipeline is
+not re-run. What changes is the tracked file list, the prose that describes those
+estimates, one card on the clinical page, and the tests. Several of the claims
+corrected below were *wrong about* the published numbers, which is why correcting
+them moves none of them.
+
+The full audit, the findings investigated and dismissed, the two boundaries
+applied to "fix everything", and the open work this pass deliberately did not do
+are in
+[`development/2026_09_18_repository-hygiene-and-claim-parity.md`](development/2026_09_18_repository-hygiene-and-claim-parity.md).
+
+### 30. Four attestation hashes in the audit manifest were never computed
+
+- **What was wrong.** `audit_manifest.yaml` binds each recorded auditor verdict
+  to a sha256 of the files it was reached against. Four of those values were not
+  digests of anything.
+- **The proof it was real.** They are 63 or 65 hex characters, where a sha256 is
+  64, and each is a hand-typed walking-nibble sequence:
+  `c2d3e4f5a6b7c8d9...` on `R/04_replicate_seeds.R`,
+  `c3d4e5f6a7b8c9d0...` on `tests/test_intro_contract.mjs`,
+  `d4e5f6a7b8c9d0e1...` on the reader-first report, and
+  `8a7b6c5d4e3f2a1b...` standing as the `report_sha256` of **three different
+  reports at once** (`paper-code-audit`, `manuscript-audit`, `evidence-audit`).
+  One value cannot be the digest of three different files. An attestation exists
+  to bind a verdict to the bytes it was reached against, so a hash nobody
+  computed binds nothing: the attested file can change freely and no check
+  notices, because no check ever compared it. `audit_gate.py` reported one of
+  them as "stale", which is a milder and wrong diagnosis, and that is why the
+  fabrication survived every green run since.
+- **The fix.** All 51 hashes in the manifest recomputed from their files. Four
+  were fabricated as above and four more had genuinely gone stale, because
+  `README.md`, `docs/index.html`, `sim_provenance.yaml` and
+  `constant_registry.yaml` were all edited in this pass. The manifest header now
+  records both findings.
+- **The test that now pins it.** `tests/test_repo_hygiene.mjs` section 4
+  recomputes every hash in the manifest on every run and reports the two failure
+  modes separately, since they mean different things: MALFORMED (never a digest)
+  and STALE (was one, file has changed). **Confirmed to fail in both modes**:
+  restoring one 63-character value reports MALFORMED, and appending a line to
+  `README.md` reports STALE.
+- **Verification.** `node tests/test_repo_hygiene.mjs` on 2026-09-18: PASS,
+  0 failures, 51 attestation hashes recomputed.
+
+### 31. The tree carried a broken submodule, two backups and a scratch pair
+
+- **What was wrong.** Commit `db72206`, message "Fix Windows path resolution in
+  test files; update audit manifest", also committed four things it did not
+  mention: `cast_demo_website` as a gitlink, `.backup_untracked/`,
+  `tests/debug_path.mjs` and `debug_path2.mjs`, and `.claude/settings.local.json`.
+- **The proof it was real.** `git ls-files -s cast_demo_website` returns
+  `160000 68a22b3ea1bafa7f86e6cbbbc3e03ee6ea83f7f4 0` and no `.gitmodules` exists,
+  so a fresh clone gets a directory git calls a submodule with no URL to fetch it
+  from. The gitlink points at `68a22b3`, a commit in this same repository. The
+  nested copy also doubles the tree: six of the seven `stale_constant_audit.py`
+  sweep warnings resolved into `cast_demo_website/...` rather than into real code.
+  The drifted backup of the viewport test cites
+  `development/2026_08_27_everest-yang-feedback.md` where the tracked file cites
+  `2026_08_27_site-review-comments.md`, re-introducing a misattribution this
+  repository had already corrected.
+- **The fix.** All four untracked, the two scratch files deleted from disk, and
+  each path added to `.gitignore` so `git add -A` cannot return it. `db72206` is
+  the tip of `origin/everest-yang-review`, so it is published and no history was
+  rewritten. The blobs stay reachable behind that commit. None is patient data or
+  a paywalled PDF.
+- **The test that now pins it.** `tests/test_repo_hygiene.mjs`, which checks the
+  gitlink *mode* rather than the one name, and checks both that each path is
+  untracked and that it is ignored. **Confirmed to fail against the unfixed tree**:
+  run in a worktree at `db72206` it reports 9 failures.
+- **Verification.** `node tests/test_repo_hygiene.mjs` on 2026-09-18: PASS,
+  0 failures.
+
+### 32. The README said CSF is tuned; grf ignores the argument
+
+- **What was wrong.** "On a full run all forests are tuned ... CSF
+  (`grf::causal_survival_forest`) use grf's built-in `tune.parameters = "all"`".
+  The causal survival forests run at grf defaults in all 24 scenarios.
+- **The proof it was real.** Deparsing the installed grf 2.5.0,
+  `tune.parameters` is referenced in exactly two places inside
+  `causal_survival_forest`: its signature default, and one line inside
+  `if (is.null(W.hat))` forwarding it to the propensity forest grf fits for
+  itself. `R/02_fit_methods.R:218` supplies `W.hat`, so that branch never runs,
+  and the nuisance survival and censoring forests never receive the argument
+  either. No error and no warning is emitted. The untracked clinical page had
+  this right while the tracked README had it backwards.
+- **The fix.** The tuning section now states which of the three tuned things are
+  tuned (the propensity and the RSF hand grid) and that CSF is not, with the
+  mechanism. Two other places reading "all forests tuned" were corrected to name
+  `DEMO_TUNE=all` instead.
+- **The test that now pins it.** `tests/test_readme_claims.mjs` asserts the
+  README records that CSF runs untuned, and separately that the CSF call site
+  still supplies `W.hat`, since the claim is only true while it does.
+  **Confirmed to fail against the unfixed README**: 2 failures at `db72206`.
+- **Verification.** `node tests/test_readme_claims.mjs` on 2026-09-18: PASS,
+  0 failures.
+
+### 33. The coverage claim quoted the easy corner of the grid
+
+- **What was wrong.** "Over the Γ = 0 panels with γ ≤ 1 the CSF interval covers
+  the truth at 28 of 30 horizons, which is what nominal coverage looks like."
+- **The proof it was real.** The count is right and the framing is not. Those 30
+  horizons are six cohorts, since the five horizons within a panel come from one
+  draw and move together. Recomputed from the shipped `scenarios.json`, CSF
+  intervals contain the truth at 44 of 120 across the grid and the CAST band at
+  41 of 120, and at Γ = 1.5 both are 0 of 40. The clinical page already printed
+  41/120 and 0/40 on its face while the README said coverage looked nominal.
+- **The fix.** A sixth numbered item in *How to read the results honestly* giving
+  the whole-grid numbers, stating the effective replicate count, and saying
+  plainly that no coverage study exists and where one would go.
+- **The test that now pins it.** `tests/test_readme_claims.mjs` recomputes all
+  four tallies and compares them to the numbers in the prose. **Confirmed to fail
+  twice over**: 4 failures against the `db72206` README, and 2 against a mutated
+  export whose CAST bands were widened threefold.
+- **Verification.** As entry 32.
+
+### 34. The clinical page showed the hidden-confounder shift with the sign reversed
+
+- **What was wrong.** The card read "refitting the same model *with* the hidden
+  factor moves the estimate by +16.4 patients per 100" when the refit moves it
+  *down* by that amount.
+- **The proof it was real.** `robustness.shift` is `ate_omitU - ate_withU`
+  (`R/02_fit_methods.R:284`), so the move caused by adding the factor is
+  `-shift`. At plateau/γ=0/Γ=1.5, h=60: `ate_omitU` 0.3433, `ate_withU` 0.1795.
+  Every Γ > 0 panel has a positive shift, so the direction was wrong on all 16.
+  The parent page prints both endpoints, so a reader can recover the direction
+  there. This page printed only the signed shift.
+- **The fix.** The card now prints both endpoints and the signed move, as the
+  parent does. Two other clinical-page defects were fixed in the same pass: the
+  balance card claimed smoking "stays near zero however strong the confounding"
+  while its own bar turns red at `|SMD|` 0.112 and 0.102, and three comments
+  described bar scaling "against a shared scale rather than the worst method"
+  when the code scales to the worst method.
+- **The test that now pins it.** `tests/test_clinical_contract.mjs` parses the
+  signed move out of the rendered card and compares it to
+  `100 * (ate_withU - ate_omitU)`, so it pins the number a reader sees. The
+  smoking claim's own stated count is recomputed from the data. **Confirmed to
+  fail against the original page**: 18 failures. **And mutation-tested**:
+  re-inverting the sign while keeping the new wording produces 16 failures, and
+  changing the bar scaling to a fixed denominator produces 23.
+- **Verification.** `node tests/test_clinical_contract.mjs docs/data/scenarios.json`
+  on 2026-09-18: PASS.
+
+### 35. Two assertions in the clinical suite could not fail, and the viewport suite was flaky
+
+- **What was wrong.** `barWidthWins > 0` counted panels whose widest bar is at
+  least 95%, and the widest bar is exactly 100 by construction. Its message
+  described cap logic the code comments say was removed.
+  `Math.min(...ratios) === 1` compared the best row to itself. Separately, the
+  viewport suite failed intermittently with "the harness produced no
+  measurement", on a step that gates every push and pull request.
+- **The proof it was real.** The bar scaling is `100 * v / top` with
+  `top = max(v)`, so the maximum width is 100 on every panel and the first
+  assertion is unconditionally true. The viewport suite failed 2 times in 5
+  measured runs, once inside `run_tests.sh` and once in four standalone runs.
+  The cause is two clocks: the harness left its JSON in a `<pre>` for
+  `--dump-dom`, which fires when `--virtual-time-budget` expires, and virtual
+  time compresses the harness's own `setTimeout` sleeps, so the dump could land
+  mid-measurement.
+- **The fix.** Both assertions replaced by a recomputation of every bar width
+  from the JSON. The viewport harness now POSTs its result to the server it was
+  loaded from and node waits for that POST, so the measurement reports when it is
+  finished rather than being sampled at a guessed moment.
+- **The test that now pins it.** The replacements are themselves the pins, and
+  both were mutation-tested (entry 34). The viewport suite's built-in negative
+  control, a deliberately 1600px-wide element, runs every time and was confirmed
+  to fire when the measurement is stubbed out.
+- **Verification.** 10 consecutive runs of `node tests/test_viewport_overflow.mjs`
+  on 2026-09-18: 10 passes, 0 failures, against 2 failures in 5 before the fix.
+
+### 36. Three claims about the shipped grid that the shipped grid contradicted
+
+- **What was wrong.** The README attributed CSF's residual bias to positivity
+  under strong confounding, framed the two RSF learners as "two different failure
+  modes", and `constant_registry.yaml` justified `gls_cond_max` with "realized
+  condition numbers are single digits". The clinical view was also undocumented
+  and unreachable: absent from the README layout tree, absent from the header
+  links, and with no link from `docs/index.html`.
+- **The proof it was real.** Recomputed from `scenarios.json`: on plateau at
+  Γ = 0, max |CSF bias| is 0.0505 at γ = 0 (no confounding, no positivity
+  problem) against 0.0700 at γ = 2, and 0.0234 at γ = 0.5, so it is not
+  monotone in γ. The RSF S-learner has the lower RMSE in 20 of 24 panels, and on
+  plateau/γ=0/Γ=0, which is random assignment, it is the worst method present
+  at 0.051 against naive 0.027. `shrinkage.cond_after` runs 8.1 to 17.6.
+- **The fix.** All three statements rewritten to what the data shows. The CAST
+  trajectory's larger-than-CSF RMSE in 9 of 24 panels, 7 on the reversal, is now
+  stated alongside the band, together with what the band is a band for. The
+  clinical view is linked from the README header, described in the layout tree,
+  and linked from the methods page.
+- **The test that now pins it.** `tests/test_readme_claims.mjs` recomputes the
+  20-of-24, the 9-of-24-and-7-on-reversal, the worked example
+  (CSF 0.006 to CAST 0.037) and the condition-number range, and compares each to
+  the prose. **Confirmed to fail against the unfixed files**: 3 failures at
+  `db72206`.
+- **Verification.** As entry 32.
+
+---
+
 ## 2026-08-29 (reader) · An introduction for a reader who is not in this field
 
 **Moves published numbers: no.** `docs/index.html`, `docs/style.css`, one line of

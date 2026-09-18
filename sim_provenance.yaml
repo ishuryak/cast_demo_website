@@ -43,7 +43,7 @@ parameters:
 
   - id: n_per_scenario
     description: >-
-      Patients simulated per scenario. Large enough that the cross-horizon influence-function covariance is full rank and well-conditioned (n >> K = 5), small enough that a 24-scenario grid with tuned forests finishes in minutes. Consequence recorded in the README: at this n a method's RMSE moves by up to 0.018 (sd) between cohort draws, which is why the site says to read the ordering rather than the third decimal.
+      Patients simulated per scenario. Large enough that the cross-horizon influence-function covariance is full rank and well-conditioned (n >> K = 5), small enough that a 24-scenario grid finishes in minutes at DEMO_TUNE=all (which tunes the propensity and the RSF baselines, not CSF; see the README). Consequence recorded in the README: at this n a method's RMSE moves by up to 0.018 (sd) between cohort draws, which is why the site says to read the ordering rather than the third decimal.
     units: "patients"
     source: user_supplied
     value: 2000

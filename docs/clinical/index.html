@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Did the treatment help? A clinician's walkthrough</title>
+<meta name="description" content="An interactive demo on simulated cancer cohorts where the true treatment effect is known, written for a clinical audience.">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+
+<header>
+  <h1>Did the treatment help, or were those patients healthier to begin with?</h1>
+  <p class="sub">An interactive demo on simulated cancer cohorts. Because the
+  patients are simulated, the true answer is known, so every method on this page
+  can be graded against the truth instead of against the other methods.</p>
+  <p class="alt">Written for a clinical audience. The methods-facing version of
+  this demo, with the estimator internals, is
+  <a href="../">here</a>.</p>
+</header>
+
+<main>
+
+<section class="intro">
+  <p class="q">A hospital looks back through its records and asks the question
+  every clinician wants answered: did the patients who received this treatment
+  live longer <em>because of it</em>?</p>
+
+  <p>The records alone cannot say. Doctors offer treatment to the patients they
+  judge fit enough to benefit, so the treated group starts out healthier, and any
+  survival gap between the groups mixes the effect of the treatment with the head
+  start of the people who received it. That mixing is called
+  <span class="term" title="A factor that influences both who gets treated and who survives. It makes the raw comparison between groups misleading.">confounding</span>,
+  and pulling the two apart is the problem this page is about.</p>
+
+  <p><strong>What goes in.</strong> Ordinary observational survival data: a
+  registry extract, a pull from electronic health records, a single-institution
+  series. One row per patient, carrying the treatment given, how long the patient
+  was followed, whether they died or were last seen alive, and the
+  characteristics recorded at the start.</p>
+
+  <p><strong>What comes out.</strong> Not one summary number, but a curve over
+  time: <strong>out of 100 treated patients, how many more are alive at each
+  point in follow-up than would have been alive without the treatment.</strong>
+  That is the quantity plotted below, and it is what every method here is trying
+  to estimate. Formally it is the difference between two whole-population
+  survival probabilities, one in which everybody was treated and one in which
+  nobody was, at each time point.</p>
+
+  <p><strong>Why the usual tools are not enough.</strong> Comparing the groups
+  directly measures the treatment plus the head start, so it answers the wrong
+  question. Cox regression does adjust for the recorded characteristics, but it
+  compresses all of follow-up into a single hazard ratio, which is only right if
+  the benefit holds steady over time. Many benefits do not: a benefit can take
+  months to appear, or peak and fade, or turn into a harm late. Averaging an
+  early benefit against a late harm returns roughly "no effect", which is wrong
+  at every single point in time. Machine-learning survival models predict well,
+  but a good prediction is not a causal answer.</p>
+
+  <p><strong>What the two methods on trial are.</strong>
+  A <strong>causal survival forest (CSF)</strong> is a machine-learning method
+  that estimates the treatment effect at one chosen time point while adjusting
+  for the recorded characteristics and handling patients whose follow-up ended
+  early. <strong>CAST (Causal Analysis for Survival Trajectories)</strong> takes
+  those separate single-time-point estimates and fits one smooth curve through
+  them, so the result is a trajectory over follow-up rather than a row of
+  disconnected dots.</p>
+</section>
+
+<section class="controls" aria-label="Scenario controls">
+  <div class="ctrl">
+    <label id="shape-legend">How the true effect behaves over time</label>
+    <div id="shape-buttons" class="seg" role="radiogroup" aria-labelledby="shape-legend"></div>
+  </div>
+  <div class="ctrl">
+    <label id="conf-legend">Confounding you can see and adjust for</label>
+    <div id="conf-buttons" class="seg" role="radiogroup" aria-labelledby="conf-legend"></div>
+  </div>
+  <div class="ctrl">
+    <label id="unmeas-legend">Confounding nobody recorded</label>
+    <div id="unmeas-buttons" class="seg" role="radiogroup" aria-labelledby="unmeas-legend"></div>
+  </div>
+  <div class="ctrl">
+    <label>Show on the figure</label>
+    <div id="method-toggles" class="toggles"></div>
+  </div>
+</section>
+
+<div id="plot" role="img" aria-label="Treatment effect over follow-up, in extra survivors per 100 treated patients"></div>
+<p class="plot-note">The solid black line is the truth, known because these
+patients are simulated. Everything else is an estimate trying to find it.</p>
+
+<section class="cards">
+
+  <article class="card">
+    <h3>What the treatment did</h3>
+    <p class="big" id="headline">&ndash;</p>
+    <p class="hint" id="headline-hint"></p>
+    <p class="sub" id="peak-text"></p>
+  </article>
+
+  <article class="card" id="coverage-card">
+    <h3>Can you trust the uncertainty band?</h3>
+    <p class="hint">A 95&percnt; band should contain the truth about 95&percnt; of
+    the time. Here the truth is known, so that claim can be checked directly
+    instead of assumed. Each cell is one follow-up time in the scenario you have
+    selected.</p>
+    <div class="cov" id="cov-strip"></div>
+    <p class="sub" id="cov-text"></p>
+  </article>
+
+  <article class="card">
+    <h3>How far is each method from the truth?</h3>
+    <p class="hint">Average distance from the known truth across follow-up, in
+    extra survivors per 100 treated. Shorter is better. The number in bold is how
+    many times worse than the best method on this panel.</p>
+    <div class="bars" id="rmse-bars"></div>
+    <p class="sub">Differences smaller than about 1 patient per 100 are noise from
+    this being a single simulated cohort, so read the ordering rather than the
+    decimals.</p>
+  </article>
+
+  <article class="card">
+    <h3>Is this cohort confounded?</h3>
+    <p class="hint">How far apart the two groups start out, on each recorded
+    characteristic. Anything beyond 0.10 is an imbalance the raw comparison
+    cannot fix.</p>
+    <div class="bars" id="smd-bars"></div>
+    <p class="sub" id="smd-text"></p>
+  </article>
+
+  <article class="card">
+    <h3>Were both treatments genuinely available?</h3>
+    <p class="hint">Adjustment only works where patients of a given type could
+    plausibly have received either treatment. If the healthiest patients are
+    always treated, there is nobody comparable to learn from.</p>
+    <p class="big" id="overlap-big">&ndash;</p>
+    <p class="sub" id="overlap-text"></p>
+  </article>
+
+  <article class="card" id="unmeas-card">
+    <h3>What no adjustment can reach</h3>
+    <p class="hint">This cohort carries a hidden fitness factor that drives both
+    who gets treated and who survives, and it is withheld from every model, just
+    as an unrecorded factor would be in a real study.</p>
+    <p class="big" id="unmeas-big">&ndash;</p>
+    <p class="sub" id="unmeas-text"></p>
+  </article>
+
+</section>
+
+<section class="limits">
+  <h2>How to read this honestly</h2>
+  <ul>
+    <li><strong>The uncertainty bands are optimistic, and the figure above shows
+    by how much.</strong> Across all 24 scenarios in this demo the nominal
+    95&percnt; band contains the known truth
+    <strong id="cov-global">&ndash;</strong> of the time. With no hidden
+    confounding it is <strong id="cov-g0">&ndash;</strong>; with strong hidden
+    confounding it is <strong id="cov-g2">&ndash;</strong>. A band drawn under an
+    assumption that has been violated does not widen to warn you. It stays narrow
+    and moves off the truth with the estimate.</li>
+
+    <li><strong>The bands are pointwise, not whole-curve.</strong> Each one is
+    about a single follow-up time. The chance that the entire trajectory lies
+    inside its band is lower than the chance for any one time point, and this
+    page does not compute that.</li>
+
+    <li><strong>Every panel is one simulated cohort at one random draw.</strong>
+    Small differences between methods move from panel to panel. Nothing here is a
+    performance benchmark, and no method is being crowned.</li>
+
+    <li><strong>The estimates are not split into training and test data.</strong>
+    CSF and CAST are fitted and scored on the same patients, so their accuracy
+    here is better than it would be on genuinely new patients.</li>
+
+    <li><strong>The peak timing carries no uncertainty interval.</strong> It is
+    read off the fitted curve, and where the true effect reverses it lands
+    systematically late. Treat it as a description of the curve that was fitted,
+    not as an estimate of when the benefit truly peaks.</li>
+
+    <li><strong>These patients are simulated, not real.</strong> The effect
+    shapes were chosen to be legible, and the reversal shape is drawn sharper
+    than most real crossings so each method's response to it is visible. Nothing
+    on this page is evidence about any actual treatment.</li>
+  </ul>
+</section>
+
+<details class="tech">
+  <summary>For methodologists: what is actually being computed</summary>
+
+  <h3>Estimand</h3>
+  <p>The target is the marginal difference in survival probability at each
+  horizon under treatment versus control, averaged over the covariate
+  distribution of the whole cohort: <code>E[S&#8321;(t)] &minus; E[S&#8320;(t)]</code>,
+  where <code>S&#8321;</code> and <code>S&#8320;</code> are the patient-level
+  survival functions under treatment and control. This is a marginal causal
+  contrast over potential outcomes, not the observed between-group comparison
+  <code>P(T&gt;t | treated) &minus; P(T&gt;t | control)</code>, which is the
+  confounded quantity the page is about.</p>
+
+  <h3>Estimators</h3>
+  <p>Per-horizon effects come from <code>grf::causal_survival_forest</code> with
+  <code>target = "survival.probability"</code>, supplied an out-of-bag propensity
+  from a <code>grf::regression_forest</code>. CAST fits an inverse-variance
+  weighted quadratic through the per-horizon estimates. The cross-horizon
+  covariance is built from the patient-aligned doubly robust influence scores and
+  stabilized with Ledoit&ndash;Wolf shrinkage; the band is the resulting sandwich
+  interval. It is pointwise at each horizon and conditional on the fitted
+  forests: it does not propagate the forests' own estimation error, and it is not
+  a simultaneous band over the trajectory.</p>
+
+  <h3>Tuning</h3>
+  <p>The propensity regression forest is tuned with grf's built-in
+  cross-validation. The causal survival forests are <strong>not</strong> tuned:
+  grf applies <code>tune.parameters</code> only when it has to estimate the
+  propensity itself, and here the propensity is supplied, so the forests run at
+  grf defaults. Any statement elsewhere that all forests are tuned does not hold
+  for the causal survival forests.</p>
+
+  <h3>Coverage</h3>
+  <p>The coverage figures on this page are computed in the browser from the same
+  <code>scenarios.json</code> that draws the figure, by asking at every horizon of
+  every scenario whether the interval contains the exported truth. They are not
+  transcribed, so they cannot drift from the data.</p>
+
+  <h3>Scope</h3>
+  <p>24 scenarios: 2 effect shapes &times; 4 levels of measured confounding
+  &times; 3 levels of unmeasured confounding, each at 5 horizons from 12 to 108
+  months, n = 2000 per cohort. No multiplicity adjustment is applied across the
+  120 intervals, the 24 proportional-hazards tests, or the scenario grid.</p>
+</details>
+
+<footer>
+  <p>Simulated data only. Source, the full method description and the R pipeline:
+  <a href="https://github.com/ishuryak/cast_demo_website">github.com/ishuryak/cast_demo_website</a>.
+  Method references: Yang et al., <a href="https://arxiv.org/abs/2505.06367">arXiv:2505.06367</a>;
+  Yang et al., <a href="https://doi.org/10.1038/s41598-026-54656-0">Sci Rep 2026;16:23659</a>;
+  Cui et al., <a href="https://doi.org/10.1093/jrsssb/qkac001">JRSS-B 2023;85:179</a>.</p>
+</footer>
+
+</main>
+<script src="app.js"></script>
+</body>
+</html>

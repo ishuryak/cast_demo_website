@@ -1,0 +1,129 @@
+/* Clinician-facing CAST demo. Self-contained on purpose: the parent
+   docs/style.css serves the methods-facing page and is left untouched, so the
+   two versions can diverge without either breaking the other. Palette and
+   type scale are inherited by hand so the two pages still look related. */
+:root {
+  --ink: #1a1f29;
+  --muted: #5b6573;
+  --line: #e2e6ec;
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --truth: #111111;
+  --naive: #d55e00;
+  --rsf: #0072b2;
+  --tlearner: #cc79a7;
+  --cox: #9467bd;
+  --csf: #009e73;
+  --cast: #009e73;
+  --accent: #1b6ec2;
+  --good: #1a7f4f;
+  --bad: #b3341c;
+  --warn: #9a6a00;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+}
+header { background: linear-gradient(135deg, #0e2a47, #154a7a); color: #fff;
+  padding: 2.2rem 1.5rem 1.8rem; }
+header h1 { margin: 0 0 .4rem; font-size: 1.9rem; letter-spacing: -0.01em; }
+header .sub { margin: 0; max-width: 60rem; color: #d7e3f0; font-size: 1.05rem; }
+header .alt { margin: .9rem 0 0; font-size: .87rem; color: #a9c4dd; }
+header .alt a { color: #d7e3f0; }
+main { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
+h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 2rem 0 .7rem; }
+h3 { font-size: 1rem; margin: 0 0 .35rem; }
+p { max-width: 62rem; }
+code { background: #eef1f5; padding: .08em .35em; border-radius: 4px; font-size: .92em; }
+.term { border-bottom: 1px dotted var(--muted); cursor: help; }
+
+/* Plain-language opening. Calmest block on the page: prose, not instruments. */
+.intro p { font-size: 1.06rem; color: #2c3440; }
+.intro .q { font-size: 1.18rem; font-weight: 700; color: #16324f; max-width: 54rem; }
+
+/* Controls */
+.controls { display: grid; gap: 1rem; margin: 1.6rem 0 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1rem 1.1rem; }
+.ctrl > label { display: block; font-size: .8rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+  margin-bottom: .4rem; }
+.seg { display: flex; flex-wrap: wrap; gap: .3rem; }
+.seg input { position: absolute; opacity: 0; width: 0; height: 0; }
+.seg label, .seg button { font: inherit; font-size: .88rem; cursor: pointer;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+  border-radius: 7px; padding: .32rem .7rem; }
+.seg input:checked + label, .seg button.on { background: var(--accent);
+  border-color: var(--accent); color: #fff; font-weight: 700; }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: .3rem .7rem; }
+.toggles label { font-size: .86rem; display: inline-flex; align-items: center; gap: .3rem; }
+.swatch { width: .8rem; height: .8rem; border-radius: 2px; display: inline-block; }
+
+/* Plot */
+#plot { width: 100%; height: 460px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; }
+.plot-note { font-size: .86rem; color: var(--muted); margin: .5rem 0 0; }
+
+/* Cards */
+.cards { display: grid; gap: 1rem; margin-top: 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(23rem, 100%), 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1rem 1.15rem; }
+.card h3 { color: var(--accent); font-size: .95rem; }
+.card .big { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em;
+  margin: .2rem 0 .3rem; }
+.card .hint { font-size: .88rem; color: #2c3440; margin: .35rem 0 0; }
+.card .sub { font-size: .82rem; color: var(--muted); margin: .3rem 0 0; }
+.card.flag { border-left: 4px solid var(--warn); }
+
+/* Error bars, sized against the worst method on the panel (see app.js). The
+   comparison is carried by the "times best" number beside each bar, not by the
+   bar: scaling to the worst method does compress the middle. */
+.bars { display: grid; gap: .3rem; margin: .5rem 0 0; }
+.bar-row { display: grid; grid-template-columns: 5.5rem 1fr 5.2rem;
+  align-items: center; gap: .5rem; font-size: .85rem; }
+.bar-row .name { font-weight: 700; }
+.track { background: #eef1f5; border-radius: 4px; height: .7rem; overflow: hidden; }
+.fill { display: block; height: 100%; border-radius: 4px; }
+.bar-row .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.bar-row .val b { color: var(--ink); }
+
+/* Coverage strip: one mark per horizon, hit or miss. */
+.cov { display: flex; gap: .35rem; margin: .5rem 0 .2rem; flex-wrap: wrap; }
+.cov .cell { flex: 1 1 3rem; text-align: center; border-radius: 6px;
+  padding: .35rem .2rem; font-size: .76rem; font-weight: 700; border: 1px solid; }
+.cov .hit { background: #e8f5ee; border-color: #b7e0c8; color: var(--good); }
+.cov .miss { background: #fceceb; border-color: #f2c4bd; color: var(--bad); }
+.cov .cell span { display: block; font-size: .68rem; font-weight: 600;
+  color: var(--muted); }
+
+/* Limitations: one named section, not scattered through the cards. */
+.limits { background: #fffaf0; border: 1px solid #f0e0bd; border-radius: 10px;
+  padding: 1.1rem 1.3rem; margin-top: 1.6rem; }
+.limits h2 { margin-top: 0; }
+.limits li { margin-bottom: .5rem; max-width: 62rem; }
+
+/* Everything a clinician does not need, one click away. */
+details.tech { margin-top: 1.6rem; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: .9rem 1.2rem; }
+details.tech > summary { cursor: pointer; list-style: none; font-size: .8rem;
+  font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+details.tech > summary::-webkit-details-marker { display: none; }
+details.tech > summary::before { content: "\25B8\00A0"; }
+details.tech[open] > summary::before { content: "\25BE\00A0"; }
+details.tech h3 { margin-top: 1rem; }
+details.tech p, details.tech li { font-size: .92rem; }
+
+footer { border-top: 1px solid var(--line); margin-top: 2.5rem; padding: 1.2rem 0 2rem;
+  font-size: .85rem; color: var(--muted); }
+footer a { color: var(--accent); }
+
+@media (max-width: 640px) {
+  header h1 { font-size: 1.45rem; }
+  #plot { height: 380px; }
+  .bar-row { grid-template-columns: 4.6rem 1fr 4.6rem; font-size: .8rem; }
+}

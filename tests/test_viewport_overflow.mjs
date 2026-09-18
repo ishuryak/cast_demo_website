@@ -23,6 +23,17 @@
 // measurement is not working and the suite fails rather than reporting a pass it
 // cannot support.
 //
+// HOW THE RESULT GETS BACK, and why it is not --dump-dom. Until 2026-09-18 the
+// harness left its JSON in a <pre> and Chrome was asked to --dump-dom once its
+// --virtual-time-budget expired. Those are two different clocks: virtual time
+// compresses the harness's own setTimeout sleeps, so the dump could land while
+// the measurement loop was still running, and the suite then reported "the
+// harness produced no measurement" for a page that was perfectly fine. Measured
+// over five runs it failed twice, on a step that gates every push and pull
+// request. The harness now POSTs its result to the server it was loaded from and
+// node waits for that POST, which is the measurement saying it is finished
+// rather than a guess about when it will be.
+//
 // SKIPS, rather than fails, when no Chrome is found: the other suites need no
 // browser and must stay runnable on a machine without one.
 //
@@ -90,8 +101,15 @@ function measure(frame) {
     rows.push({ requested: w, ...m });
   }
   const control = measure(neg);
-  document.getElementById("out").textContent =
-    JSON.stringify({ rows, control }, null, 1);
+  const payload = JSON.stringify({ rows, control }, null, 1);
+  document.getElementById("out").textContent = payload;
+  // Reported by POST rather than left in the DOM for --dump-dom to scrape.
+  // --dump-dom races the page: Chrome dumps when its virtual-time budget runs
+  // out, which is not the moment this function finishes, so roughly one run in
+  // four dumped while <pre> still read "pending" and the suite failed with "the
+  // harness produced no measurement" on a page that was fine. A POST is the
+  // measurement telling the server it is done, which is not a race.
+  fetch("/__result", { method: "POST", body: payload });
 })();
 </script></body>`;
 
@@ -110,8 +128,17 @@ const control = readFileSync(join(DOCS, "index.html"), "utf8").replace(
   "</body>",
   '<div id="deliberate-overflow" style="width:1600px;height:8px"></div></body>');
 
+let resolveResult;
+const resultPromise = new Promise(r => { resolveResult = r; });
+
 const server = createServer((req, res) => {
   const url = (req.url || "/").split("?")[0];
+  if (url === "/__result" && req.method === "POST") {
+    let body = "";
+    req.on("data", c => { body += c; });
+    req.on("end", () => { res.writeHead(204); res.end(); resolveResult(body); });
+    return;
+  }
   if (url === "/__overflow_control.html") {
     res.writeHead(200, { "content-type": "text/html" });
     return res.end(control);
@@ -140,16 +167,15 @@ function runChrome(port) {
   if (!isWindowsChrome) {
     args.push("--no-sandbox", `--user-data-dir=${mkdtempSync(join(tmpdir(), "cast-viewport-"))}`);
   }
-  args.push("--virtual-time-budget=25000", "--window-size=1600,1500", "--dump-dom",
-            `http://localhost:${port}/__harness.html`);
-  return new Promise((res) => {
-    const p = spawn(chrome, args, { stdio: ["ignore", "pipe", "pipe"] });
-    let out = "", err = "";
-    const kill = setTimeout(() => p.kill("SIGKILL"), 120_000);
-    p.stdout.on("data", d => { out += d; });
-    p.stderr.on("data", d => { err += d; });
-    p.on("close", () => { clearTimeout(kill); res({ out, err }); });
-  });
+  // No --virtual-time-budget and no --dump-dom: the harness now reports by POST,
+  // so Chrome is simply left running in real time until it does, and killed
+  // after. Virtual time compressed the harness's own sleeps, which is what made
+  // the dump land mid-measurement.
+  args.push("--window-size=1600,1500", `http://localhost:${port}/__harness.html`);
+  const p = spawn(chrome, args, { stdio: ["ignore", "pipe", "pipe"] });
+  let err = "";
+  p.stderr.on("data", d => { err += d; });
+  return { proc: p, errText: () => err };
 }
 
 // A Windows Chrome reaches a WSL server through Windows' localhost forwarding,
@@ -157,19 +183,26 @@ function runChrome(port) {
 // is not reachable from the Windows side. A Linux Chrome takes the loopback.
 server.listen(0, isWindowsChrome ? "0.0.0.0" : "127.0.0.1", async () => {
   const port = server.address().port;
-  const { out: dom, err } = await runChrome(port);
+  const { proc, errText } = runChrome(port);
+
+  // Wait for the harness's POST, with a ceiling. The harness's own schedule is
+  // ~6.7s of real time (a 2.5s first paint plus 700ms per width), so 90s is a
+  // hang, not a slow machine.
+  const TIMEOUT_MS = 90_000;
+  let timer;
+  const timeout = new Promise(r => { timer = setTimeout(() => r(null), TIMEOUT_MS); });
+  const body = await Promise.race([resultPromise, timeout]);
+  clearTimeout(timer);
+  proc.kill("SIGKILL");
   server.close();
   server.closeAllConnections?.();
 
-  const m = dom.match(/<pre id="out">([\s\S]*?)<\/pre>/);
-  if (!m || m[1].trim() === "pending") {
-    console.error("viewport overflow: FAIL (the harness produced no measurement)");
-    console.error(err.split("\n").filter(l => !/ERROR:google_apis/.test(l)).slice(0, 5).join("\n"));
+  if (!body) {
+    console.error(`viewport overflow: FAIL (no measurement posted within ${TIMEOUT_MS / 1000}s)`);
+    console.error(errText().split("\n").filter(l => !/ERROR:google_apis/.test(l)).slice(0, 5).join("\n"));
     process.exit(1);
   }
-  const decode = s => s.replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-                       .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
-  const data = JSON.parse(decode(m[1]));
+  const data = JSON.parse(body);
 
   let fails = 0;
   const ok = (msg, cond) => { if (!cond) fails++; console.log(`  ${cond ? "ok  " : "FAIL"}  ${msg}`); };
