@@ -13,13 +13,327 @@ Entries are newest first.
 
 ---
 
-## 2026-08-27 (review) · Everest Yang's five comments
+## 2026-08-29 (reader) · An introduction for a reader who is not in this field
+
+**Moves published numbers: no.** `docs/index.html`, `docs/style.css`, one line of
+`docs/app.js`, `tests/`, the CI workflow and `README.md` only. No R script, no
+`scenarios.json`, no figure and no registry file is touched, and every quantity
+on the page is bit-identical to the previous commit.
+
+The request, the two design decisions Igor made before any file was touched, the
+defect introduced and caught during the work, and the findings investigated and
+deliberately not acted on are in
+[`development/2026_08_29_reader-first-introduction.md`](development/2026_08_29_reader-first-introduction.md).
+
+### 28. The page had no introduction a non-specialist could read
+
+- **What was wrong.** The page opened with a heading reading "From confounding to
+  trajectories", a subtitle naming a Causal Survival Forest and a
+  treatment-effect trajectory, and five lead paragraphs. A reader outside causal
+  inference, which includes most of the clinicians and researchers this demo is
+  built for, could not tell from any of it what the demo is for, what data it
+  applies to, what it delivers, or why they should prefer it to the tools they
+  already use. Entry 21 below had rewritten that lead once, plain-statement-first,
+  and that fix is not withdrawn here: it improved the block, but the block assumes
+  a reader who has already accepted the framing, and never asks why anyone outside
+  the field should care.
+- **The proof it was real.** The second paragraph a reader met was "We estimate
+  the between-group difference in the probability of surviving past each fixed
+  time horizon, i.e. the **survival-probability difference**, formally
+  P(T&gt;t | treated) − P(T&gt;t | control)", and the page's own first
+  non-specialist reader reported exactly this: "the website has no introduction
+  that explains to a non causal inference specialist [...] what the problem being
+  studied actually is". Ten suites were green at that moment, because every one of
+  them checks whether the page is *correct* and none checks whether it is
+  *readable*.
+- **The fix.** A `<section class="intro">` above the controls: a lead paragraph
+  stating the problem with **confounding** defined in the sentence that first uses
+  it, four blocks laid out 2x2 (what the demo is for, what it analyzes and what it
+  delivers, why the familiar tools fall short, what no method can fix), and a
+  glossary giving one plain-language line to each method drawn on the figure. 796
+  words. The header subtitle was rewritten in the same pass, since it is the first
+  line on the page and leaving it in the old register would have undone the change
+  three inches below it. **The existing technical lead was folded, not deleted**:
+  all five paragraphs move verbatim inside `<details class="lead-detail">` under
+  the summary "The simulated cohorts in detail", so the formal estimand is one
+  click away rather than in front of the reader.
+- **The test that now pins it.** `tests/test_intro_contract.mjs`, registered in
+  `tests/run_tests.sh` and in the CI workflow. It asserts the introduction exists
+  and precedes the controls, that it carries a lead paragraph and four blocks
+  answering the four questions, that **every method key in `app.js` has a line in
+  the glossary** (a method added to the figure with no introduction line fails
+  here), that it stays within a 900-word cap, that "confounding" is defined where
+  it first appears, that a blocklist of 29 specialist terms stays out of it, and
+  that the folded technical lead is still present with its estimand statement
+  intact. **Confirmed failing by six mutations**: the introduction moved below the
+  controls, "estimand" inserted into it, a block deleted, a method added to
+  `app.js` with no glossary line, the technical lead deleted rather than folded,
+  and the introduction padded past the word cap. The suite also caught a bug in
+  itself on its first run, where a case-insensitive search for the acronym `ATE`
+  fired on the word "treated"; acronyms are now matched case-sensitively on word
+  boundaries.
+- **Verified.** `./tests/run_tests.sh` -> **11 suites passed, 0 failed** on
+  2026-08-29, against `docs/data/scenarios.json`. The baseline is the 10 suites
+  passing before this change; the eleventh is the new one. `README.md` was updated
+  in the same pass (the "What you see" section, the suite counts from ten to
+  eleven and five node suites to six, and an entry for the new suite) per the
+  README-parity rule.
+
+### 29. A card's own title was not what opened it
+
+- **What was wrong.** Entry 22 below collapsed each card's prose behind a
+  `<details class="more">` disclosure whose summary read "Full explanation" and
+  sat at the bottom of the card. That was an improvement and it is not withdrawn.
+  But the card face still carried its title, its live numbers **and** three
+  bullets, so seven cards still presented seven paragraphs at once, and the
+  control that opened a card was a separate small link rather than the card's own
+  heading. Reaching one card's explanation took two clicks in a page that already
+  asks the reader to hold six methods and two confounding axes in mind.
+- **The proof it was real.** Measured in a 1440 px viewport, reading
+  `.cards` back from the page's own `getBoundingClientRect()` rather than off a
+  screenshot: the seven closed cards occupied **912 px** before the change and
+  **450 px** after it, a 51% reduction with no word removed from the page. Total
+  visible text moved from 2024 to 2200 words, so the introduction's 796 words are
+  largely paid for by the prose that folding puts one click away.
+- **The fix.** Each card is now ONE `<details class="card">` whose `<summary>`
+  contains its own `<h3>` title and its live-value elements. Closed, a card shows
+  its title and its numbers, which is what a card is for. Clicking the title opens
+  the bullets and the full prose together. The nested "Full explanation"
+  disclosure is gone, so one card is one click. `<details>` rather than a click
+  handler on the title, for the reasons entry 22 gives and which still hold:
+  keyboard-reachable, announced by screen readers, works with JavaScript off, and
+  the browser's in-page search still finds text inside a closed card. A modal
+  popup was offered and Igor chose expansion in place.
+- **The ripple.** `<summary>` takes phrasing content plus headings, so the
+  live-value containers that ride on the closed face became `<span>`s, and the one
+  line of `docs/app.js` that built an RMSE row as a `<div>` now builds a `<span>`.
+  A span is inline by default, so `.hint`, `.big` and `.rmse-bars` were given
+  explicit block displays. That is load-bearing, not tidiness: without them the
+  card face collapses into a single run of text, which is the same class of defect
+  as entry 18 below.
+- **The tests that now pin it.** `tests/test_render_smoke.mjs` asserts each card
+  is a single `<details>` with an `<h3>` inside its `<summary>`, with its live
+  values **inside** the summary (the inverse of the assertion it made before, when
+  they had to be outside), with brief bullets, with no nested second disclosure,
+  with prose after the summary, and with no `<p>`, `<div>` or `<ul>` inside the
+  summary, which its content model forbids. `tests/test_style_contract.mjs` gains
+  a check that every class appearing on a `<span>` inside a `<summary>` declares a
+  non-inline display. **Confirmed failing by seven mutations**: a live value moved
+  out of a summary, a `<p>` put back inside one, a second disclosure nested in a
+  card, a card title demoted from `<h3>` to `<b>`, a card's prose deleted rather
+  than collapsed, and `display: block` removed from `.hint` and from
+  `.rmse-bars`.
+- **Verified.** Same run as entry 28: 11 suites passed, 0 failed, including the
+  viewport suite at 360, 420, 620, 720, 1024 and 1440 px. Rendered headless at
+  1440 px in both states, closed and with two cards forced open, and read back.
+
+---
+
+## 2026-08-28 (record) · The evidence record disagreed with itself
+
+**Moves published numbers: no.** `FIXES.md`, `README.md`, `.gitignore`,
+`tests/` and the CI workflow only. No R script, no `scenarios.json`, no figure
+and no registry file is touched. Found while re-auditing the repository from a
+clean checkout rather than from the previous audit's conclusions.
+
+The audit that found both items, its full thirteen-auditor triage, the claims it
+re-derived rather than trusted, the findings it investigated and dismissed, and
+the one mistake it made along the way are in
+[`development/2026_08_28_independent-re-audit.md`](development/2026_08_28_independent-re-audit.md).
+
+### 26. FIXES.md told the reader entries were newest first, and they were not
+
+- **What was wrong.** The preamble states "Entries are newest first." A reader
+  who trusts that sentence and stops at the top section believes they are looking
+  at the most recent change. They were not: the two newest sections, both dated
+  2026-08-28, sat third and fourth, below 2026-08-27 and 2026-08-26. The two
+  changes that landed that day were appended after the section that was already
+  open rather than above it, which is what happens whenever a day's work lands
+  while an earlier day's section is still the one being edited.
+- **The proof it was real.** Reading the seven `## YYYY-MM-DD` headings in file
+  order gave `2026-08-27, 2026-08-26, 2026-08-28, 2026-08-28, 2026-08-26,
+  2026-08-25, 2026-08-25`. The third heading is newer than the two above it, so
+  the stated contract was false at the third section of a seven-section file.
+- **The fix.** The sections were reordered newest-first, ties keeping their
+  existing relative order so the two 2026-08-28 entries stay in the sequence they
+  landed (25 the routing record, then 24 the AUTOC seed). Nothing was reworded:
+  a sorted-line comparison of the file before and after reports an identical line
+  multiset, so only section order changed.
+- **The test that now pins it.** `tests/test_fixes_order.mjs`, registered in
+  `tests/run_tests.sh` and in the CI workflow. It asserts the section dates are
+  non-increasing, that every `development/` link in the file resolves, and that
+  no entry number is used twice. **Confirmed failing against the unfixed file**,
+  where it reported `line 224: 2026-08-28 appears after an older section`. It
+  also asserts the "Entries are newest first." sentence is still present, so the
+  ordering check cannot be made to pass by deleting the claim it enforces --
+  removing the sentence fails the suite instead, which forces the question.
+- **Verified.** `./tests/run_tests.sh` -> **10 suites passed, 0 failed** on
+  2026-08-28 against `docs/data/scenarios.json`, on the tree at this commit. The
+  baseline it is compared against is the 9 suites passing before this change; the
+  tenth is the new one. `README.md` was updated in the same pass from "nine
+  suites" to ten and from "four node suites" to five, per the README-parity rule.
+
+### 27. Three regenerable artifacts were untracked and unignored at once
+
+- **What was wrong.** `.stale_constant_record.json`, `development/*.docx` and a
+  `web/` directory sat in `git status` as untracked and matched no ignore rule,
+  which is the one state that is neither tracked nor deliberately excluded. Each
+  is committable by a single `git add -A`, and each would be wrong to commit:
+  the attestation binds to a sha256 of `constant_registry.yaml` and reads as
+  proof after the registry moves, the DOCX files are conversions of committed
+  markdown that would let two copies of the same prose disagree, and `web/` is a
+  superseded 2026-08-10 snapshot of an earlier build of the site that nothing
+  references.
+- **The proof it was real.** `git status --short` listed nine `??` entries across
+  the three classes, and `git check-ignore -v` matched no rule for any of them.
+- **The fix.** Ignore rules for all three, each carrying the reason it is
+  excluded rather than the pattern alone.
+- **The verification.** `git check-ignore -q` now matches all three; a clean
+  `git status --short` shows only the files this change edits. `web/` is left on
+  disk and is safe to delete; it is referenced by no script, workflow, test or
+  document, which was checked by grep across `R/`, `tests/`, `*.md`, `*.yaml` and
+  `*.sh`.
+
+---
+
+## 2026-08-28 (routing) · The audit record, checked by running it
+
+**Moves published numbers: no.** `audit_manifest.yaml`, `FIXES.md` and
+`development/` only. No R script, no `scenarios.json`, no figure is touched.
+
+Verification environment for this pass: node v18.19.1, R 4.5.1, on 2026-08-28.
+
+Reasoning, options considered and what was dismissed:
+[`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
+
+### 25. The routing manifest attested to a report it had not read
+
+- **Moves published numbers: no.** `audit_manifest.yaml` only.
+- **What was wrong.** The methods-audit entry's `completion.report_sha256` did not
+  match the report it names. A content-bound attestation exists so a manifest
+  cannot claim a review of text nobody reviewed; one that does not bind is worse
+  than none, because it reads as proof. Two further defects in the same file: the
+  header stated that the stale-constant audit "is NOT one of the gate's twelve",
+  and the manifest carried no entry for it, so the gate was supplying the auditor
+  itself and warning that it had nothing to execute.
+- **The proof it was real.** `audit_gate.py --project .` reported
+  `methods-audit: completion.report_sha256 is stale (the report changed since it
+  was recorded)` and
+  `stale-constant-audit ... [SUPPLIED BY GATE] FAIL: RUN executable auditor needs
+  a typed run: block`. The recorded hash is
+  `74a3573745af515f1f4223c98a5d01fbfdf3c8760356153ae5d09009baf94817`; the file
+  hashes to `d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7`.
+  The cause is recoverable rather than guessed: a pre-cleanup copy of the report
+  hashes to exactly the recorded value and differs in the two lines the 2026-08-26
+  em-dash cleanup edited. The hash was taken on 2026-08-25 and never re-taken.
+  Both recorded *input* hashes still match, so the review was of the code that
+  ships; only its report drifted.
+- **The fix.** Hash re-taken, with a note in the file saying why it moved.
+  `stale-constant-audit` recorded as a full entry with a typed `run:` block
+  (project, registry, inputs), and the header corrected: it is the thirteenth
+  routed auditor, which the gate enumerates and executes under `--release`.
+- **The test that now pins it.** The gate itself, which is the point: this defect
+  is invisible to prose review and was found only by running the tool the manifest
+  exists to satisfy. Re-run after the fix, the two warnings are gone.
+- **Verified.** `audit_gate.py --project .` no longer warns on either;
+  `stale_constant_audit.py --project . --project-root . --strict` reports
+  `REGISTRY (12 constants) STRICT, 0 errors, 0 warnings`, now resolved through the
+  manifest rather than by hand; `sim_provenance.py validate` -> `registry OK`;
+  `./tests/run_tests.sh` -> 9 suites passed, 0 failed (2026-08-28).
+- **Not fixed, and deliberately.** The gate still routes five auditors the
+  manifest marks N/A, because it reads `is_grant` from the word "resubmission" in
+  a development record and `has_radiation` from the *titles* of the two cited
+  papers. The only available fix is rewording a reference list until a keyword
+  detector stops matching. Reasoning:
+  [`development/2026_08_28_audit-manifest-attestation.md`](development/2026_08_28_audit-manifest-attestation.md).
+
+---
+
+## 2026-08-28 · The one number the pipeline could not reproduce
+
+**Moves published numbers: YES, sixteen of them, in a field nothing reads.**
+`docs/data/scenarios.json` changes in exactly 17 leaves out of roughly 1,900: the
+16 `autoc.se` values that moved and the `generated` timestamp. All nine figures
+are **byte-identical**. No average treatment effect, confidence interval, RMSE,
+hazard ratio, PH p-value, standardized mean difference, overlap or shrinkage
+diagnostic changes, and neither does the AUTOC point estimate.
+
+Verification environment for this pass: R 4.5.1, `grf` 2.5.0, `survival` 3.8.3,
+`jsonlite` 2.0.0, node v18.19.1, on 2026-08-28.
+
+Reasoning, options considered and what was dismissed:
+[`development/2026_08_28_autoc-bootstrap-seed.md`](development/2026_08_28_autoc-bootstrap-seed.md).
+
+### 24. The shipped scenarios.json was not what the shipped code produces
+
+- **Moves published numbers: YES**, as itemized above.
+- **What was wrong.** `grf::rank_average_treatment_effect()` returns a
+  deterministic point estimate and a standard error formed from `R = 200`
+  half-sample bootstrap replicates drawn with R's **global** RNG. Every forest in
+  `R/02_fit_methods.R` carries an explicit `seed =` and is therefore
+  stream-independent; that one call was not. Any edit anywhere earlier in the run
+  that drew a random number silently re-rolled every `autoc$se` in the exported
+  grid, leaving the estimate, every other exported field and all nine figures
+  untouched. The 2026-08-26 restructuring around the `DEMO_SOURCE_ONLY` guards
+  was such an edit, and the grid was not regenerated after it, so the committed
+  `scenarios.json` (stamped `2026-08-25 23:09`) predated the fit script beside it.
+- **The proof it was real.** The whole pipeline was re-run from a clean extract of
+  the committed tree and compared byte for byte: nine figures identical,
+  `scenarios.json` differing in 20 leaves, every one of them `autoc.se`. The
+  mechanism was then confirmed directly on one fixed forest, rather than inferred:
+  the same RNG state gives `se=0.691754` twice, and an advanced stream gives
+  `se=0.635089`, while `est=-0.851334` never moves.
+- **Why no auditor caught it.** None of them compares a shipped artifact to a
+  re-run. `pipeline-audit` asks whether outputs are fresher than the code,
+  `manuscript-audit` whether quoted numbers match their source file,
+  `stale-constant-audit` whether a hard-coded bound still describes its artifact.
+  All three pass on an artifact the current code would no longer produce.
+- **What it actually broke.** `autoc` is read by nothing: it appears in
+  `docs/data/scenarios.json` and in no other file. No figure plots it, no card
+  shows it, no test asserts it. What it broke is the claim `docs/index.html` makes
+  to every visitor, that the numbers are "reproduced by the R pipeline at" this
+  repository.
+- **The fix.** `set.seed(FOREST_SEED)` immediately before the call, bringing the
+  last stream-dependent number in the pipeline under the seed everything else
+  already uses. The alternative of deleting the unused field was rejected:
+  removing an output to make a reproducibility problem go away is the wrong
+  instinct, and the statistic is named in the README as part of what
+  `02_fit_methods.R` computes.
+- **The test that now pins it.** Three assertions in
+  `tests/test_source_guards.R`, and the guard was broken three ways and confirmed
+  to report each: the seed removed (the original defect); the seed set but a
+  `runif` draw placed between it and the call, which a naive "is `set.seed`
+  present" check would pass; and `set.seed(42)` instead of `set.seed(FOREST_SEED)`.
+- **Verified.** The defect was reproduced on demand and the fix shown to hold
+  against it, end to end through `run_all.sh` on the subsample grid, using a
+  simulated upstream edit of three extra `runif` draws:
+
+  | build | `autoc.se`, both smoke scenarios |
+  |:--|:--|
+  | unfixed | 0.044, 0.040 |
+  | unfixed + upstream edit | **0.046, 0.041** |
+  | fixed | 0.044, 0.042 |
+  | fixed + upstream edit | **0.044, 0.042** |
+
+  Then the full 24-scenario pipeline (33 min, R 4.5.1): the regenerated tree
+  differs from the committed one in `docs/data/scenarios.json` alone, and within
+  it in 16 `autoc.se` values and the timestamp alone, with all nine figures
+  byte-identical. `./tests/run_tests.sh` -> 9 suites passed, 0 failed against the
+  regenerated export.
+- **What is NOT claimed.** The fix is proven on the two-scenario smoke grid, where
+  the defect was reproduced and then shown not to occur. It was not re-proven by a
+  second full 24-scenario run, which would cost another 33 minutes to demonstrate
+  a per-call property already demonstrated per call.
+
+---
+
+## 2026-08-27 (review) · A colleague's five comments
 
 **Moves published numbers: no.** `docs/`, `README.md`, `tests/` and `.gitignore`
 only. No R script, no `scenarios.json`, no figure and no registry entry is
 touched, and all eight test suites pass. The reasoning, including the costing
 that decided comment 1, is in
-[`development/2026_08_27_everest-yang-feedback.md`](development/2026_08_27_everest-yang-feedback.md).
+[`development/2026_08_27_site-review-comments.md`](development/2026_08_27_site-review-comments.md).
 
 ### 18. Every RMSE bar was an empty grey rail, in every state, since the card was written
 
@@ -142,13 +456,45 @@ that decided comment 1, is in
   headless at 1440, 820 and 420 px and read back: four groups in four columns at
   1440, one column below 900.
 
+### 23. A defect recorded here did not exist: the instrument was wrong
+
+- **Moves published numbers: no.** This entry withdraws a claim and adds a test.
+  Nothing under `docs/` changes.
+- **What was wrong.** The paragraph that stood here said "the page overflows its
+  viewport horizontally below about 720 px, so a phone gets a sideways scroll",
+  and put the figure at 22 clipped body rows at 620 px. Rewritten here, and in
+  `development/2026_08_27_site-review-comments.md`, because it is false. The
+  page fits every width tested. What was measured was a headless SCREENSHOT, and
+  a screenshot is not a measurement of layout: Chrome on Windows will not open a
+  window narrower than about 500 px, so `--window-size=420,H --screenshot` lays
+  the page out at ~497 px and crops the image to 420. The crop looks exactly like
+  a page overflowing its viewport, and reading it that way is how a defect that
+  was never in the stylesheet came to be written into two records as measured
+  fact.
+- **The proof it was real.** Measured inside an iframe of the requested width --
+  a real viewport at any size -- at 345, 405, 605, 705, 1009 and 1425 CSS px:
+  zero elements whose right edge passes the viewport's, and
+  `scrollWidth === clientWidth` at every one. The 420 px screenshot that produced
+  the original claim reports `clientWidth = 497` when the page is asked for its
+  own width, which is the artifact itself, visible in the instrument's own
+  output.
+- **The test that now pins it.** `tests/test_viewport_overflow.mjs`, a new suite
+  measuring six widths in one browser launch. Because it asserts the ABSENCE of
+  something, it carries its own negative control and runs it every time: a second
+  iframe loads the same page with one deliberately 1600 px-wide element appended,
+  and the suite fails if that does not report an overflow, rather than reporting
+  a pass the measurement cannot support. Confirmed to fail against a mutated
+  page: appending a 1600 px element to `docs/index.html` turned all twelve
+  assertions red and exited 1. Confirmed to skip, not fail, with `CHROME` set to
+  a path that does not exist.
+- **Verified.** `./tests/run_tests.sh` -> 9 suites passed, 0 failed (2026-08-28),
+  against a baseline of 8 before this entry. The new suite also runs in CI, along
+  with the style contract added in entry 18, which CI had not been running.
+
 ### Known, pre-existing, not fixed here
 
-The page overflows its viewport horizontally below about 720 px, so a phone gets
-a sideways scroll. This is **not** new: rendered headless at 620, 720 and 820 px,
-the pre-change build at `HEAD` and the post-change build clip identically (22
-body rows reaching the right edge at 620 px in both, 0 at 720 px in both). It is
-outside the five comments answered here and is left for a separate pass.
+Nothing outstanding from this pass. The one item previously recorded here was
+the mobile-overflow claim, withdrawn in entry 23 above.
 
 ---
 
@@ -157,6 +503,10 @@ outside the five comments answered here and is left for a separate pass.
 **Moves published numbers: no.** `docs/style.css` is the only file changed. No
 data, figure, estimate or caption is touched, and all seven test suites pass
 unchanged.
+
+Reasoning, including the two alternatives rejected and why the decision was
+revisited a day later:
+[`development/2026_08_26_card-layout.md`](development/2026_08_26_card-layout.md).
 
 ### 17. Two thirds of the page below the figure was empty
 

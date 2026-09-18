@@ -1,0 +1,11 @@
+{
+  "name": "cast-demo-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tutorial/tests/run.mjs",
+    "build": "node scripts/build-site.mjs",
+    "build:pages": "node scripts/build-pages.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

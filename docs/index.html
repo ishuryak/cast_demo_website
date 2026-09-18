@@ -17,47 +17,169 @@
 <body>
 <header>
   <h1>From confounding to trajectories</h1>
-  <p class="sub">How a Causal Survival Forest (CSF) removes measured confounding,
-     what an <em>unmeasured</em> confounder does to it anyway, and how CAST
-     extends it to a full treatment-effect trajectory, on simulated oncology data
-     where the <em>true</em> effect is known.</p>
+  <!-- The first line a reader sees, so it is written for a clinician or a
+       scientist from another field rather than for a causal-inference audience.
+       The formal version of the same sentence opens the introduction below. -->
+  <p class="sub">Did the treatment help, or were the patients who received it
+     simply healthier to begin with? An interactive demo on simulated cancer
+     cohorts where the <em>true</em> answer is known, so every method can be
+     graded against it instead of against the others.</p>
 </header>
 
 <main>
-  <section class="lead">
-    <p>Every cohort on this page is <strong>simulated</strong>, so unlike a real
-    study this one comes with an answer key: the true average treatment effect
-    (ATE) at every horizon, drawn as the solid black curve. Each method can
-    therefore be judged against the truth rather than against the other
-    methods.</p>
+  <!-- The plain-language entry point. It sits above the controls because a
+       reader who is not a causal-inference specialist (a clinician, or a
+       scientist from another field) needs the goal, the data, the deliverable
+       and the methods before any of the figure means anything. Every specialist
+       term is glossed in words on first use here, and the formal statement of
+       the estimand now sits in the disclosure below rather than in front of it. -->
+  <section class="intro" id="intro">
+    <h2>What this demo is about</h2>
 
-    <p>We estimate the between-group difference in the probability of surviving
-    past each fixed time horizon, i.e. the <strong>survival-probability
-    difference</strong>, formally P(T&gt;t | treated) &minus; P(T&gt;t | control).
-    Horizons run from 12 to 108 months, and the control arm of the synthetic
-    cohort has a median survival near 47 months.</p>
+    <p class="intro-lead">A hospital looks back through its records and asks the
+    question every clinician wants answered: did the patients who received this
+    treatment live longer <em>because of it</em>? The records alone cannot say,
+    because the treated patients were never like the untreated ones. Doctors
+    offer treatment to the patients they judge fit enough to benefit, so the
+    treated group starts out healthier, and any survival gap between the groups
+    mixes the effect of the treatment with the head start of the people who
+    received it. That mixing is called <strong>confounding</strong>, and pulling
+    the two apart is the problem this page is about.</p>
 
-    <p>Two effect shapes are available, and both are simulated. Under
-    <strong>plateau</strong>, treatment helps at every horizon, so the survival
-    gap widens, peaks, and then slowly narrows as both arms approach low
-    survival. Under <strong>reversal</strong>, treatment helps early and harms
-    after about four years, so the survival curves cross and the gap turns
-    negative. The reversal is drawn sharper than most real crossings, to make
-    each estimator’s response to it easy to see.</p>
+    <div class="intro-grid">
 
-    <p>Every cohort also carries four <strong>confounders</strong>: age, stage,
-    performance status and comorbidity count, all of which drive both prognosis
-    and treatment assignment. Alongside them sits one covariate that worsens
-    survival but has no bearing on who gets treated (smoking, a
-    <strong>prognostic non-confounder</strong>), two that affect nothing at all
-    (sex and ethnicity, <strong>negative controls</strong>), and one
-    <strong>unmeasured confounder</strong>: a latent fitness factor that both
-    improves survival and raises the chance of being treated, and that no fitted
-    model ever sees.</p>
+      <div class="intro-block">
+        <h3>What the demo is for</h3>
+        <p>Every patient here is simulated, so unlike a real study this one comes
+        with an answer key: the true survival benefit of treatment at every point
+        in follow-up, drawn as the solid black curve. Each method can therefore be
+        graded against the truth rather than against the other methods, which is
+        the one comparison no real study can run. The goal is not to crown a
+        winner. It is to show what each method quietly assumes, and to let you
+        watch it break when that assumption fails.</p>
+      </div>
 
-    <p>Set the two confounding controls and switch methods on and off to watch
-    each estimator move while the black truth curve stays where it is.</p>
+      <div class="intro-block">
+        <h3>What it analyzes, and what it delivers</h3>
+        <p>The setting is ordinary observational survival data: a registry
+        extract, a pull from electronic health records, a single-institution
+        series. One row per patient, carrying the treatment given, how long the
+        patient was followed, whether they died or were last seen alive, and the
+        characteristics recorded at the start. What comes out is not one summary
+        number but a curve over time: out of 100 treated patients, how many more
+        are alive at each point in follow-up than would have been without the
+        treatment, with an uncertainty band around it.</p>
+      </div>
+
+      <div class="intro-block">
+        <h3>Why the familiar tools fall short</h3>
+        <p>Comparing the groups directly measures the treatment plus the head
+        start, so it answers the wrong question. Cox regression does adjust for
+        the recorded characteristics, but it compresses all of follow-up into a
+        single hazard ratio, which is only right if the benefit holds steady over
+        time. Many do not: a benefit can take months to appear, or peak and fade,
+        or turn into a harm late. Averaging an early benefit against a late harm
+        returns roughly "no effect", which is wrong at every point in time.
+        Machine-learning survival models predict well, but a good prediction is
+        not a causal answer.</p>
+      </div>
+
+      <div class="intro-block">
+        <h3>What no method can fix</h3>
+        <p>Adjustment only works on what somebody wrote down. If a factor drives
+        both who gets treated and who survives, and nobody recorded it, every
+        method here is pulled off the truth in the same direction at once while
+        the usual warning signs still look healthy: recorded characteristics
+        balanced, intervals narrow, nothing complaining. The second control above
+        the figure turns exactly that on, and because these patients are
+        simulated, the page can show you what it costs.</p>
+      </div>
+
+    </div>
+
+    <div class="intro-methods">
+      <h3>The methods on the figure, and why each one is here</h3>
+      <dl>
+        <dt>Naive comparison</dt>
+        <dd>Survival in the treated group minus survival in the untreated group,
+        with no adjustment at all. It is here to show how large the problem is,
+        not as a serious contender.</dd>
+
+        <dt>Cox regression</dt>
+        <dd>The survival workhorse most readers already know: it adjusts for the
+        recorded characteristics and reports one hazard ratio for all of
+        follow-up. It is a fair benchmark rather than a straw man, because on one
+        of the two effect shapes the simulated biology really does hold steady
+        over time, so Cox is the right model there and usually wins.</dd>
+
+        <dt>Random survival forest, in two arrangements</dt>
+        <dd>A machine-learning model that predicts how long patients survive. The
+        <strong>S-learner</strong> treats "was this patient treated" as one
+        feature among many, while the <strong>T-learner</strong> fits a separate
+        model per group and compares them. Both show that predicting survival well is
+        not the same as measuring what treatment did, and that the two
+        arrangements go wrong in two different ways.</dd>
+
+        <dt>Causal survival forest (CSF)</dt>
+        <dd>A forest built for the causal question instead of the prediction one.
+        It learns who tends to get treated and who tends to survive, then
+        subtracts the part of the survival gap those two patterns already explain,
+        leaving the treatment's own contribution. It removes confounding without
+        anyone having to specify in advance how each characteristic relates to
+        survival, which is the assumption a regression asks you to make and get
+        right.</dd>
+
+        <dt>CAST</dt>
+        <dd>The causal forest gives a separate estimate at each time point, and
+        those estimates wobble against one another. CAST fits one smooth curve
+        through them, allowing for the fact that nearby time points rise and fall
+        together, and turns the result into numbers a clinician can read off: how
+        large the benefit gets, and when it arrives. It is the method this site
+        exists to demonstrate.</dd>
+      </dl>
+    </div>
   </section>
+
+  <!-- The technical lead, unchanged in wording, folded behind a disclosure.
+       It states the estimand formally and enumerates the confounder taxonomy,
+       which is what a reader wants SECOND, after the introduction above. -->
+  <details class="lead-detail">
+    <summary>The simulated cohorts in detail</summary>
+    <div class="lead">
+      <p>Every cohort on this page is <strong>simulated</strong>, so unlike a real
+      study this one comes with an answer key: the true average treatment effect
+      (ATE) at every horizon, drawn as the solid black curve. Each method can
+      therefore be judged against the truth rather than against the other
+      methods.</p>
+
+      <p>We estimate the between-group difference in the probability of surviving
+      past each fixed time horizon, i.e. the <strong>survival-probability
+      difference</strong>, formally P(T&gt;t | treated) &minus; P(T&gt;t | control).
+      Horizons run from 12 to 108 months, and the control arm of the synthetic
+      cohort has a median survival near 47 months.</p>
+
+      <p>Two effect shapes are available, and both are simulated. Under
+      <strong>plateau</strong>, treatment helps at every horizon, so the survival
+      gap widens, peaks, and then slowly narrows as both arms approach low
+      survival. Under <strong>reversal</strong>, treatment helps early and harms
+      after about four years, so the survival curves cross and the gap turns
+      negative. The reversal is drawn sharper than most real crossings, to make
+      each estimator’s response to it easy to see.</p>
+
+      <p>Every cohort also carries four <strong>confounders</strong>: age, stage,
+      performance status and comorbidity count, all of which drive both prognosis
+      and treatment assignment. Alongside them sits one covariate that worsens
+      survival but has no bearing on who gets treated (smoking, a
+      <strong>prognostic non-confounder</strong>), two that affect nothing at all
+      (sex and ethnicity, <strong>negative controls</strong>), and one
+      <strong>unmeasured confounder</strong>: a latent fitness factor that both
+      improves survival and raises the chance of being treated, and that no fitted
+      model ever sees.</p>
+
+      <p>Set the two confounding controls and switch methods on and off to watch
+      each estimator move while the black truth curve stays where it is.</p>
+    </div>
+  </details>
 
   <section class="controls">
     <div class="ctrl">
@@ -91,167 +213,174 @@
       <section class="card-group">
         <h2><span class="n">1 ·</span>Is this cohort confounded?</h2>
 
-        <div class="card" id="card-balance">
-          <h3>Confounder imbalance (SMD)</h3>
-          <p class="hint" id="smd-text"></p>
+        <details class="card" id="card-balance">
+          <summary>
+            <h3>Confounder imbalance (SMD)</h3>
+            <span class="hint" id="smd-text"></span>
+          </summary>
           <ul class="brief">
             <li>Standardized mean difference between the two arms. |SMD| &gt; 0.1 is imbalance a naive comparison cannot fix.</li>
             <li>The confounders drift apart as measured confounding rises; smoking, which affects survival but not treatment, stays near zero.</li>
             <li>The latent factor becomes imbalanced on its own axis, where no method can see it.</li>
           </ul>
-          <details class="more"><summary>Full explanation</summary>
-            <p class="hint">Standardized mean difference between arms. |SMD|&gt;0.1 signals imbalance the naive comparison cannot fix. As measured confounding rises, the confounders shown (age, performance status, comorbidity) become imbalanced while smoking, a non-confounder, stays near zero. The latent factor becomes imbalanced on the unmeasured-confounding axis, and no adjustment method can see it.</p>
-          </details>
-        </div>
 
-        <div class="card" id="card-overlap">
-          <h3>Propensity overlap (positivity)</h3>
-          <p class="hint" id="overlap-text"></p>
+          <p class="hint">Standardized mean difference between arms. |SMD|&gt;0.1 signals imbalance the naive comparison cannot fix. As measured confounding rises, the confounders shown (age, performance status, comorbidity) become imbalanced while smoking, a non-confounder, stays near zero. The latent factor becomes imbalanced on the unmeasured-confounding axis, and no adjustment method can see it.</p>
+        </details>
+
+        <details class="card" id="card-overlap">
+          <summary>
+            <h3>Propensity overlap (positivity)</h3>
+            <span class="hint" id="overlap-text"></span>
+          </summary>
           <ul class="brief">
             <li>The estimated probability of being treated, from the propensity forest.</li>
             <li>Causal adjustment needs those probabilities away from 0 and 1. That is the positivity condition.</li>
             <li>Strong confounding pushes them outward, and that overlap stress is what leaves CSF with a residual bias.</li>
           </ul>
-          <details class="more"><summary>Full explanation</summary>
-            <p class="hint">The estimated probability of treatment from the propensity
-            forest. Good overlap (values away from 0 and 1) is the positivity condition
-            that causal adjustment needs. As confounding rises, healthier patients are
-            almost always treated and propensities spread toward 0 and 1, so the share
-            beyond [0.05, 0.95] grows. This near-violation of positivity is what leaves
-            CSF with residual bias at strong confounding. The [0.01, 0.99] clip rarely
-            binds, so the residual reflects genuine overlap stress rather than the
-            clip.</p>
-          </details>
-        </div>
+
+          <p class="hint">The estimated probability of treatment from the propensity
+          forest. Good overlap (values away from 0 and 1) is the positivity condition
+          that causal adjustment needs. As confounding rises, healthier patients are
+          almost always treated and propensities spread toward 0 and 1, so the share
+          beyond [0.05, 0.95] grows. This near-violation of positivity is what leaves
+          CSF with residual bias at strong confounding. The [0.01, 0.99] clip rarely
+          binds, so the residual reflects genuine overlap stress rather than the
+          clip.</p>
+        </details>
       </section>
 
       <section class="card-group">
         <h2><span class="n">2 ·</span>How close is each method to the truth?</h2>
 
-        <div class="card" id="card-rmse">
-          <h3>Accuracy vs. truth (RMSE, survival-probability)</h3>
-          <div class="rmse-bars"></div>
+        <details class="card" id="card-rmse">
+          <summary>
+            <h3>Accuracy vs. truth (RMSE, survival-probability)</h3>
+            <span class="rmse-bars"></span>
+          </summary>
           <ul class="brief">
             <li>Root-mean-square distance from the known truth across the five horizons. Lower is better.</li>
             <li>Watch Naive collapse as confounding rises while CSF stays accurate.</li>
             <li>Read the ordering, not the decimals: gaps of about ±0.01 are Monte-Carlo noise.</li>
           </ul>
-          <details class="more"><summary>Full explanation</summary>
-            <p class="hint">Lower is better. Watch Naive collapse as confounding rises while CSF stays accurate. CSF and CAST are scored in-sample (no train/test split), so their accuracy here is optimistic relative to real-world deployment.</p>
-            <p class="hint"><strong>Read the ordering, not the decimals.</strong> Each panel is a
-            <em>single</em> simulated cohort at one seed. Across repeated cohorts the
-            RMSE of a given method moves by roughly ±0.01, so the large gaps (Naive
-            versus everything else) are real while small ones (CSF versus CAST) are
-            within Monte-Carlo noise and can swap from panel to panel.</p>
-          </details>
-        </div>
 
-        <div class="card" id="card-cox">
-          <h3>Cox baseline</h3>
-          <p class="big"><span id="cox-hr"></span></p>
-          <p class="hint" id="cox-ph"></p>
+          <p class="hint">Lower is better. Watch Naive collapse as confounding rises while CSF stays accurate. CSF and CAST are scored in-sample (no train/test split), so their accuracy here is optimistic relative to real-world deployment.</p>
+          <p class="hint"><strong>Read the ordering, not the decimals.</strong> Each panel is a
+          <em>single</em> simulated cohort at one seed. Across repeated cohorts the
+          RMSE of a given method moves by roughly ±0.01, so the large gaps (Naive
+          versus everything else) are real while small ones (CSF versus CAST) are
+          within Monte-Carlo noise and can swap from panel to panel.</p>
+        </details>
+
+        <details class="card" id="card-cox">
+          <summary>
+            <h3>Cox baseline</h3>
+            <span class="big"><span id="cox-hr"></span></span>
+            <span class="hint" id="cox-ph"></span>
+          </summary>
           <ul class="brief">
             <li>One time-constant hazard ratio for the whole follow-up, with no trajectory.</li>
             <li>On the plateau shape the simulation itself is a proportional-hazards model, so Cox is correctly specified here: a fair benchmark, not a straw man.</li>
             <li>On the reversal shape one hazard ratio has to average a protective early phase against a harmful late one, so the curve flattens toward zero.</li>
           </ul>
-          <details class="more"><summary>Full explanation</summary>
-            <p class="hint">A single time-constant hazard ratio, with no trajectory. The proportional-hazards test flags when a single hazard ratio cannot hold across all horizons. The dotted purple <strong>Cox (marginal)</strong> curve on the plot standardizes the same model to the survival-probability scale.
-            On the <strong>plateau</strong> shape the simulation's own hazard model
-            <em>is</em> a proportional-hazards Weibull with linear covariate effects, so
-            this Cox model is correctly specified and is usually the most accurate
-            method on the panel: a fair benchmark, not a straw man. That holds at
-            &Gamma; = 0; push the unmeasured-confounding control and the
-            proportional-hazards test starts flagging the plateau too, because
-            omitting a covariate that affects survival induces non-proportionality in
-            the hazard ratio you can still fit. On the
-            <strong>reversal</strong> shape the single hazard ratio has to average a
-            protective early phase against a harmful late one, so it shrinks toward 1
-            and the marginal curve flattens near zero, unable to bend and follow the
-            crossing.</p>
-          </details>
-        </div>
+
+          <p class="hint">A single time-constant hazard ratio, with no trajectory. The proportional-hazards test flags when a single hazard ratio cannot hold across all horizons. The dotted purple <strong>Cox (marginal)</strong> curve on the plot standardizes the same model to the survival-probability scale.
+          On the <strong>plateau</strong> shape the simulation's own hazard model
+          <em>is</em> a proportional-hazards Weibull with linear covariate effects, so
+          this Cox model is correctly specified and is usually the most accurate
+          method on the panel: a fair benchmark, not a straw man. That holds at
+          &Gamma; = 0; push the unmeasured-confounding control and the
+          proportional-hazards test starts flagging the plateau too, because
+          omitting a covariate that affects survival induces non-proportionality in
+          the hazard ratio you can still fit. On the
+          <strong>reversal</strong> shape the single hazard ratio has to average a
+          protective early phase against a harmful late one, so it shrinks toward 1
+          and the marginal curve flattens near zero, unable to bend and follow the
+          crossing.</p>
+        </details>
       </section>
 
       <section class="card-group">
         <h2><span class="n">3 ·</span>What adjustment cannot reach</h2>
 
-        <div class="card" id="card-unmeas">
-          <h3>Unmeasured confounding</h3>
-          <p class="hint" id="unmeas-text"></p>
+        <details class="card" id="card-unmeas">
+          <summary>
+            <h3>Unmeasured confounding</h3>
+            <span class="hint" id="unmeas-text"></span>
+          </summary>
           <ul class="brief">
             <li>The latent fitness factor is drawn into the cohort but withheld from every fitted model.</li>
             <li>The same CSF is refit <em>with</em> it, an oracle no real analysis could run. The gap between the two is what the latent factor costs.</li>
             <li>The E-value is the companion statistic: how strong a hidden confounder would have to be to explain the estimate away.</li>
           </ul>
-          <details class="more"><summary>Full explanation</summary>
-            <p class="hint">The latent factor is drawn into the cohort but withheld from
-            every fitted model. To measure what that costs, the same CSF is refit
-            <em>with</em> the latent factor added to the covariates <em>and</em> to the
-            propensity model: an oracle no real analysis could run. The gap between
-            the two is the part of CSF's error attributable to the latent factor, and
-            it grows along the unmeasured-confounding axis even though the measured
-            covariates stay balanced. The factor has to enter <em>both</em> sides for
-            the oracle to mean anything: it drives treatment assignment as well as
-            survival, so an oracle given it only in the outcome model leaves the
-            orthogonalization wrong on the treatment side.</p>
-            <p class="hint">Read the gap as a component, not as the whole error. The
-            oracle does <em>not</em> land on the truth at strong measured confounding,
-            because CSF carries a second, unrelated residual there from the positivity
-            stress described in the overlap card, which is present already at
-            &Gamma; = 0 and is not the oracle's to remove. At &Gamma; = 1.5 the oracle
-            removes between 39% and 95% of the total error depending on the panel; at
-            &Gamma; = 0.75 the latent factor's contribution is small enough that the
-            gap is comparable to Monte-Carlo noise. The <strong>E-value</strong>
-            is the companion sensitivity statistic: how strongly, on the risk-ratio
-            scale, an unmeasured confounder would have to relate to both treatment and
-            survival to explain the estimate away. Because the estimand here is a
-            survival-<em>probability</em> difference rather than a ratio, it is
-            converted to a risk ratio against the observed control-arm survival at
-            that same horizon (shown above), which across these cohorts falls from about
-            0.80 at 12 months to about 0.15 at 108: a single fixed baseline would
-            mis-anchor both ends of the window.</p>
-          </details>
-        </div>
+
+          <p class="hint">The latent factor is drawn into the cohort but withheld from
+          every fitted model. To measure what that costs, the same CSF is refit
+          <em>with</em> the latent factor added to the covariates <em>and</em> to the
+          propensity model: an oracle no real analysis could run. The gap between
+          the two is the part of CSF's error attributable to the latent factor, and
+          it grows along the unmeasured-confounding axis even though the measured
+          covariates stay balanced. The factor has to enter <em>both</em> sides for
+          the oracle to mean anything: it drives treatment assignment as well as
+          survival, so an oracle given it only in the outcome model leaves the
+          orthogonalization wrong on the treatment side.</p>
+          <p class="hint">Read the gap as a component, not as the whole error. The
+          oracle does <em>not</em> land on the truth at strong measured confounding,
+          because CSF carries a second, unrelated residual there from the positivity
+          stress described in the overlap card, which is present already at
+          &Gamma; = 0 and is not the oracle's to remove. At &Gamma; = 1.5 the oracle
+          removes between 39% and 95% of the total error depending on the panel; at
+          &Gamma; = 0.75 the latent factor's contribution is small enough that the
+          gap is comparable to Monte-Carlo noise. The <strong>E-value</strong>
+          is the companion sensitivity statistic: how strongly, on the risk-ratio
+          scale, an unmeasured confounder would have to relate to both treatment and
+          survival to explain the estimate away. Because the estimand here is a
+          survival-<em>probability</em> difference rather than a ratio, it is
+          converted to a risk ratio against the observed control-arm survival at
+          that same horizon (shown above), which across these cohorts falls from about
+          0.80 at 12 months to about 0.15 at 108: a single fixed baseline would
+          mis-anchor both ends of the window.</p>
+        </details>
       </section>
 
       <section class="card-group">
         <h2><span class="n">4 ·</span>Inside the CAST layer</h2>
 
-        <div class="card" id="card-cast">
-          <h3>CAST trajectory</h3>
-          <p class="hint" id="cast-text"></p>
+        <details class="card" id="card-cast">
+          <summary>
+            <h3>CAST trajectory</h3>
+            <span class="hint" id="cast-text"></span>
+          </summary>
           <ul class="brief">
             <li>A smooth quadratic in time, fitted through the per-horizon CSF estimates.</li>
             <li>Fitted by generalized least squares when the cross-horizon covariance is well-conditioned, and by weighted least squares when it is not.</li>
             <li>The shaded band is covariance-aware: correlated horizons are handled rather than assumed independent.</li>
           </ul>
-          <details class="more"><summary>Full explanation</summary>
-            <p class="hint">A smooth quadratic effect trajectory. The point fit uses generalized least squares (weight = Σ̂⁻¹) automatically when the cross-horizon covariance is well-conditioned, falling back to weighted least squares otherwise. On this survival-probability scale the horizons are far less correlated than on the cumulative-RMST scale, so the covariance is well-conditioned and generalized least squares engages.</p>
-            <p class="hint">The shaded 95% band is the <em>covariance-aware</em> band: it propagates the Ledoit–Wolf-shrunk cross-horizon influence-function covariance through the fit (a sandwich variance), so correlated horizons are handled correctly rather than treated as independent. The band is conditional on the fitted forests and does not propagate the forests' own estimation error. Peak time and effect are model-based summaries of the horizon-specific causal estimates, not separately identified causal quantities.</p>
-          </details>
-        </div>
 
-        <div class="card" id="card-shrink">
-          <h3>Ledoit–Wolf shrinkage</h3>
-          <p class="hint" id="shrink-text"></p>
+          <p class="hint">A smooth quadratic effect trajectory. The point fit uses generalized least squares (weight = Σ̂⁻¹) automatically when the cross-horizon covariance is well-conditioned, falling back to weighted least squares otherwise. On this survival-probability scale the horizons are far less correlated than on the cumulative-RMST scale, so the covariance is well-conditioned and generalized least squares engages.</p>
+          <p class="hint">The shaded 95% band is the <em>covariance-aware</em> band: it propagates the Ledoit–Wolf-shrunk cross-horizon influence-function covariance through the fit (a sandwich variance), so correlated horizons are handled correctly rather than treated as independent. The band is conditional on the fitted forests and does not propagate the forests' own estimation error. Peak time and effect are model-based summaries of the horizon-specific causal estimates, not separately identified causal quantities.</p>
+        </details>
+
+        <details class="card" id="card-shrink">
+          <summary>
+            <h3>Ledoit–Wolf shrinkage</h3>
+            <span class="hint" id="shrink-text"></span>
+          </summary>
           <ul class="brief">
             <li>Stabilizes the cross-horizon covariance before the trajectory fit inverts it.</li>
             <li>Deliberately near-inert in this demo: 5 horizons and n = 2000 leave the sample covariance with nothing to stabilize.</li>
             <li>It earns its place in the real pipeline, where more horizons or a smaller cohort make that covariance ill-conditioned.</li>
           </ul>
-          <details class="more"><summary>Full explanation</summary>
-            <p class="hint">Shrinkage intensity λ and the cross-horizon covariance condition number, before → after shrinkage.
-            <strong>In this demo the shrinkage is deliberately near-inert</strong> (λ is a
-            few thousandths, and the condition number barely moves): with n = 2000
-            patients and only 5 horizons the sample covariance is already
-            well-conditioned, so there is nothing to stabilize. The step earns its
-            place in the real pipeline, where many more horizons, a smaller cohort, or
-            the near-collinear cumulative-RMST scale make the raw covariance
-            ill-conditioned and inverting it unstable. Watch the number rather than
-            expect it to move.</p>
-          </details>
-        </div>
+
+          <p class="hint">Shrinkage intensity λ and the cross-horizon covariance condition number, before → after shrinkage.
+          <strong>In this demo the shrinkage is deliberately near-inert</strong> (λ is a
+          few thousandths, and the condition number barely moves): with n = 2000
+          patients and only 5 horizons the sample covariance is already
+          well-conditioned, so there is nothing to stabilize. The step earns its
+          place in the real pipeline, where many more horizons, a smaller cohort, or
+          the near-collinear cumulative-RMST scale make the raw covariance
+          ill-conditioned and inverting it unstable. Watch the number rather than
+          expect it to move.</p>
+        </details>
       </section>
 
     </aside>

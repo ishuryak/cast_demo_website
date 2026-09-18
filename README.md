@@ -1,5 +1,7 @@
 # CAST demo website: causal survival trajectories on simulated oncology data
 
+[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/)
+
 An interactive teaching demo that shows, on **simulated** cancer-survival
 cohorts where the true treatment effect is known:
 
@@ -24,7 +26,15 @@ with real data.
 
 ## What you see
 
-A single ATE-vs-horizon figure with two level selectors – **measured-confounding
+A plain-language **introduction** first, written for a reader who is not a
+causal-inference specialist: what the demo is for, what data it is meant to
+analyze and what it delivers, why the familiar tools (a direct comparison, a
+single Cox hazard ratio, a survival-prediction model) fall short of the
+question, what none of them can fix, and one line on each method drawn on the
+figure. The formal statement of the estimand and the confounder taxonomy sit
+one click below it, under *The simulated cohorts in detail*.
+
+Then a single ATE-vs-horizon figure with two level selectors – **measured-confounding
 strength** (γ, four levels) and **unmeasured-confounding strength** (Γ, three
 levels) – an **effect-shape** selector, and per-method **toggles**, plus live
 cards for
@@ -32,7 +42,9 @@ accuracy (RMSE vs. truth), the Cox hazard ratio and proportional-hazards test,
 confounder imbalance (SMD, including the latent factor's own imbalance),
 propensity overlap, the unmeasured-confounding oracle gap with its E-value, the
 CAST trajectory summary, and the Ledoit–Wolf shrinkage intensity and covariance
-condition number.
+condition number. Each card shows its live numbers on its face and opens its
+bullets and full explanation when its title is clicked, so seven cards read as
+seven headline numbers rather than seven essays.
 
 The **effect-shape** selector switches between two trajectories: a **plateau**,
 where treatment is protective throughout (constant hazard ratio ≈ 0.54), so on
@@ -85,7 +97,7 @@ cast_demo_website/
   R/
     cast_core.R          Ledoit–Wolf shrinkage, cross-horizon influence-function
                          covariance, covariance-aware quadratic trajectory fit,
-                         true/KM survival-probability helpers (ported from the glioma CAST pipeline)
+                         true/KM survival-probability helpers (adapted CAST implementation)
     01_simulate.R        simulate confounded cohorts + known true ATE(t)
     02_fit_methods.R     Naive / Cox / RSF S- and T-learner / CSF / CAST, plus the
                          oracle CSF refit and AUTOC, all scored vs truth
@@ -93,7 +105,7 @@ cast_demo_website/
     04_replicate_seeds.R re-draw one scenario at N seeds; what replicates
     install_packages.R   one-time dependency install
   tests/
-    run_tests.sh             one command; runs the eight suites below
+    run_tests.sh             one command; runs the eleven suites below
     test_data_contract.mjs   every field the site reads exists and lines up
     test_render_smoke.mjs    app.js actually runs at all 24 control settings
     test_export_labels.R     figure labels track gamma, not control position
@@ -102,6 +114,9 @@ cast_demo_website/
     test_source_guards.R     the sourcing contract 04 reuses 01 and 02 through
     test_sim_provenance.R    every registered parameter still sits in the code
     test_style_contract.mjs  the CSS lets the markup take a size (bar fills)
+    test_intro_contract.mjs  the page opens with something a non-specialist reads
+    test_viewport_overflow.mjs the page fits a phone, measured in a real
+                             viewport rather than read off a screenshot
   docs/                              <- the published static site (GitHub Pages root)
     index.html  app.js  style.css      static site (Plotly, no build step)
     data/scenarios.json                aggregate results (safe to publish)
@@ -114,7 +129,7 @@ cast_demo_website/
   References/README.md   the same two sources, with licences (no PDFs committed)
   FIXES.md               landed fixes, with the evidence for each
   development/           the audits and decisions behind those fixes
-  .github/workflows/     CI: the two node suites + a docs/ completeness check
+  .github/workflows/     CI: the six node suites + a docs/ completeness check
   output/                R intermediates, output/preview/ for smoke-test exports,
                          and replicate_seeds.csv (all gitignored)
 ```
@@ -184,6 +199,12 @@ cd docs && python3 -m http.server 8000   # open http://localhost:8000
 
 The site lives in `docs/`, which GitHub Pages can serve directly:
 
+The illustrated walkthrough is at `/tutorial/`. Its editable source is in
+`tutorial/`; run `npm test` and `npm run build:pages` from the repository root,
+then commit and push the source and generated `docs/tutorial/` together to
+`main`. The build includes all interactions, animations, illustrations and
+educator downloads. See [the editing guide](design/COPY_EDITING.md).
+
 1. Push this repo to GitHub.
 2. Repo **Settings → Pages**.
 3. Under **Build and deployment**, set **Source = Deploy from a branch**, then
@@ -192,7 +213,8 @@ The site lives in `docs/`, which GitHub Pages can serve directly:
    `https://ishuryak.github.io/cast_demo_website/`
    (or `https://<your-username>.github.io/<repo-name>/` for a fork).
 
-Only aggregate artifacts ship. The per-patient simulated intermediates in
+The methods page ships aggregate artifacts. The tutorial class kit also includes
+an explicitly synthetic teaching cohort. Per-patient simulation intermediates in
 `output/` are gitignored.
 
 ## For collaborators
@@ -456,7 +478,7 @@ re-run it rather than trusting this table if the numbers matter to you.
 ./tests/run_tests.sh
 ```
 
-Eight suites, all runnable without a full pipeline run (pass a different
+Eleven suites, all runnable without a full pipeline run (pass a different
 `scenarios.json` as the first argument to check another export, e.g.
 `./tests/run_tests.sh output/preview/data/scenarios.json` after a smoke test):
 
@@ -477,6 +499,28 @@ Eight suites, all runnable without a full pipeline run (pass a different
   as empty grey rails: they were inline spans, and an inline non-replaced element
   ignores `width` and `height`. Every other suite passed throughout, because the
   markup was never the problem.
+- **`test_intro_contract.mjs`** (node) checks that the page still opens with an
+  introduction a non-specialist can read: that it comes before the controls,
+  that it answers the goal / data-and-deliverable / what-the-familiar-tools-miss
+  / what-nothing-fixes questions, that every method drawn by `app.js` has a line
+  in it (a method added to the figure with no introduction line fails here),
+  that it stays inside a word cap, and that a blocklist of specialist terms
+  stays out of it. It exists because every other suite passed on a page whose
+  first words were "the estimand is the RMST difference": correctness and
+  legibility are different properties, and only one of them had a test.
+- **`test_viewport_overflow.mjs`** (node) loads the published page in an iframe of
+  each width and asks the page for its own geometry: no element's right edge may
+  pass the viewport's, and `scrollWidth` must equal `clientWidth`, at 360, 420,
+  620, 720, 1024 and 1440 px. It replaces a headless *screenshot* check, which is
+  not a measurement of layout: Chrome will not open a window narrower than about
+  500 px, so a 420 px screenshot lays the page out at ~497 px and crops the
+  image, which looks exactly like an overflow. Reading that crop is how this
+  repository briefly recorded a mobile-overflow defect that was never in the
+  stylesheet. Because the suite asserts an *absence*, it carries a negative
+  control and runs it every time: a second iframe loads the same page with one
+  deliberately 1600 px-wide element appended, and the suite fails if that does
+  not report an overflow. It needs a Chrome or Edge and skips, rather than fails,
+  without one.
 - **`test_export_labels.R`** checks that a confounding-strength label is derived
   from the value of γ, never from a position in the grid, so a change to
   `CONF_GRID` cannot silently retitle a figure.
@@ -566,8 +610,11 @@ suppressed.
 
 CAST was developed by Yang et al. (see [Citation](#citation)). This repository
 demonstrates that method on simulated data and is not the analysis code for
-either paper. `R/cast_core.R` is ported from the production pipeline used in the
-lower-grade glioma study.
+either paper. The preprint describes weighted quadratic and spline trajectories;
+the applied glioma study describes bootstrap covariance, shrinkage and GLS/WLS.
+The current `R/cast_core.R` adapts the trajectory approach using patient-aligned
+influence-score covariance. The versioned code is the source for these exact
+implementation choices; the papers do not establish a verbatim code match.
 
 The CSF fits use `grf::causal_survival_forest` (survival.probability target,
 propensity from a `grf::regression_forest`). The CAST layer builds the
@@ -601,7 +648,7 @@ Effects with Application to Chemotherapy and Radiotherapy on Head and Neck
 Squamous Cell Carcinoma*. arXiv:2505.06367.
 https://arxiv.org/abs/2505.06367
 
-The applied study whose pipeline `R/cast_core.R` is ported from:
+An applied CAST study informing this demonstration's trajectory approach:
 
 Yang, E., Agrawal, S., Kinslow, C. J., Cheng, S. K., Yang, L., Wang, E.,
 Wang, T. J., Kachnic, L. A., Brenner, D. J., & Shuryak, I. (2026). Estimating

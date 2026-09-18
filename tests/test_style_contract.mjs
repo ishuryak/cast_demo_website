@@ -74,7 +74,30 @@ for (const cls of ["card-group", "brief", "rmse-track", "rmse-fill", "seg"]) {
   }
 }
 
-// ---- 3. the segmented control styles its radio options, not just buttons ---
+// ---- 3. the card face's spans are given a block display --------------------
+// A card's live numbers live inside its <summary>, whose content model forbids
+// <p> and <div>, so they are <span>s. A span is inline by default: without an
+// explicit display they run together on one line and the card face turns into a
+// paragraph. The markup cannot say this and the render smoke test cannot see it,
+// so it is pinned here.
+const summaries = [...html.matchAll(/<summary>([\s\S]*?)<\/summary>/g)].map(m => m[1]);
+const faceClasses = new Set();
+for (const s of summaries)
+  for (const m of s.matchAll(/<span class="([\w -]+)"/g))
+    m[1].split(/\s+/).forEach(c => faceClasses.add(c));
+if (faceClasses.size === 0)
+  fail.push("no <span class=...> inside any <summary>: the card-face scan has drifted " +
+            "from index.html");
+for (const cls of [...faceClasses].sort()) {
+  const d = decl(cls, "display");
+  if (d === null)
+    fail.push(`.${cls} rides on a card face inside <summary> but declares no display, ` +
+              `so it stays inline and the card face collapses into one run of text`);
+  else if (!SIZEABLE.test(d))
+    fail.push(`.${cls} rides on a card face but has display: ${d}`);
+}
+
+// ---- 4. the segmented control styles its radio options, not just buttons ---
 // The confounding controls are radio inputs styled to look like the effect-shape
 // buttons. If only `.seg button` is styled they render as raw radios.
 if (html.includes('id="conf-buttons"') && !/\.seg\s+input[^{}]*\{/.test(cssLive))
@@ -83,6 +106,7 @@ if (html.includes('id="conf-buttons"') && !/\.seg\s+input[^{}]*\{/.test(cssLive)
 
 console.log("style contract: docs/style.css");
 console.log(`  checked ${sized.size} percentage-sized class(es): ${[...sized].sort().join(", ")}`);
+console.log(`  checked ${faceClasses.size} card-face class(es): ${[...faceClasses].sort().join(", ")}`);
 fail.forEach(f => console.log("  FAIL  " + f));
 console.log(fail.length ? `  => ${fail.length} FAILURES` : "  => PASS");
 process.exit(fail.length ? 1 : 0);

@@ -103,6 +103,42 @@ ok("04 writes its table to output/ (gitignored), not docs/",
    grepl('"output/replicate_seeds.csv"', rep_src, fixed = TRUE) &&
    !grepl("docs/", rep_src, fixed = TRUE))
 
+# ---- the AUTOC bootstrap must be seeded, immediately before the call --------
+#
+# rank_average_treatment_effect() draws R = 200 half-sample bootstrap replicates
+# from R's GLOBAL RNG to form its standard error, while its point estimate is the
+# deterministic full-sample statistic. Every forest in 02 carries an explicit
+# `seed =` and so is stream-independent; this one call is not. Without a
+# set.seed() directly in front of it, any future edit that draws a random number
+# earlier in the file re-rolls every autoc$se in the exported grid, leaving the
+# estimate, every other exported field and all nine figures byte-identical -- a
+# change nothing else in this repository can see. That is not hypothetical: it is
+# exactly how the shipped scenarios.json came to differ from a re-run of the code
+# that produced it (FIXES.md 24).
+#
+# "Immediately before" is the assertion, not merely "somewhere in the file":
+# a seed set higher up is undone by any draw between it and the call.
+fit_src <- readLines("R/02_fit_methods.R", warn = FALSE)
+# Comment lines are excluded: the call is named in the comment that explains the
+# seed, and counting that as a second call site would make this check unfixable.
+is_comment <- grepl("^\\s*#", fit_src)
+autoc_line <- grep("rank_average_treatment_effect(", fit_src, fixed = TRUE)
+autoc_line <- autoc_line[!is_comment[autoc_line]]
+ok("02 calls rank_average_treatment_effect exactly once",
+   length(autoc_line) == 1L)
+if (length(autoc_line) == 1L) {
+  # Walk back over the tryCatch wrapper to the nearest preceding statement.
+  before <- rev(head(fit_src, autoc_line - 1L))
+  before <- before[trimws(before) != ""]
+  before <- before[!grepl("^\\s*(#|rate <- tryCatch)", before)]
+  ok("the AUTOC bootstrap is seeded immediately before the call",
+     length(before) > 0L && grepl("set.seed(", before[1], fixed = TRUE))
+  ok("the AUTOC seed derives from FOREST_SEED, not a bare literal",
+     length(before) > 0L && grepl("set.seed(FOREST_SEED", before[1], fixed = TRUE))
+} else {
+  fails <- fails + 2L
+}
+
 cat(sprintf("test_source_guards.R: %s (%d failure%s)\n",
             if (fails == 0L) "PASS" else "FAIL", fails,
             if (fails == 1L) "" else "s"))

@@ -286,8 +286,21 @@ fit_scenario <- function(sc, label) {
                      evalue = eval_rr(rr_from_diff(csf_ate, s0_km)))
 
   ## ---- aggregate AUTOC (benefit ranking) at the mid horizon ----
+  ## rank_average_treatment_effect() returns a DETERMINISTIC point estimate
+  ## (the full-sample statistic) and a standard error from R = 200 half-sample
+  ## bootstrap replicates drawn with R's global RNG. Every forest here carries an
+  ## explicit `seed =`, so nothing else in this file depends on where the global
+  ## stream happens to be -- but this bootstrap does. Without the set.seed below,
+  ## editing ANY code that runs earlier and draws a random number shifts the
+  ## stream and silently re-rolls every autoc$se in the exported grid, while the
+  ## estimate, every other field and all nine figures stay byte-identical. That
+  ## is not hypothetical: it is what separated the shipped scenarios.json from a
+  ## re-run of the code that produced it. Seeding here makes the standard error a
+  ## function of this scenario's data and FOREST_SEED alone.
+  ## Pinned by tests/test_source_guards.R.
   autoc <- list(est = NA_real_, se = NA_real_, toc = NULL)
   if (!is.null(f_mid)) {
+    set.seed(FOREST_SEED)
     rate <- tryCatch(
       rank_average_treatment_effect(f_mid, priorities = predict(f_mid)$predictions,
                                     target = "AUTOC"),

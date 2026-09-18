@@ -4,6 +4,9 @@
 # docs/data/scenarios.json (pass a different path as $1 to check another export,
 # e.g. output/preview/data/scenarios.json after a smoke test).
 #
+# Two suites have an optional dependency and SKIP rather than fail without it:
+# the five R suites need Rscript, and the viewport suite needs a Chrome or Edge.
+#
 #   ./tests/run_tests.sh
 #   ./tests/run_tests.sh output/preview/data/scenarios.json
 set -uo pipefail
@@ -40,6 +43,11 @@ if command -v node >/dev/null 2>&1; then
   run "site data contract" node tests/test_data_contract.mjs "$JSON"
   run "site render smoke"  node tests/test_render_smoke.mjs  "$JSON"
   run "site style contract" node tests/test_style_contract.mjs
+  run "intro contract"     node tests/test_intro_contract.mjs
+  run "FIXES.md order"    node tests/test_fixes_order.mjs
+  # Needs a browser. Skips (exit 0) with a message when none is found, so a
+  # machine without Chrome still runs the other nine rather than failing.
+  run "viewport overflow"  node tests/test_viewport_overflow.mjs
 else
   echo "--- SKIP: node not found; the site data contract was not checked"
   echo

@@ -42,3 +42,32 @@ CAST_demo_screenshot.pdf
 References/*.pdf
 References/*.PDF
 !References/README.md
+
+# Build artifacts of files that ARE tracked as markdown. The .md is the source
+# and is committed; the .docx is a convenience conversion for reading in Word and
+# is regenerated on demand, so committing it would put two copies of the same
+# prose in the history and let them disagree.
+development/*.docx
+
+# Written by stale_constant_audit.py on every clean --strict run and removed by
+# any failing one. It binds to a sha256 of constant_registry.yaml, so a committed
+# copy would go stale the moment the registry is edited and would then read as an
+# attestation that no longer attests to anything. The routing record in
+# audit_manifest.yaml is where that verdict is kept.
+.stale_constant_record.json
+
+# Superseded 2026-08-10 snapshot of an earlier build of the site, kept locally
+# during the docs/ migration and referenced by nothing. Ignored so it cannot be
+# committed by accident; safe to delete.
+web/
+
+# Local planning documents and generated tutorial output.
+/design/*.local.md
+/tutorial/.cache/
+/tutorial/labs/output/
+/tutorial/dist/
+/dist/
+cast-lab-output/
+
+# Local agent consultation prompts, responses, and diagnostics.
+/design/collaboration-runs/

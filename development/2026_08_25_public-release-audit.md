@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-25
 **Decision owner:** Igor Shuryak
-**Trigger:** the repository was about to be made public on GitHub. Everest Yang
+**Trigger:** the repository was about to be made public on GitHub. a colleague
 had approved the scientific content; the question asked was whether the code and
 documentation were ready to publish alongside it.
 

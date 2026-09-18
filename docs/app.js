@@ -241,7 +241,7 @@ function renderCards(s) {
   const wrap = document.querySelector(".rmse-bars");
   wrap.innerHTML = "";
   rows.forEach(([name, val, color]) => {
-    const row = document.createElement("div");
+    const row = document.createElement("span");
     row.className = "rmse-row";
     row.innerHTML =
       `<span class="name">${name}</span>` +

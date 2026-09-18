@@ -1,0 +1,11 @@
+{
+  "name": "cast-learning-preview",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node tests/run.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
