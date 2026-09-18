@@ -11,8 +11,9 @@
 
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const file = process.argv[2] || path.join(root, "docs", "data", "scenarios.json");
 const appjs = fs.readFileSync(path.join(root, "docs", "app.js"), "utf8");
 

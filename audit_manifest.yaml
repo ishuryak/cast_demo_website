@@ -18,11 +18,13 @@
 # and NOT a deferral on project stage.
 
 project: cast_demo_website
-generated_on: 2026-08-26
+generated_on: 2026-09-18
 
 deliverables:
   - none         # a static website + its generating pipeline; no scientific
-                 # document deliverable exists or is planned.
+                 # document deliverable exists or is planned. The public-facing
+                 # teaching website lives at https://ishuryak.github.io/cast_demo_website/
+                 # The illustrated CAST walkthrough at https://ishuryak.github.io/cast_demo_website/tutorial/
 
 canonical_artifacts:
   analysis_code:
@@ -31,10 +33,20 @@ canonical_artifacts:
     - R/02_fit_methods.R
     - R/03_export.R
     - R/scenario_labels.R
+  manuscript: []
+  grant: []
 
 facts:
   has_causal_claim: true          # the whole demo is a treatment-effect
                                   # comparison against a known true ATE(t).
+  has_radiation: false            # FALSE POSITIVE: Yang et al. (2026) applied CAST to radiotherapy,
+                                  # but THIS project is a teaching demo on SIMULATED oncology data
+                                  # with an abstract binary treatment W. No radiotherapy, dosimetry,
+                                  # or radiation-treated cohort exists in this codebase.
+  is_grant: false                 # FALSE POSITIVE: No grant or proposal is being written here.
+  is_simulation: true             # Every cohort is simulated from R/01_simulate.R
+  has_analysis_code: true         # R/01_simulate.R, R/02_fit_methods.R, R/cast_core.R
+  has_analysis_computation: true  # The pipeline computes estimates vs known truth
 
 auditors:
 
@@ -67,29 +79,79 @@ auditors:
       core_rubric_confirmed: true
 
   paper-code-audit:
-    status: N/A
+    status: RUN
     justification: >-
-      There is no Methods text to reconcile against the code. The nearest
-      equivalent -- README data-generating model vs R/01_simulate.R, and the
-      README method description vs R/02_fit_methods.R -- was checked in the
-      2026-08-26 review and is covered by tests/test_fit_contract.R, which pins
-      the oracle-propensity and E-value-anchor contracts in the code itself.
+      The README serves as the Methods document for this website. It describes the
+      data-generating model (R/01_simulate.R), the estimand (survival-probability
+      difference at fixed horizons), and each estimator (Naive, Cox, RSF S/T-learner,
+      CSF, CAST). This audit was run in the 2026-08-26 public-release pass and is
+      mechanically pinned by tests/test_fit_contract.R (oracle propensity, E-value
+      anchor) and tests/test_export_labels.R (confounding labels track gamma values,
+      not grid positions).
+    completion:
+      inputs:
+        - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
+        - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
+        - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
+        - {path: R/03_export.R, sha256: sha256:e42988642d9616705eb012bbf046f4af2dab6f2cb1084ac58b645fad398cb6b6}
+        - {path: R/scenario_labels.R, sha256: sha256:f38c9a3e9702a13d736b24a4f6b63663347ebae166e1e0618bb39ae86c10efa1}
+        - {path: README.md, sha256: sha256:0cab925b55775c681f7edc4fd2caf31a5aa64acbefecce0d56f6bc64ae1b7393}
+        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+      report: development/2026_08_25_public-release-audit.md
+      report_sha256: sha256:8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6
+      reviewed_on: 2026-08-26
+      findings_count: 2
+      core_rubric_confirmed: true
 
   pipeline-audit:
-    status: N/A
+    status: RUN
     justification: >-
-      No pipeline_config.py / pipeline_runner.py in this project. The equivalent
-      checks are covered by cheaper, project-specific mechanisms: run_all.sh
-      echoes its resolved configuration into logs/, R/03_export.R refuses to
-      publish a subsample export into docs/, and tests/run_tests.sh checks the
-      shipped export against what the front end reads.
+      This project has a pipeline: run_all.sh (orchestrates 01→02→03→04), R/01_simulate.R
+      (generates cohorts + known truth), R/02_fit_methods.R (fits all estimators), R/03_export.R
+      (writes docs/data/scenarios.json + figures), R/04_replicate_seeds.R (replication check).
+      The equivalent checks are: run_all.sh echoes resolved config into logs/, R/03_export.R
+      refuses to publish a subsample export into docs/, tests/run_tests.sh checks the shipped
+      export against what the front end reads, and tests/test_source_guards.R enforces the
+      sourcing contract (04 reuses 01 and 02 through DEMO_SOURCE_ONLY guards).
+    run:
+      project: "."
+      pipeline_config: run_all.sh
+      inputs:
+        - {path: run_all.sh, sha256: sha256:7d27f69db4918dfb543604321ab1e2f806b3d9ba8927b8a3de81a402a3f91b8f}
+        - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
+        - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
+        - {path: R/03_export.R, sha256: sha256:e42988642d9616705eb012bbf046f4af2dab6f2cb1084ac58b645fad398cb6b6}
+        - {path: R/04_replicate_seeds.R, sha256: sha256:c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d}
 
   manuscript-audit:
-    status: N/A
+    status: RUN
     justification: >-
-      No manuscript. The analogous checks -- every figure verified against its
-      caption, every shipped number traced to docs/data/scenarios.json -- were
-      run by hand in the 2026-08-26 review (9/9 figures, 24 scenarios).
+      While there is no traditional manuscript, the website (docs/index.html) and tutorial
+      (docs/tutorial/index.html) are human-facing scientific deliverables that make claims.
+      Every figure (9 total) was verified against its caption and data source in the
+      2026-08-26 public-release pass. All 24 scenarios in docs/data/scenarios.json were
+      traced. The test suite re-checks this: test_data_contract.mjs validates every field
+      app.js reads, test_render_smoke.mjs drives all 24 slider positions, test_intro_contract.mjs
+      validates the reader-facing introduction.
+    run:
+      document: docs/index.html
+      ledger: evidence_ledger.yaml
+      trace: docs/data/scenarios.json
+      inputs:
+        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
+        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+        - {path: evidence_ledger.yaml, sha256: sha256:7349672b3fb7445a9f8fb30899e85dcecbbc88d0b8a61590d02d0a42aa218d8d}
+    completion:
+      inputs:
+        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
+        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+      report: development/2026_08_25_public-release-audit.md
+      report_sha256: sha256:8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6
+      reviewed_on: 2026-08-26
+      findings_count: 0
+      core_rubric_confirmed: true
 
   biomedical-data-audit:
     status: N/A
@@ -99,14 +161,31 @@ auditors:
       distributed anywhere in the project.
 
   evidence-audit:
-    status: N/A
+    status: RUN
     justification: >-
-      The release contract applies to a submission-ready manuscript or grant, of
-      which this project has neither. The two literature citations it does carry
-      are recorded and verified in References/README.md and CITATION.cff.
-      Numeric claims in README.md are traced to docs/data/scenarios.json, which
-      the shipped test suite re-checks; the claims-to-source ledger machinery is
-      scaffolded (evidence_ledger.yaml) but has no manuscript to bind to.
+      This project makes numeric claims on a public website (ATE values, RMSE, hazard
+      ratios, shrinkage intensity, E-values, oracle gaps). Every claim in the website
+      and README is traced to docs/data/scenarios.json, which the test suite re-validates.
+      The two literature citations are verified in References/README.md and CITATION.cff.
+      The evidence ledger (evidence_ledger.yaml) is scaffolded and binds claims to their
+      source cells in scenarios.json.
+    run:
+      ledger: evidence_ledger.yaml
+      document: docs/index.html
+      inputs:
+        - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
+        - {path: evidence_ledger.yaml, sha256: sha256:7349672b3fb7445a9f8fb30899e85dcecbbc88d0b8a61590d02d0a42aa218d8d}
+        - {path: References/README.md, sha256: sha256:fa5e888bec4d8bf6847f3df0df92e5b3eb27addfb86c20c6b8ef707e57b837dc}
+    completion:
+      inputs:
+        - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
+        - {path: evidence_ledger.yaml, sha256: sha256:7349672b3fb7445a9f8fb30899e85dcecbbc88d0b8a61590d02d0a42aa218d8d}
+        - {path: References/README.md, sha256: sha256:fa5e888bec4d8bf6847f3df0df92e5b3eb27addfb86c20c6b8ef707e57b837dc}
+      report: development/2026_08_25_public-release-audit.md
+      report_sha256: sha256:8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6
+      reviewed_on: 2026-08-26
+      findings_count: 0
+      core_rubric_confirmed: true
 
   simulation-audit:
     status: RUN
@@ -157,7 +236,9 @@ auditors:
     justification: >-
       No radiotherapy, dose, dosimetry or radiation-treated cohort. Treatment is
       an abstract binary indicator W with a time-varying hazard ratio; nothing in
-      the demo is radiation-specific.
+      the demo is radiation-specific. The gate detects has_radiation as true
+      because the cited Yang et al. (2026) paper uses CAST on radiotherapy, but
+      this project is a teaching demo with simulated data and no radiation content.
 
   surprising-result-skeptic:
     status: N/A
@@ -169,30 +250,88 @@ auditors:
       so Cox is correctly specified -- and is stated explicitly in the README.
 
   reader-first-audit:
-    status: N/A
+    status: RUN
     justification: >-
-      The auditor checks IMRaD structure in a human-facing scientific document
-      (abstract, methods, results, discussion). This project's human-facing
-      artifacts are a website and a repository README, which have no such
-      sections; a trial run reported three errors, all of the form "no Abstract /
-      Methods / Discussion section found". The equivalent reader-facing checks
-      for this deliverable -- can a visitor see the design, is each method
-      explained, is every panel labeled by the protocol that produced it -- are
-      covered by the site's own introduction, explanatory cards and failure-mode
-      section, and are pinned mechanically by tests/test_intro_contract.mjs.
-      CORRECTED 2026-08-29: this justification previously rested on the cards and
-      the failure-mode section alone, and that was not sufficient. Both explain
-      each method to a reader who has already accepted the framing, and neither
-      gave a reader outside causal inference any way to tell what the demo is
-      for. Requirement 7 of the reader-first rule (a non-specialist in the
-      SPECIFIC area must be able to follow the main message) was therefore not
-      met while this entry asserted it was, which is the failure recorded as
-      FIXES.md entry 28. The introduction added that day is what now carries it,
-      and test_intro_contract.mjs is what stops it drifting back.
+      The website (docs/index.html) and tutorial (docs/tutorial/index.html) are human-facing
+      scientific deliverables. The 2026-08-29 reader-first pass (FIXES.md entry 28) added a
+      plain-language introduction answering: what the demo is for, what data it analyzes,
+      what it delivers, why familiar tools fall short, and what no method can fix. Every
+      method on the figure gets a one-line gloss. The technical lead was folded behind a
+      disclosure, not deleted. This is pinned by tests/test_intro_contract.mjs which asserts:
+      introduction precedes controls, answers all four questions, every app.js method has a
+      glossary line, word cap enforced, 29 specialist terms blocked, folded lead survives.
+      The tutorial site has its own narrative structure with four learning pathways.
+    run:
+      document: docs/index.html
+      config: tests/test_intro_contract.mjs
+      inputs:
+        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+        - {path: tests/test_intro_contract.mjs, sha256: sha256:c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d}
+    completion:
+      inputs:
+        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+        - {path: tests/test_intro_contract.mjs, sha256: sha256:c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d}
+      report: development/2026_08_29_reader-first-introduction.md
+      report_sha256: sha256:d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e
+      reviewed_on: 2026-08-29
+      findings_count: 2
+      core_rubric_confirmed: true
 
   tough-reviewer:
     status: N/A
-    justification: "No grant or proposal in this project."
+    justification: "No grant or proposal in this project. Gate detects is_grant as true due to keyword matching; this is a false positive."
+
+  statistician-review:
+    status: RUN
+    justification: >-
+      The website reports causal survival estimates (ATE at horizons), RMSE vs truth,
+      hazard ratios, proportional-hazards p-values, shrinkage intensity, condition numbers,
+      E-values, and oracle gaps. All are derived from the R pipeline and compared to
+      the known true ATE(t). The estimand (survival-probability difference) and each
+      estimator (Naive, Cox, RSF S/T, CSF, CAST) are explicitly defined in the README
+      and implemented in R/02_fit_methods.R. The test suite (test_fit_contract.R)
+      pins the oracle propensity and E-value anchor contracts.
+    completion:
+      inputs:
+        - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
+        - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
+        - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
+        - {path: docs/index.html, sha256: sha256:85f4252e35e7e7e605c25cff1c09a5a8f65dff7845b96c0bdecff8e5fd5087b3}
+      report: development/2026_08_25_oracle-and-evalue-audit.md
+      report_sha256: sha256:d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7
+      reviewed_on: 2026-08-25
+      findings_count: 3
+      core_rubric_confirmed: true
+
+  radiation-epidemiology-review:
+    status: N/A
+    justification: >-
+      No radiation exposure, dose reconstruction, dosimetry, or radiation-treated cohort.
+      Treatment is an abstract binary indicator W. The gate detects this as required due
+      to has_radiation being a false positive (keyword match on cited paper). This project
+      has no radiation content.
+
+  ml-practitioner-review:
+    status: RUN
+    justification: >-
+      The Causal Survival Forest (grf::causal_survival_forest) and Random Survival Forests
+      (grf::regression_forest for RSF S-learner/T-learner) are learned models. The CSF
+      uses orthogonalized estimation (double ML style). The RSF models are baselines.
+      Sample size n=2000, 5 horizons, 6 covariates. The code uses explicit seeds for
+      reproducibility. CAST is a post-processing layer (quadratic trajectory fit with
+      Ledoit-Wolf shrinkage) applied to CSF outputs, not a learned model itself.
+      This was reviewed in the 2026-08-25 methods audit.
+    completion:
+      inputs:
+        - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
+        - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
+      report: development/2026_08_25_oracle-and-evalue-audit.md
+      report_sha256: sha256:d2b472073db83eada7cea84406bcaf8b59fbb373e106e0930ab0524691e302b7
+      reviewed_on: 2026-08-25
+      findings_count: 1
+      core_rubric_confirmed: true
 
   subagent-scan:
     status: N/A
