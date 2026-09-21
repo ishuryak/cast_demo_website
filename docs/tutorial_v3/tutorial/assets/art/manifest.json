@@ -1,5 +1,0 @@
-{
-  "hero": null,
-  "followUp": null,
-  "note": "Codex owns this manifest. Claude supplies assets and ART_NOTES.md; integration follows review. Each entry may be {src, alt}, relative to this manifest directory."
-}
