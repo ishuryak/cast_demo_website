@@ -1,0 +1,209 @@
+:root {
+  --ink: #1a1f29;
+  --muted: #5b6573;
+  --line: #e2e6ec;
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --truth: #111111;
+  --naive: #d55e00;
+  --rsf: #0072b2;
+  --csf: #009e73;
+  --cast: #009e73;
+  --tlearner: #cc79a7;
+  --cox: #9467bd;
+  --accent: #1b6ec2;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+}
+header {
+  background: linear-gradient(135deg, #0e2a47, #154a7a);
+  color: #fff; padding: 2.2rem 1.5rem 1.8rem;
+}
+header h1 { margin: 0 0 .4rem; font-size: 1.9rem; letter-spacing: -0.01em; }
+header .sub { margin: 0; max-width: 60rem; color: #d7e3f0; font-size: 1.05rem; }
+main { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
+.lead { font-size: 1.05rem; color: var(--ink); max-width: 62rem; }
+em { font-style: italic; }
+code { background: #eef1f5; padding: .08em .35em; border-radius: 4px; font-size: .92em; }
+
+/* The plain-language introduction: goal, data in, answer out, why the familiar
+   tools fall short, and one line on each method. It is the first thing on the
+   page because a reader who is not a causal-inference specialist cannot read the
+   figure until they have it. Deliberately the calmest block here, plain cards
+   with no accent bars, so it reads as prose rather than as another instrument
+   panel. */
+.intro { margin-bottom: 1.3rem; }
+.intro > h2 { margin: 0 0 .6rem; font-size: 1.45rem; letter-spacing: -0.01em; }
+.intro-lead { margin: 0 0 1rem; max-width: 62rem; font-size: 1.06rem; color: #2c3440; }
+/* Two columns, not `auto-fit` at 18rem. Four blocks across a 1132px content
+   width give three plus a stranded fourth with two empty columns beside it,
+   which is the same dead space the card grid below was rebuilt to remove.
+   24rem admits exactly two columns there and one on a phone, so the four
+   blocks read as a 2x2 with no orphan row. */
+/* `min(24rem, 100%)`, not a bare 24rem: `auto-fit` never shrinks a track below
+   its stated minimum, so a flat 24rem forced a 408px column onto a 345px
+   phone and pushed the whole page sideways. Caught by
+   tests/test_viewport_overflow.mjs. */
+.intro-grid { display: grid; gap: .9rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr)); }
+.intro-block { background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: .9rem 1.1rem; }
+.intro-block h3 { margin: 0 0 .35rem; font-size: .95rem; color: var(--accent); }
+.intro-block p { margin: 0; font-size: .92rem; color: #2c3440; }
+.intro-methods { margin-top: .9rem; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: .9rem 1.2rem 1rem; }
+.intro-methods h3 { margin: 0 0 .7rem; font-size: .95rem; color: var(--accent); }
+.intro-methods dl { margin: 0; display: grid; grid-template-columns: 13rem 1fr; gap: .55rem 1.2rem; }
+.intro-methods dt { margin: 0; font-weight: 800; font-size: .92rem; }
+.intro-methods dd { margin: 0; font-size: .92rem; color: #2c3440; }
+
+/* The technical lead: one click away, rather than in front of the introduction. */
+.lead-detail { margin: 0 0 1.2rem; }
+.lead-detail > summary { display: inline-block; cursor: pointer; list-style: none;
+  font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--accent); }
+.lead-detail > summary::-webkit-details-marker { display: none; }
+.lead-detail > summary::before { content: "\25B8\00A0"; }
+.lead-detail[open] > summary::before { content: "\25BE\00A0"; }
+.lead-detail > summary:focus-visible { outline: 2px solid var(--accent);
+  outline-offset: 2px; border-radius: 3px; }
+.lead-detail .lead { margin-top: .6rem; }
+
+.controls {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  gap: 1.2rem 2rem; background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; padding: 1.1rem 1.3rem; margin: 1.2rem 0;
+}
+/* Flex rather than a fixed-minimum grid: the measured-confounding control has
+   four options and needs about 24rem, which a `minmax(15rem, 1fr)` column could
+   not give it, so its last option wrapped onto a second, unbordered row. */
+.ctrl { min-width: 0; }
+.ctrl label { display: block; font-weight: 700; font-size: .82rem;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: .5rem; }
+.seg { display: inline-flex; flex-wrap: wrap; max-width: 100%;
+  border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button, .seg label { border: 0; background: #fff; padding: .5rem 1rem; cursor: pointer;
+  font-size: .95rem; font-weight: 600; color: var(--muted); margin: 0;
+  text-transform: none; letter-spacing: 0; white-space: nowrap; }
+.seg button.active, .seg input:checked + label { background: var(--accent); color: #fff; }
+.seg button + button, .seg input + label:not(:first-of-type) { border-left: 1px solid var(--line); }
+/* The two confounding axes are radio inputs styled to look like the effect-shape
+   buttons. Real radios rather than ARIA-annotated <button>s, so arrow-key
+   navigation and screen-reader semantics come from the platform. The input is
+   hidden visually but stays focusable, and the focus ring is drawn on its label. */
+.seg input[type="radio"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: -3px; }
+#conf-label { color: var(--accent); font-weight: 800; }
+/* The method toggles are eight items. Left beside the shape selector and the two
+   confounding controls they stack vertically, making that column three times the
+   height of its neighbours and leaving the same dead space under them that the
+   cards used to leave under the plot. Taking a full row lets them wrap into one
+   or two lines instead. */
+.controls .ctrl:last-child { flex: 1 0 100%; }
+.toggles { display: flex; flex-wrap: wrap; gap: .5rem 1.1rem; max-width: none; }
+/* Keep "γ = 0" from breaking between the symbol and its value, and keep the
+   label's `text-transform: uppercase` off it: uppercasing the measured axis's
+   lowercase γ renders it as Γ, which is the symbol for the OTHER axis. */
+#conf-label, #unmeas-label { white-space: nowrap; text-transform: none; }
+.toggles label { display: inline-flex; align-items: center; gap: .35rem;
+  font-weight: 600; font-size: .9rem; text-transform: none; letter-spacing: 0;
+  color: var(--ink); margin: 0; cursor: pointer; }
+.swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+
+/* Plot full width on top, cards flowing underneath it.
+   The cards used to sit in a fixed 320px right-hand column beside a 540px-tall
+   plot. Seven stacked cards run far taller than the plot, so everything to the
+   left of them below the figure was dead white space -- close to two screens of
+   it on a laptop. Stacking the plot and flowing the cards beneath uses that
+   width instead.
+   That layout used CSS multi-column, chosen because the cards differed
+   several-fold in height and a grid, which aligns row heights, would have
+   reopened the gaps it was meant to close. Collapsing each card's long prose
+   behind a <details> removed that height spread, so the cards are now a grid of
+   four labeled GROUPS instead. A grid is what the grouping needs: a
+   multi-column flow can break a group heading away from the cards beneath it,
+   and `auto-fit` still drops to one column on a phone with no media query.
+   The 16.5rem minimum is chosen so all FOUR groups fit across the 1132px content
+   width: at 17rem the fourth wrapped onto a second row and left two empty
+   columns beside it, which is the dead space this layout exists to avoid. */
+.plot-row { display: block; }
+#plot { width: 100%; height: 560px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 12px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(16.5rem, 1fr));
+  gap: 1rem; align-items: start; margin-top: 1.1rem; }
+.card-group { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
+.card-group > h2 { margin: 0; font-size: .82rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+.card-group > h2 .n { display: inline-block; min-width: 1.35em; margin-right: .3em; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  padding: .9rem 1rem; margin: 0; }
+.card h3 { margin: 0 0 .6rem; font-size: .9rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+.card .big { display: block; font-size: 1.5rem; font-weight: 800; margin: .1rem 0; }
+.hint { display: block; font-size: .8rem; color: var(--muted); margin: .35rem 0 0; }
+
+/* Each card is ONE disclosure whose control is its own title. The closed face
+   carries the title and the card's live numbers, which is what the card is for;
+   the bullets and the full prose open on a click. A reader meeting seven cards
+   at once therefore sees seven headlines rather than seven essays.
+   <details> rather than a click handler on the title: keyboard-reachable,
+   announced by screen readers, works with JavaScript off, and the browser's own
+   in-page search still finds text inside a closed one.
+   The live-value containers are <span>s because <summary> takes phrasing
+   content, not <p> or <div>; the block displays below restore the layout they
+   had as <p>/<div>, so they are load-bearing rather than tidiness. */
+.card > summary { cursor: pointer; list-style: none; display: block; }
+.card > summary::-webkit-details-marker { display: none; }
+.card > summary h3 { margin: 0 0 .5rem; padding-left: 1.05em; text-indent: -1.05em; }
+.card > summary h3::before { content: "\25B8"; display: inline-block; width: 1.05em;
+  text-indent: 0; color: var(--accent); }
+.card[open] > summary h3::before { content: "\25BE"; }
+.card > summary:hover h3 { color: var(--accent); }
+.card > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px;
+  border-radius: 8px; }
+.card[open] > summary { border-bottom: 1px solid var(--line); padding-bottom: .5rem; }
+.card .brief { margin: .7rem 0 0; padding-left: 1.05rem; font-size: .8rem; color: var(--muted); }
+.card .brief li { margin: .22rem 0; }
+.rmse-bars { display: flex; flex-direction: column; gap: .4rem; }
+.rmse-row { display: grid; grid-template-columns: 64px 1fr 52px; align-items: center; gap: .5rem; font-size: .85rem; }
+.rmse-row .name { font-weight: 700; }
+.rmse-track { display: block; background: #eef1f5; border-radius: 5px; height: 14px; overflow: hidden; }
+/* `display: block` is load-bearing, not tidiness. app.js sets the fill's width as
+   a percentage, and a non-replaced INLINE element ignores width and height
+   (CSS 2.1 10.3.1 / 10.6.1). Without it every bar rendered as an empty grey rail
+   in every state of the page. `min-width` keeps a near-zero RMSE visible as a
+   sliver rather than as nothing. Pinned by tests/test_style_contract.mjs. */
+.rmse-fill { display: block; height: 100%; min-width: 2px; border-radius: 5px; }
+.rmse-row .val { text-align: right; font-variant-numeric: tabular-nums; }
+
+.story { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.6rem; }
+.step { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  border-radius: 10px; padding: 1rem 1.2rem; }
+.step h2 { margin: 0 0 .4rem; font-size: 1.1rem; }
+.step p { margin: 0; font-size: .94rem; color: #2c3440; }
+.provenance { margin-top: 1.6rem; padding: 1rem 1.2rem; background: #eef3f8;
+  border: 1px solid #d4e1ee; border-radius: 10px; font-size: .88rem; color: #2c3440; }
+.provenance .gen { color: var(--muted); font-size: .78rem; margin-bottom: 0; }
+
+.failure-modes { margin-top: 1.8rem; }
+.failure-modes h2 { margin: 0 0 .4rem; font-size: 1.25rem; }
+.fm-lead { margin: 0 0 1rem; color: var(--muted); font-size: .95rem; max-width: 62rem; }
+.fm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
+.fm-item { background: var(--card); border: 1px solid var(--line);
+  border-left: 5px solid var(--line); border-radius: 10px; padding: .8rem 1.1rem; }
+.fm-item h3 { margin: 0 0 .3rem; font-size: 1rem; color: var(--ink); }
+.fm-item p { margin: 0; font-size: .9rem; color: #2c3440; }
+.fm-item .mode { font-weight: 800; }
+
+@media (max-width: 900px) {
+  .controls .ctrl { flex: 1 0 100%; }
+  .story { grid-template-columns: 1fr; }
+  .fm-grid { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: 1fr; }
+  .intro-methods dl { grid-template-columns: 1fr; gap: .1rem; }
+  .intro-methods dt { margin-top: .7rem; }
+  #plot { height: 420px; }
+}

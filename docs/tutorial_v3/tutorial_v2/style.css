@@ -1,0 +1,230 @@
+/* Oncology framing of the CAST demo. Self-contained: docs/style.css serves the
+   methods page and docs/clinical/style.css the clinical view, and both are left
+   untouched so the three versions can diverge independently. The palette is
+   inherited by hand so they still look related, with one deliberate break: CSF
+   and CAST no longer share a colour. */
+:root {
+  --ink: #1a1f29;
+  --muted: #5b6573;
+  --line: #e2e6ec;
+  --bg: #f7f8fa;
+  --card: #ffffff;
+  --truth: #111111;
+  --naive: #d55e00;
+  --rsf: #0072b2;
+  --tlearner: #cc79a7;
+  --cox: #9467bd;
+  --csf: #009e73;
+  --cast: #00356b;
+  --accent: #1b6ec2;
+  --good: #1a7f4f;
+  --bad: #b3341c;
+  --warn: #9a6a00;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; color: var(--ink); background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+}
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+header { background: linear-gradient(135deg, #0e2a47, #154a7a); color: #fff;
+  padding: 2.2rem 1.5rem 1.8rem; }
+header h1 { margin: 0 0 .4rem; font-size: 2rem; letter-spacing: -0.015em; }
+header .sub { margin: 0; max-width: 58rem; color: #d7e3f0; font-size: 1.06rem; }
+header .alt { margin: .9rem 0 0; font-size: .87rem; color: #a9c4dd; max-width: 58rem; }
+header .alt a { color: #d7e3f0; }
+
+main { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
+h2 { font-size: 1.35rem; letter-spacing: -0.01em; margin: 2rem 0 .7rem; }
+h3 { font-size: 1rem; margin: 0 0 .35rem; }
+p { max-width: 62rem; }
+code { background: #eef1f5; padding: .08em .35em; border-radius: 4px; font-size: .92em; }
+.term { border-bottom: 1px dotted var(--muted); cursor: help; }
+
+/* Opening prose. The calmest block on the page. */
+.intro p { font-size: 1.06rem; color: #2c3440; }
+.intro .q { font-size: 1.2rem; font-weight: 700; color: #16324f; max-width: 54rem; }
+.gloss-block, .units-note {
+  background: var(--card); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 8px;
+  padding: .85rem 1rem; margin-top: 1.1rem;
+}
+.units-note { border-left-color: var(--good); }
+
+/* Reader paths. Five audiences, clinician first. */
+.reader-entry {
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.2rem; margin: 1.8rem 0 .6rem;
+}
+.reader-intro h2 { margin: 0 0 .25rem; font-size: 1.2rem; }
+.reader-intro p { margin: 0 0 .85rem; color: var(--muted); font-size: .95rem; }
+.reader-choices { display: flex; flex-wrap: wrap; gap: .4rem; }
+.reader-choices button {
+  font: inherit; font-size: .92rem; cursor: pointer;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+  border-radius: 999px; padding: .42rem .95rem;
+}
+.reader-choices button:hover { border-color: var(--accent); }
+.reader-choices button[aria-pressed="true"] {
+  background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700;
+}
+.reader-choices button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.reader-itinerary {
+  margin-top: 1rem; padding: .9rem 1rem; background: #f2f6fb;
+  border: 1px solid #d5e3f2; border-radius: 8px;
+}
+.reader-itinerary h3 { font-size: 1.02rem; margin: 0 0 .2rem; }
+.reader-itinerary p { margin: 0 0 .5rem; color: var(--muted); font-size: .93rem; }
+.reader-itinerary ol { margin: 0; padding-left: 1.3rem; }
+.reader-itinerary li { margin: .2rem 0; }
+.reader-reset {
+  margin-top: .8rem; font: inherit; font-size: .85rem; cursor: pointer;
+  background: none; border: 0; color: var(--accent); text-decoration: underline; padding: 0;
+}
+.reader-fallback { display: flex; flex-direction: column; gap: .3rem; margin-top: .8rem; }
+
+/* Controls */
+.controls { display: grid; gap: 1rem; margin: 1.6rem 0 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1rem 1.1rem; }
+.ctrl > label { display: block; font-size: .8rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+  margin-bottom: .4rem; }
+/* The unrecorded-confounding control is the one that decides whether any of
+   this is believable. On the sibling pages it sat inside a collapsed
+   disclosure. Here it is on the face and marked. */
+.ctrl.highlight { background: #fff7e8; border: 1px solid #f0d9a8;
+  border-radius: 8px; padding: .7rem .8rem; margin: -.7rem -.8rem; }
+.ctrl.highlight > label { color: #8a5d00; }
+.ctrl-hint { font-size: .84rem; color: var(--muted); margin: .45rem 0 0; max-width: none; }
+.seg { display: flex; flex-wrap: wrap; gap: .3rem; }
+.seg button { font: inherit; font-size: .88rem; cursor: pointer;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+  border-radius: 7px; padding: .32rem .7rem; }
+.seg button.on { background: var(--accent); border-color: var(--accent);
+  color: #fff; font-weight: 700; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toggles { display: flex; flex-wrap: wrap; gap: .3rem .7rem; }
+.toggles label { font-size: .86rem; display: inline-flex; align-items: center; gap: .3rem; }
+.swatch { width: .8rem; height: .8rem; border-radius: 2px; display: inline-block; }
+
+/* Figure */
+#plot { width: 100%; height: 470px; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; }
+.plot-caption { font-size: .9rem; font-weight: 700; color: #16324f;
+  margin: .6rem 0 0; }
+.plot-note { font-size: .86rem; color: var(--muted); margin: .5rem 0 0; }
+.load-error { padding: 2rem; color: var(--bad); }
+.warn-note {
+  font-size: .9rem; margin: .7rem 0 0; padding: .7rem .9rem;
+  background: #fff7e8; border: 1px solid #f0d9a8; border-left: 4px solid var(--warn);
+  border-radius: 8px; color: #6b4d09;
+}
+
+/* Value table: nothing on this page is hover-only. */
+.table-wrap { margin: 1.4rem 0 0; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.1rem;
+  overflow-x: auto; }
+.table-title { font-size: 1rem; margin: 0 0 .2rem; }
+.table-wrap .hint { font-size: .86rem; color: var(--muted); margin: 0 0 .7rem; }
+#values-table { border-collapse: collapse; width: 100%; font-size: .86rem;
+  font-variant-numeric: tabular-nums; }
+#values-table caption { caption-side: bottom; text-align: left; font-size: .82rem;
+  color: var(--muted); padding-top: .6rem; }
+#values-table th, #values-table td { padding: .34rem .5rem; text-align: right;
+  border-bottom: 1px solid var(--line); }
+#values-table thead th { text-align: right; font-size: .78rem; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .03em; border-bottom: 2px solid var(--line); }
+#values-table tbody th { text-align: left; font-weight: 700; }
+#values-table tr.selected-row { background: #eef5fd; }
+
+/* Cards */
+.cards { display: grid; gap: 1rem; margin: 1.6rem 0 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(21rem, 100%), 1fr)); }
+.card { background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1rem 1.1rem; }
+.card h3 { font-size: 1.02rem; margin: 0 0 .4rem; }
+.card .hint { font-size: .86rem; color: var(--muted); margin: 0 0 .7rem; max-width: none; }
+.card .sub { font-size: .88rem; margin: .7rem 0 0; max-width: none; }
+.card .big { font-size: 1.9rem; font-weight: 800; margin: .2rem 0 .3rem;
+  letter-spacing: -0.02em; color: #16324f; }
+.card .big .unit { font-size: .95rem; font-weight: 600; color: var(--muted);
+  letter-spacing: 0; }
+.horizon-pick { margin-top: .9rem; display: flex; flex-wrap: wrap;
+  align-items: center; gap: .5rem; }
+.pick-label { font-size: .78rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--muted); }
+
+/* Coverage strip */
+.cov { display: flex; flex-wrap: wrap; gap: .35rem; }
+.cov-cell { flex: 1 1 4.2rem; border-radius: 7px; padding: .45rem .3rem;
+  text-align: center; border: 1px solid var(--line); }
+.cov-cell .cov-mo { display: block; font-size: .72rem; color: var(--muted); }
+.cov-cell .cov-mark { display: block; font-weight: 800; font-size: .92rem; }
+.cov-cell.in  { background: #e9f6ef; border-color: #b9e0cb; }
+.cov-cell.in .cov-mark  { color: var(--good); }
+.cov-cell.out { background: #fdecea; border-color: #f2c2b8; }
+.cov-cell.out .cov-mark { color: var(--bad); }
+
+/* Bar rows */
+.bars { display: flex; flex-direction: column; gap: .35rem; }
+.bar-row { display: grid; grid-template-columns: minmax(7rem, 14rem) 1fr auto;
+  align-items: center; gap: .55rem; font-size: .86rem; }
+.bar-row .name { color: var(--ink); }
+.bar-row .name em { color: var(--muted); font-size: .92em; }
+.bar-row .track { background: #eef1f5; border-radius: 5px; height: .72rem;
+  overflow: hidden; }
+.bar-row .fill { display: block; height: 100%; border-radius: 5px; }
+.bar-row .val { font-variant-numeric: tabular-nums; color: var(--muted);
+  min-width: 3rem; text-align: right; }
+
+/* Limitations */
+.limits { margin-top: 2.2rem; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: 1.1rem 1.3rem; }
+.limits h2 { margin-top: 0; }
+.limits ul { margin: 0; padding-left: 1.2rem; }
+.limits li { margin: .55rem 0; max-width: 62rem; }
+
+/* Technical disclosure */
+.tech { margin: 1.4rem 0 0; background: var(--card); border: 1px solid var(--line);
+  border-radius: 10px; padding: .9rem 1.1rem; }
+.tech summary { cursor: pointer; font-weight: 700; }
+.tech h3 { margin: 1.1rem 0 .3rem; }
+
+footer { margin: 2.2rem 0 1rem; font-size: .84rem; color: var(--muted); }
+footer p { max-width: none; }
+
+@media (max-width: 640px) {
+  header { padding: 1.6rem 1rem 1.3rem; }
+  header h1 { font-size: 1.55rem; }
+  main { padding: 1rem; }
+  .card .big { font-size: 1.6rem; }
+  .bar-row { grid-template-columns: 1fr; gap: .15rem; }
+  /* Ten numeric columns will not fit a phone at body size. Shrinking the type
+     and letting cells wrap keeps every value on the page rather than moving
+     any of them behind a scroll or a hover. */
+  /* Ten numeric columns cannot fit a phone. Rather than hiding values or
+     putting them behind a sideways scroll, each horizon becomes a stacked
+     block of label/value pairs, so every number stays on the page. */
+  #values-table, #values-table tbody, #values-table tr,
+  #values-table th, #values-table td { display: block; width: auto; }
+  #values-table thead { display: none; }
+  #values-table tbody tr { border: 1px solid var(--line); border-radius: 8px;
+    padding: .45rem .65rem; margin-bottom: .55rem; }
+  #values-table tbody th { font-size: .95rem; padding: 0 0 .3rem;
+    border-bottom: 1px solid var(--line); margin-bottom: .3rem; }
+  #values-table tbody th::before { content: attr(data-label) " "; color: var(--muted); }
+  #values-table tbody td { display: flex; justify-content: space-between;
+    gap: .8rem; border: 0; padding: .12rem 0; text-align: right; font-size: .84rem; }
+  #values-table tbody td::before { content: attr(data-label);
+    font-weight: 600; color: var(--muted); text-align: left; }
+  .table-wrap { overflow-x: visible; }
+  .bar-row .val { text-align: left; }
+  .ctrl.highlight { margin: 0; }
+}
