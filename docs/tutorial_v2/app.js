@@ -1,8 +1,8 @@
 /* Oncology framing of the CAST demo: two active options, not treatment vs none.
  *
  * Self-contained on purpose. docs/app.js serves the methods page and
- * docs/clinical/app.js serves the clinical view; both are left untouched so the
- * three versions can diverge without any of them breaking the others. This file
+ * docs/tutorial/ the illustrated walkthrough; both are left untouched so the
+ * versions can diverge without any of them breaking the others. This file
  * reads the same frozen export, ../data/scenarios.json.
  *
  * Four deliberate departures from the sibling pages, each answering a defect

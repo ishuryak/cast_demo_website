@@ -1,0 +1,9 @@
+/* Clinical edition only: the asides and the hero note. Everything else is the walkthrough's own style. */
+.clinic-dek{font-size:15px;color:var(--muted);max-width:450px;margin-top:16px}
+.clinic-note{border-left:2px solid var(--rust);background:#f6efe6;padding:18px 24px 20px;margin:28px 0;font-size:15px;line-height:1.65}
+.clinic-note .eyebrow{color:var(--rust);margin-bottom:6px}
+.clinic-note h3{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.2;letter-spacing:-.02em;margin:0 0 10px}
+.clinic-note p{margin:0}.clinic-note p+p{margin-top:.8em}
+.reading-wide>.clinic-note,#explore .clinic-note{max-width:780px}
+@media(max-width:600px){.clinic-note{padding:16px 18px;font-size:14px}.clinic-note h3{font-size:21px}}
+@media print{.clinic-note{background:white}}

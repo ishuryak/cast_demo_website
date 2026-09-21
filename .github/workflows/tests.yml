@@ -48,6 +48,15 @@ jobs:
       - name: Viewport overflow (the page fits a phone, measured not screenshotted)
         run: node tests/test_viewport_overflow.mjs
 
+      - name: Tutorial variants (v1, v2, v3 and the /oncology/ redirect are whole, separate pages)
+        run: node tests/test_tutorial_variants.mjs docs
+
+      - name: Viewport overflow on the tutorial variants
+        run: |
+          node tests/test_viewport_overflow.mjs docs/tutorial
+          node tests/test_viewport_overflow.mjs docs/tutorial_v2
+          node tests/test_viewport_overflow.mjs docs/tutorial_v3
+
       - name: Shipped site is complete
         run: |
           set -euo pipefail
@@ -66,5 +75,5 @@ jobs:
         run: |
           npm test
           npm run build:pages
-          git diff --exit-code -- docs/tutorial tutorial/class-kit tutorial/downloads
-          test -z "$(git ls-files --others --exclude-standard -- docs/tutorial)"
+          git diff --exit-code -- docs/tutorial docs/tutorial_v3 tutorial/class-kit tutorial/downloads
+          test -z "$(git ls-files --others --exclude-standard -- docs/tutorial docs/tutorial_v3)"

@@ -5,7 +5,8 @@
   "scripts": {
     "test": "node tutorial/tests/run.mjs",
     "build": "node scripts/build-site.mjs",
-    "build:pages": "node scripts/build-pages.mjs"
+    "build:pages": "node scripts/build-pages.mjs",
+    "build:v3": "node scripts/build-tutorial-v3.mjs"
   },
   "engines": { "node": ">=20" }
 }

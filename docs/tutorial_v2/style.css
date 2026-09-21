@@ -1,6 +1,6 @@
 /* Oncology framing of the CAST demo. Self-contained: docs/style.css serves the
-   methods page and docs/clinical/style.css the clinical view, and both are left
-   untouched so the three versions can diverge independently. The palette is
+   methods page and docs/tutorial/ the illustrated walkthrough, and both are left
+   untouched so the versions can diverge independently. The palette is
    inherited by hand so they still look related, with one deliberate break: CSF
    and CAST no longer share a colour. */
 :root {
@@ -154,8 +154,10 @@ code { background: #eef1f5; padding: .08em .35em; border-radius: 4px; font-size:
 .card .sub { font-size: .88rem; margin: .7rem 0 0; max-width: none; }
 .card .big { font-size: 1.9rem; font-weight: 800; margin: .2rem 0 .3rem;
   letter-spacing: -0.02em; color: #16324f; }
-.card .big .unit { font-size: .95rem; font-weight: 600; color: var(--muted);
-  letter-spacing: 0; }
+.card .big { line-height: 1.15; }
+.card .big .unit { display: block; margin-top: .2rem; line-height: 1.4;
+  font-size: .95rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+.cards > .card:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
 .horizon-pick { margin-top: .9rem; display: flex; flex-wrap: wrap;
   align-items: center; gap: .5rem; }
 .pick-label { font-size: .78rem; font-weight: 800; text-transform: uppercase;

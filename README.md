@@ -1,6 +1,6 @@
 # CAST demo website: causal survival trajectories on simulated oncology data
 
-[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/)
+[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/) · [Oncology version: Option A or Option B?](https://ishuryak.github.io/cast_demo_website/tutorial_v2/) · [Walkthrough, clinical edition](https://ishuryak.github.io/cast_demo_website/tutorial_v3/)
 
 An interactive teaching demo that shows, on **simulated** cancer-survival
 cohorts where the true treatment effect is known:
@@ -204,6 +204,14 @@ The illustrated walkthrough is at `/tutorial/`. Its editable source is in
 then commit and push the source and generated `docs/tutorial/` together to
 `main`. The build includes all interactions, animations, illustrations and
 educator downloads. See [the editing guide](design/COPY_EDITING.md).
+
+Two further versions sit beside it and never overwrite it. `/tutorial_v2/` is a
+self-contained oncology framing (Option A versus Option B) edited directly in
+`docs/tutorial_v2/`. `/tutorial_v3/` is the walkthrough with a clinical layer,
+generated from `docs/tutorial/` by `scripts/build-tutorial-v3.mjs`, which
+`npm run build:pages` runs automatically, so edit the walkthrough source or that
+script, never `docs/tutorial_v3/` by hand. `tests/test_tutorial_variants.mjs`
+checks that all of them are whole pages whose links resolve.
 
 1. Push this repo to GitHub.
 2. Repo **Settings → Pages**.

@@ -1,38 +1,35 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CAST demo: causal survival trajectories on simulated oncology data — with clinical walkthrough</title>
-  <meta name="description" content="An interactive teaching demo on simulated oncology cohorts where the true treatment effect is known, with a guided clinical walkthrough.">
+  <title>One person, two possible paths · A clinical reading of CAST</title>
+  <meta name="description" content="A clinical edition for oncologists. Begin with Hector’s missing counterfactual, then explore average survival effects across time and patient profiles, causal survival forests, CAST and the causal roadmap.">
   <meta name="theme-color" content="#ffffff">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>📈</text></svg>">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="narrative.css">
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"
-        integrity="sha384-cCVCZkAjYNxaYKbM8lsArLznDF/SvMFr1jcZrvOpSTCa0W40ZAdLzHCEulnUa5i7"
-        crossorigin="anonymous"></script>
-</head></head>
+  <link rel="stylesheet" href="clinical.css">
+  <script type="module" src="app.mjs"></script>
+  <script type="module" src="narrative.mjs"></script>
+</head>
 <body>
 <a class="skip-link" href="#explore">Skip to the interactive example</a>
 <header class="site-header">
   <div class="cast-brand">
     <a class="wordmark" href="https://github.com/ishuryak/cast_demo_website" aria-label="CAST">CAS<span class="trajectory-accent">T</span></a>
-    <span class="edition">Causal Analysis for Survival <span class="trajectory-accent">Trajectories</span></span>
+    <span class="edition">Causal Analysis for Survival <span class="trajectory-accent">Trajectories</span> · clinical edition</span>
   </div>
   <a href="downloads/causal-educators-class-kit.zip" class="header-link" download>Educator class kit <span aria-hidden="true">↓</span></a>
 </header>
-
-<main>
 <main>
   <section class="hero reading-wide" aria-labelledby="title">
     <div class="hero-copy">
       <div class="hero-heading"><p class="opening-thesis">The central problem of causal inference...</p>
       <h1 id="title">One person.<br><em>Two possible paths.</em></h1></div>
       <div class="hero-opening"><p class="dek">Hector receives treatment. His symptoms improve. What would have happened to him without it?</p>
-      <a class="text-link" href="#question">Take a snapshot <span aria-hidden="true">↓</span></a></div>
+      <a class="text-link" href="#question">Take a snapshot <span aria-hidden="true">↓</span></a><p class="clinic-dek">This edition reads the walkthrough as an oncologist would. At the bedside the choice is rarely treatment against nothing. It is one active option against another, and the record of who received which option is shaped by who looked fit enough for it.</p></div>
     </div>
-<section class="reader-entry" id="choose-path" aria-labelledby="reader-heading">
+    <section class="reader-entry" id="choose-path" aria-labelledby="reader-heading">
       <div class="reader-intro"><h2 id="reader-heading">How would you describe yourself?</h2><p>Choose a starting point. The whole story is yours to explore.</p></div>
       <div class="reader-choices" role="group" aria-labelledby="reader-heading" hidden>
         <button type="button" data-reader-path="clinician" aria-pressed="false" aria-controls="path-clinician">Clinician or oncologist</button>
@@ -42,8 +39,8 @@
         <button type="button" data-reader-path="educator" aria-pressed="false" aria-controls="path-educator">Educator</button>
       </div>
       <div class="reader-itinerary" id="path-clinician" hidden>
-        <div><h3>Start with the patient in front of you.</h3><p>Meet the missing counterfactual through Hector, read the survival difference over follow-up, then move to the version written for a clinical reader, where the arms are two active treatment options rather than treatment and control.</p></div>
-        <ol aria-label="Clinician path"><li><a href="#question">Meet the missing counterfactual</a></li><li><a href="#explore">Read the survival difference over follow-up</a></li><li><a class="leaves-walkthrough" href="../tutorial_v2/">Continue in the oncology version: Option A versus Option B <span aria-hidden="true">&#8599;</span></a></li></ol>
+        <div><h3>Start with the choice you actually make.</h3><p>Read the question as two active options, see why the registry alone cannot settle it, then read the survival difference over follow-up.</p></div>
+        <ol aria-label="Clinician path"><li><a href="#clinic-options">Two active options, not treatment against nothing</a></li><li><a href="#clinic-indication">Why fitter patients get the intensive option</a></li><li><a href="#clinic-curve">Read the curve at the horizon your patient cares about</a></li></ol>
       </div>
       <div class="reader-itinerary" id="path-student" hidden>
         <div><h3>Start with the counterfactual.</h3><p>Begin with the missing path. Try two possible worlds, then watch an average effect change through time.</p></div>
@@ -63,526 +60,20 @@
       </div>
       <button class="reader-reset" id="reader-reset" type="button" hidden>Clear my choice</button>
       <p class="sr-only" id="reader-status" role="status" aria-atomic="true"></p>
-      <noscript><nav class="reader-fallback" aria-label="Choose a starting point"><a href="../tutorial_v2/">Clinician or oncologist: read the oncology version, Option A versus Option B</a><a href="#question">Statistics student: start with the missing path</a><a href="#causal-roadmap">Researcher: start with the question and assumptions</a><a href="#missingness">Causal convert: revisit missingness</a><a href="#class-kit">Educator: explore the teaching kit</a></nav></noscript>
-    </section><figure class="hero-art" id="hero-art">
+      <noscript><nav class="reader-fallback" aria-label="Choose a starting point"><a href="#clinic-options">Clinician or oncologist: start with the choice you actually make</a><a href="#question">Statistics student: start with the missing path</a><a href="#causal-roadmap">Researcher: start with the question and assumptions</a><a href="#missingness">Causal convert: revisit missingness</a><a href="#class-kit">Educator: explore the teaching kit</a></nav></noscript>
+    </section>
+    <figure class="hero-art" id="hero-art">
       <div id="hero-art-fallback">
         <a href="assets/art/hector-counterfactual.png" target="_blank" rel="noopener" aria-label="Open the Hector sketch at full size">
           <img src="assets/art/hector-counterfactual.png" width="1815" height="1086" fetchpriority="high" alt="Hector’s symptom burden falls with treatment. A shadow Hector follows an imagined untreated path. A vertical line marks the same time on both paths.">
         </a>
       </div>
       <figcaption>Conceptual sketch of symptom burden: lower is better. The untreated path is imagined.</figcaption>
-    </figure><nav class="chapter-nav" aria-label="In this field guide">
-    <a href="#question"><span>01</span> The missing path</a><a href="#longitudinal"><span>02</span> Bring in time</a><a href="#explore"><span>03</span> Read the curve</a><a href="#for-whom"><span>04</span> For whom?</a><a href="#causal-roadmap"><span>05</span> Can we learn it?</a>
-  </nav>
+    </figure>
   </section>
   <nav class="chapter-nav" aria-label="In this field guide">
     <a href="#question"><span>01</span> The missing path</a><a href="#longitudinal"><span>02</span> Bring in time</a><a href="#explore"><span>03</span> Read the curve</a><a href="#for-whom"><span>04</span> For whom?</a><a href="#causal-roadmap"><span>05</span> Can we learn it?</a>
   </nav>
-
-  <!-- The plain-language entry point. It sits above the controls because a
-       reader who is not a causal-inference specialist (a clinician, or a
-       scientist from another field) needs the goal, the data, the deliverable
-       and the methods before any of the figure means anything. Every specialist
-       term is glossed in words on first use here, and the formal statement of
-       the estimand now sits in the disclosure below rather than in front of it. -->
-  <section class="intro" id="intro">
-    <h2>What this demo is about</h2>
-
-    <p class="intro-lead">A hospital looks back through its records and asks the
-    question every clinician wants answered: did the patients who received this
-    treatment live longer <em>because of it</em>? The records alone cannot say,
-    because the treated patients were never like the untreated ones. Doctors
-    offer treatment to the patients they judge fit enough to benefit, so the
-    treated group starts out healthier, and any survival gap between the groups
-    mixes the effect of the treatment with the head start of the people who
-    received it. That mixing is called <strong>confounding</strong>, and pulling
-    the two apart is the problem this page is about.</p>
-
-    <div class="intro-grid">
-
-      <div class="intro-block">
-        <h3>What the demo is for</h3>
-        <p>Every patient here is simulated, so unlike a real study this one comes
-        with an answer key: the true survival benefit of treatment at every point
-        in follow-up, drawn as the solid black curve. Each method can therefore be
-        graded against the truth rather than against the other methods, which is
-        the one comparison no real study can run. The goal is not to crown a
-        winner. It is to show what each method quietly assumes, and to let you
-        watch it break when that assumption fails.</p>
-      </div>
-
-      <div class="intro-block">
-        <h3>What it analyzes, and what it delivers</h3>
-        <p>The setting is ordinary observational survival data: a registry
-        extract, a pull from electronic health records, a single-institution
-        series. One row per patient, carrying the treatment given, how long the
-        patient was followed, whether they died or were last seen alive, and the
-        characteristics recorded at the start. What comes out is not one summary
-        number but a curve over time: out of 100 treated patients, how many more
-        are alive at each point in follow-up than would have been without the
-        treatment, with an uncertainty band around it.</p>
-      </div>
-
-      <div class="intro-block">
-        <h3>Why the familiar tools fall short</h3>
-        <p>Comparing the groups directly measures the treatment plus the head
-        start, so it answers the wrong question. Cox regression does adjust for
-        the recorded characteristics, but it compresses all of follow-up into a
-        single hazard ratio, which is only right if the benefit holds steady over
-        time. Many do not: a benefit can take months to appear, or peak and fade,
-        or turn into a harm late. Averaging an early benefit against a late harm
-        returns roughly "no effect", which is wrong at every point in time.
-        Machine-learning survival models predict well, but a good prediction is
-        not a causal answer.</p>
-      </div>
-
-      <div class="intro-block">
-        <h3>What no method can fix</h3>
-        <p>Adjustment only works on what somebody wrote down. If a factor drives
-        both who gets treated and who survives, and nobody recorded it, every
-        method here is pulled off the truth in the same direction at once while
-        the usual warning signs still look healthy: recorded characteristics
-        balanced, intervals narrow, nothing complaining. The second control above
-        the figure turns exactly that on, and because these patients are
-        simulated, the page can show you what it costs.</p>
-      </div>
-
-    </div>
-
-    <div class="intro-methods">
-      <h3>The methods on the figure, and why each one is here</h3>
-      <dl>
-        <dt>Naive comparison</dt>
-        <dd>Survival in the treated group minus survival in the untreated group,
-        with no adjustment at all. It is here to show how large the problem is,
-        not as a serious contender.</dd>
-
-        <dt>Cox regression</dt>
-        <dd>The survival workhorse most readers already know: it adjusts for the
-        recorded characteristics and reports one hazard ratio for all of
-        follow-up. It is a fair benchmark rather than a straw man, because on one
-        of the two effect shapes the simulated biology really does hold steady
-        over time, so Cox is the right model there and usually wins.</dd>
-
-        <dt>Random survival forest, in two arrangements</dt>
-        <dd>A machine-learning model that predicts how long patients survive. The
-        <strong>S-learner</strong> treats "was this patient treated" as one
-        feature among many, while the <strong>T-learner</strong> fits a separate
-        model per group and compares them. Both show that predicting survival well is
-        not the same as measuring what treatment did, and that the two
-        arrangements go wrong in two different ways.</dd>
-
-        <dt>Causal survival forest (CSF)</dt>
-        <dd>A forest built for the causal question instead of the prediction one.
-        It learns who tends to get treated and who tends to survive, then
-        subtracts the part of the survival gap those two patterns already explain,
-        leaving the treatment's own contribution. It removes confounding without
-        anyone having to specify in advance how each characteristic relates to
-        survival, which is the assumption a regression asks you to make and get
-        right.</dd>
-
-        <dt>CAST</dt>
-        <dd>The causal forest gives a separate estimate at each time point, and
-        those estimates wobble against one another. CAST fits one smooth curve
-        through them, allowing for the fact that nearby time points rise and fall
-        together, and turns the result into numbers a clinician can read off: how
-        large the benefit gets, and when it arrives. It is the method this site
-        exists to demonstrate.</dd>
-      </dl>
-    </div>
-  </section>
-
-  <!-- The technical lead, unchanged in wording, folded behind a disclosure.
-       It states the estimand formally and enumerates the confounder taxonomy,
-       which is what a reader wants SECOND, after the introduction above. -->
-  <details class="lead-detail">
-    <summary>The simulated cohorts in detail</summary>
-    <div class="lead">
-      <p>Every cohort on this page is <strong>simulated</strong>, so unlike a real
-      study this one comes with an answer key: the true average treatment effect
-      (ATE) at every horizon, drawn as the solid black curve. Each method can
-      therefore be judged against the truth rather than against the other
-      methods.</p>
-
-      <p>We estimate the between-group difference in the probability of surviving
-      past each fixed time horizon, i.e. the <strong>survival-probability
-      difference</strong>, formally P(T&gt;t | treated) &minus; P(T&gt;t | control).
-      Horizons run from 12 to 108 months, and the control arm of the synthetic
-      cohort has a median survival near 47 months.</p>
-
-      <p>Two effect shapes are available, and both are simulated. Under
-      <strong>plateau</strong>, treatment helps at every horizon, so the survival
-      gap widens, peaks, and then slowly narrows as both arms approach low
-      survival. Under <strong>reversal</strong>, treatment helps early and harms
-      after about four years, so the survival curves cross and the gap turns
-      negative. The reversal is drawn sharper than most real crossings, to make
-      each estimator’s response to it easy to see.</p>
-
-      <p>Every cohort also carries four <strong>confounders</strong>: age, stage,
-      performance status and comorbidity count, all of which drive both prognosis
-      and treatment assignment. Alongside them sits one covariate that worsens
-      survival but has no bearing on who gets treated (smoking, a
-      <strong>prognostic non-confounder</strong>), two that affect nothing at all
-      (sex and ethnicity, <strong>negative controls</strong>), and one
-      <strong>unmeasured confounder</strong>: a latent fitness factor that both
-      improves survival and raises the chance of being treated, and that no fitted
-      model ever sees.</p>
-
-      <p>Set the two confounding controls and switch methods on and off to watch
-      each estimator move while the black truth curve stays where it is.</p>
-    </div>
-  </details>
-
-  <section class="controls">
-    <div class="ctrl">
-      <label>Effect shape</label>
-      <div id="shape-buttons" class="seg"></div>
-    </div>
-    <div class="ctrl">
-      <!-- Four discrete levels, shown as four options. A slider with four stops
-           promises a continuum the precomputed scenario grid does not have. -->
-      <label id="conf-legend">Measured confounding: <span id="conf-label"></span></label>
-      <div id="conf-buttons" class="seg" role="radiogroup" aria-labelledby="conf-legend"></div>
-    </div>
-    <div class="ctrl" id="unmeas-ctrl">
-      <label id="unmeas-legend">Unmeasured confounding: <span id="unmeas-label"></span></label>
-      <div id="unmeas-buttons" class="seg" role="radiogroup" aria-labelledby="unmeas-legend"></div>
-    </div>
-    <div class="ctrl">
-      <label>Show methods</label>
-      <div id="method-toggles" class="toggles"></div>
-    </div>
-  </section>
-
-  <section class="plot-row">
-    <div id="plot"></div>
-    <!-- Four numbered groups, in the order the story section below tells: what
-         the cohort looks like, how the methods did on it, what adjustment cannot
-         reach, and what CAST adds. Each card leads with its live numbers and a
-         few brief bullets; the full prose sits behind a disclosure. -->
-    <aside class="cards">
-
-      <section class="card-group">
-        <h2><span class="n">1 ·</span>Is this cohort confounded?</h2>
-
-        <details class="card" id="card-balance">
-          <summary>
-            <h3>Confounder imbalance (SMD)</h3>
-            <span class="hint" id="smd-text"></span>
-          </summary>
-          <ul class="brief">
-            <li>Standardized mean difference between the two arms. |SMD| &gt; 0.1 is imbalance a naive comparison cannot fix.</li>
-            <li>The confounders drift apart as measured confounding rises; smoking, which affects survival but not treatment, stays near zero.</li>
-            <li>The latent factor becomes imbalanced on its own axis, where no method can see it.</li>
-          </ul>
-
-          <p class="hint">Standardized mean difference between arms. |SMD|&gt;0.1 signals imbalance the naive comparison cannot fix. As measured confounding rises, the confounders shown (age, performance status, comorbidity) become imbalanced while smoking, a non-confounder, stays near zero. The latent factor becomes imbalanced on the unmeasured-confounding axis, and no adjustment method can see it.</p>
-        </details>
-
-        <details class="card" id="card-overlap">
-          <summary>
-            <h3>Propensity overlap (positivity)</h3>
-            <span class="hint" id="overlap-text"></span>
-          </summary>
-          <ul class="brief">
-            <li>The estimated probability of being treated, from the propensity forest.</li>
-            <li>Causal adjustment needs those probabilities away from 0 and 1. That is the positivity condition.</li>
-            <li>Strong confounding pushes them outward, and that overlap stress is what leaves CSF with a residual bias.</li>
-          </ul>
-
-          <p class="hint">The estimated probability of treatment from the propensity
-          forest. Good overlap (values away from 0 and 1) is the positivity condition
-          that causal adjustment needs. As confounding rises, healthier patients are
-          almost always treated and propensities spread toward 0 and 1, so the share
-          beyond [0.05, 0.95] grows. This near-violation of positivity is what leaves
-          CSF with residual bias at strong confounding. The [0.01, 0.99] clip rarely
-          binds, so the residual reflects genuine overlap stress rather than the
-          clip.</p>
-        </details>
-      </section>
-
-      <section class="card-group">
-        <h2><span class="n">2 ·</span>How close is each method to the truth?</h2>
-
-        <details class="card" id="card-rmse">
-          <summary>
-            <h3>Accuracy vs. truth (RMSE, survival-probability)</h3>
-            <span class="rmse-bars"></span>
-          </summary>
-          <ul class="brief">
-            <li>Root-mean-square distance from the known truth across the five horizons. Lower is better.</li>
-            <li>Watch Naive collapse as confounding rises while CSF stays accurate.</li>
-            <li>Read the ordering, not the decimals: gaps of about ±0.01 are Monte-Carlo noise.</li>
-          </ul>
-
-          <p class="hint">Lower is better. Watch Naive collapse as confounding rises while CSF stays accurate. CSF and CAST are scored in-sample (no train/test split), so their accuracy here is optimistic relative to real-world deployment.</p>
-          <p class="hint"><strong>Read the ordering, not the decimals.</strong> Each panel is a
-          <em>single</em> simulated cohort at one seed. Across repeated cohorts the
-          RMSE of a given method moves by roughly ±0.01, so the large gaps (Naive
-          versus everything else) are real while small ones (CSF versus CAST) are
-          within Monte-Carlo noise and can swap from panel to panel.</p>
-        </details>
-
-        <details class="card" id="card-cox">
-          <summary>
-            <h3>Cox baseline</h3>
-            <span class="big"><span id="cox-hr"></span></span>
-            <span class="hint" id="cox-ph"></span>
-          </summary>
-          <ul class="brief">
-            <li>One time-constant hazard ratio for the whole follow-up, with no trajectory.</li>
-            <li>On the plateau shape the simulation itself is a proportional-hazards model, so Cox is correctly specified here: a fair benchmark, not a straw man.</li>
-            <li>On the reversal shape one hazard ratio has to average a protective early phase against a harmful late one, so the curve flattens toward zero.</li>
-          </ul>
-
-          <p class="hint">A single time-constant hazard ratio, with no trajectory. The proportional-hazards test flags when a single hazard ratio cannot hold across all horizons. The dotted purple <strong>Cox (marginal)</strong> curve on the plot standardizes the same model to the survival-probability scale.
-          On the <strong>plateau</strong> shape the simulation's own hazard model
-          <em>is</em> a proportional-hazards Weibull with linear covariate effects, so
-          this Cox model is correctly specified and is usually the most accurate
-          method on the panel: a fair benchmark, not a straw man. That holds at
-          &Gamma; = 0; push the unmeasured-confounding control and the
-          proportional-hazards test starts flagging the plateau too, because
-          omitting a covariate that affects survival induces non-proportionality in
-          the hazard ratio you can still fit. On the
-          <strong>reversal</strong> shape the single hazard ratio has to average a
-          protective early phase against a harmful late one, so it shrinks toward 1
-          and the marginal curve flattens near zero, unable to bend and follow the
-          crossing.</p>
-        </details>
-      </section>
-
-      <section class="card-group">
-        <h2><span class="n">3 ·</span>What adjustment cannot reach</h2>
-
-        <details class="card" id="card-unmeas">
-          <summary>
-            <h3>Unmeasured confounding</h3>
-            <span class="hint" id="unmeas-text"></span>
-          </summary>
-          <ul class="brief">
-            <li>The latent fitness factor is drawn into the cohort but withheld from every fitted model.</li>
-            <li>The same CSF is refit <em>with</em> it, an oracle no real analysis could run. The gap between the two is what the latent factor costs.</li>
-            <li>The E-value is the companion statistic: how strong a hidden confounder would have to be to explain the estimate away.</li>
-          </ul>
-
-          <p class="hint">The latent factor is drawn into the cohort but withheld from
-          every fitted model. To measure what that costs, the same CSF is refit
-          <em>with</em> the latent factor added to the covariates <em>and</em> to the
-          propensity model: an oracle no real analysis could run. The gap between
-          the two is the part of CSF's error attributable to the latent factor, and
-          it grows along the unmeasured-confounding axis even though the measured
-          covariates stay balanced. The factor has to enter <em>both</em> sides for
-          the oracle to mean anything: it drives treatment assignment as well as
-          survival, so an oracle given it only in the outcome model leaves the
-          orthogonalization wrong on the treatment side.</p>
-          <p class="hint">Read the gap as a component, not as the whole error. The
-          oracle does <em>not</em> land on the truth at strong measured confounding,
-          because CSF carries a second, unrelated residual there from the positivity
-          stress described in the overlap card, which is present already at
-          &Gamma; = 0 and is not the oracle's to remove. At &Gamma; = 1.5 the oracle
-          removes between 39% and 95% of the total error depending on the panel; at
-          &Gamma; = 0.75 the latent factor's contribution is small enough that the
-          gap is comparable to Monte-Carlo noise. The <strong>E-value</strong>
-          is the companion sensitivity statistic: how strongly, on the risk-ratio
-          scale, an unmeasured confounder would have to relate to both treatment and
-          survival to explain the estimate away. Because the estimand here is a
-          survival-<em>probability</em> difference rather than a ratio, it is
-          converted to a risk ratio against the observed control-arm survival at
-          that same horizon (shown above), which across these cohorts falls from about
-          0.80 at 12 months to about 0.15 at 108: a single fixed baseline would
-          mis-anchor both ends of the window.</p>
-        </details>
-      </section>
-
-      <section class="card-group">
-        <h2><span class="n">4 ·</span>Inside the CAST layer</h2>
-
-        <details class="card" id="card-cast">
-          <summary>
-            <h3>CAST trajectory</h3>
-            <span class="hint" id="cast-text"></span>
-          </summary>
-          <ul class="brief">
-            <li>A smooth quadratic in time, fitted through the per-horizon CSF estimates.</li>
-            <li>Fitted by generalized least squares when the cross-horizon covariance is well-conditioned, and by weighted least squares when it is not.</li>
-            <li>The shaded band is covariance-aware: correlated horizons are handled rather than assumed independent.</li>
-          </ul>
-
-          <p class="hint">A smooth quadratic effect trajectory. The point fit uses generalized least squares (weight = Σ̂⁻¹) automatically when the cross-horizon covariance is well-conditioned, falling back to weighted least squares otherwise. On this survival-probability scale the horizons are far less correlated than on the cumulative-RMST scale, so the covariance is well-conditioned and generalized least squares engages.</p>
-          <p class="hint">The shaded 95% band is the <em>covariance-aware</em> band: it propagates the Ledoit–Wolf-shrunk cross-horizon influence-function covariance through the fit (a sandwich variance), so correlated horizons are handled correctly rather than treated as independent. The band is conditional on the fitted forests and does not propagate the forests' own estimation error. Peak time and effect are model-based summaries of the horizon-specific causal estimates, not separately identified causal quantities.</p>
-        </details>
-
-        <details class="card" id="card-shrink">
-          <summary>
-            <h3>Ledoit–Wolf shrinkage</h3>
-            <span class="hint" id="shrink-text"></span>
-          </summary>
-          <ul class="brief">
-            <li>Stabilizes the cross-horizon covariance before the trajectory fit inverts it.</li>
-            <li>Deliberately near-inert in this demo: 5 horizons and n = 2000 leave the sample covariance with nothing to stabilize.</li>
-            <li>It earns its place in the real pipeline, where more horizons or a smaller cohort make that covariance ill-conditioned.</li>
-          </ul>
-
-          <p class="hint">Shrinkage intensity λ and the cross-horizon covariance condition number, before → after shrinkage.
-          <strong>In this demo the shrinkage is deliberately near-inert</strong> (λ is a
-          few thousandths, and the condition number barely moves): with n = 2000
-          patients and only 5 horizons the sample covariance is already
-          well-conditioned, so there is nothing to stabilize. The step earns its
-          place in the real pipeline, where many more horizons, a smaller cohort, or
-          the near-collinear cumulative-RMST scale make the raw covariance
-          ill-conditioned and inverting it unstable. Watch the number rather than
-          expect it to move.</p>
-        </details>
-      </section>
-
-    </aside>
-  </section>
-
-  <section class="story">
-    <div class="step">
-      <h2>1 · The confounding problem</h2>
-      <p>Healthier patients (younger, earlier-stage, better performance status,
-      fewer comorbidities) are preferentially selected into treatment (confounding
-      by indication). The
-      <strong>Naive</strong> unadjusted survival-probability difference then
-      measures treatment effect <em>plus</em> baseline prognosis, so it is biased
-      <em>upward</em> and overstates benefit. At zero confounding it matches the
-      truth; turn confounding up and it diverges.</p>
-    </div>
-    <div class="step">
-      <h2>2 · CSF adjusts for measured confounding</h2>
-      <p>The <strong>Causal Survival Forest</strong> orthogonalizes against a
-      propensity model and a censoring model (Neyman-orthogonal, like double
-      machine learning), recovering the true ATE at each horizon under
-      mild-to-moderate confounding and substantially reducing (though not fully
-      removing) the bias under strong confounding, where treatment propensities
-      are pushed toward 0 or 1 and overlap is stressed (a positivity limit; see
-      the strong-confounding figures, where CSF sits above the truth but far
-      below the naive curve). Two non-orthogonalized ML baselines are shown for
-      contrast: the <strong>RSF S-learner</strong> (one survival forest with
-      treatment as a feature), which can ignore treatment when splitting and so
-      attenuates the effect toward zero even with no confounding, and the
-      <strong>RSF T-learner</strong> (separate per-arm forests), which avoids
-      that attenuation but, lacking a propensity model, extrapolates across arms
-      and stays biased under confounding.</p>
-    </div>
-    <div class="step">
-      <h2>3 · Every baseline has a regime where it breaks</h2>
-      <p>None of these estimators is uniformly worst. <strong>Cox</strong> gives
-      one hazard ratio for all time; here the plateau simulation is itself a
-      proportional-hazards model, so Cox is correctly specified and wins on those
-      panels, and the same model then flattens to near-zero on the reversal it
-      cannot represent. The <strong>S- and T-learner</strong> survival forests
-      predict survival well but give no principled causal contrast, and fail in
-      two different ways (effect attenuation versus cross-arm extrapolation). The
-      lesson is not a ranking but a map of which assumption each method needs.</p>
-    </div>
-    <div class="step">
-      <h2>4 · What no method can fix</h2>
-      <p>Adjustment only works on what you measured. Push the
-      <strong>unmeasured-confounding</strong> control and a latent fitness factor
-      starts driving both survival and treatment while staying invisible to every
-      model. The measured covariates remain balanced, the overlap diagnostics stay
-      clean, the confidence intervals stay narrow, and every estimator, CSF and
-      CAST included, drifts away from the truth together. The oracle refit in the
-      card above measures exactly how much, which is the one thing a real analysis
-      can never do.</p>
-    </div>
-    <div class="step">
-      <h2>5 · CAST extends CSF to a trajectory</h2>
-      <p>CSF gives correlated point estimates across horizons. <strong>CAST</strong>
-      forms the cross-horizon covariance from the CSF influence-function scores,
-      stabilizes it with <strong>Ledoit–Wolf shrinkage</strong>, and fits a smooth
-      quadratic in time. The point fit is generalized least squares
-      <code>β̂ = (XᵀΣ̂⁻¹X)⁻¹XᵀΣ̂⁻¹y</code>, which engages automatically because the
-      survival-probability horizons make Σ̂ well-conditioned (it falls back to
-      weighted least squares when they do not), and the 95% band is a
-      covariance-aware sandwich that propagates Σ̂. The result is a smooth effect
-      trajectory whose clinical
-      metrics (peak effect, time-to-peak) are model-based summaries of the
-      per-horizon causal estimates rather than separately identified causal
-      quantities.</p>
-    </div>
-  </section>
-
-  <section class="failure-modes">
-    <h2>Failure modes at a glance</h2>
-    <p class="fm-lead">Every estimator on the plot fails in its own
-    characteristic way. Set the confounding levels and switch effect shapes to
-    watch each one break against the known truth.</p>
-    <div class="fm-grid">
-      <div class="fm-item" style="border-left-color:#d55e00">
-        <h3>Naive (unadjusted)</h3>
-        <p><span class="mode">Confounding by indication.</span> The unadjusted
-        survival-probability difference measures the treatment effect plus the
-        baseline prognostic gap between arms. Because healthier patients are
-        preferentially treated, it is biased upward and overstates benefit, and
-        the bias grows as confounding rises. It matches the truth only under
-        randomization (γ = 0) with no latent confounder.</p>
-      </div>
-      <div class="fm-item" style="border-left-color:#0072b2">
-        <h3>RSF S-learner</h3>
-        <p><span class="mode">Treatment-signal dilution.</span> With treatment
-        entered as just one of many covariates, the survival forest can split on
-        the other features and rarely on treatment, so the estimated contrast
-        shrinks toward zero. This attenuation appears even at zero confounding,
-        where the S-learner sits well below the truth. Watch for the panels where
-        that downward pull happens to cancel an upward confounding bias and the
-        S-learner lands on the truth for the wrong reason.</p>
-      </div>
-      <div class="fm-item" style="border-left-color:#cc79a7">
-        <h3>RSF T-learner</h3>
-        <p><span class="mode">Cross-arm extrapolation.</span> Separate per-arm
-        forests each see only their own arm's covariate distribution, then
-        predict counterfactual survival for everyone, extrapolating into regions
-        never observed in that arm. Without a propensity model it avoids the
-        S-learner's attenuation but stays biased under confounding, drifting
-        upward with the naive curve.</p>
-      </div>
-      <div class="fm-item" style="border-left-color:#9467bd">
-        <h3>Cox (marginal)</h3>
-        <p><span class="mode">Proportional-hazards misspecification.</span> A
-        single time-constant hazard ratio cannot represent a time-varying
-        effect. It is confounder-adjusted, so measured confounding does not bias
-        it, and on the plateau shape it is the correctly specified model and the
-        most accurate curve on the plot. On the reversal shape the one hazard
-        ratio averages the protective-early and harmful-late phases toward 1, and
-        the marginal curve flattens to near zero. The proportional-hazards test
-        flags this (p &lt; 0.0001 on every reversal panel).</p>
-      </div>
-      <div class="fm-item" style="border-left-color:#009e73">
-        <h3>CSF (causal survival forest)</h3>
-        <p><span class="mode">Positivity / overlap stress.</span> Orthogonalizing
-        against a propensity and a censoring model removes confounding under good
-        overlap, but when strong confounding pushes treatment propensities toward
-        0 or 1, overlap degrades and a residual bias remains (the points sit above
-        the truth at strong confounding, though far below the naive curve). CSF
-        also returns correlated per-horizon points with no smooth trajectory, and
-        here it is scored in-sample, so its accuracy is optimistic.</p>
-      </div>
-      <div class="fm-item" style="border-left-color:#111111">
-        <h3>Every method at once</h3>
-        <p><span class="mode">Unmeasured confounding.</span> The one failure no
-        estimator on this page escapes. A latent factor that drives both survival
-        and treatment assignment biases the naive comparison, the forests, the Cox
-        model, CSF and CAST alike, and leaves every visible diagnostic looking
-        healthy: measured covariates balanced, overlap fine, intervals narrow. Only
-        the oracle refit, available here because the data are simulated, reveals
-        the size of the gap.</p>
-      </div>
-      <div class="fm-item" style="border-left-color:#009e73">
-        <h3>CAST (trajectory)</h3>
-        <p><span class="mode">Trajectory-shape misspecification.</span> CAST
-        smooths the CSF points into a quadratic in time; when the true effect is
-        not quadratic, such as the reversal's sharp early peak, the smooth fit
-        underfits the peak and its error can exceed the per-horizon CSF points.
-        Its peak time and effect are model-based summaries of the per-horizon
-        causal estimates, not separately identified causal quantities, and the
-        band is conditional on the fitted forests.</p>
-      </div>
-    </div>
-  </section>
-
   <section class="reading section" id="question">
     <p class="eyebrow">01 / Start with the question</p>
     <h2>Pause both paths at the same time.</h2>
@@ -590,6 +81,7 @@
     <p>Across people, we can ask about an average effect, even though each person’s alternative remains unobserved. Hector’s sketch shows symptoms. Our worked example turns to survival: how does treatment change the probability of being alive at a chosen time?</p>
     <div class="plain-equation"><span>Survival probability<br>under treatment</span><b aria-label="minus">−</b><span>Survival probability<br>under control</span></div>
     <p>A difference of +10 percentage points means survival is 10 points more likely under treatment at that time. It does not tell us which people benefited.</p>
+    <aside class="clinic-note" id="clinic-options" aria-label="In the clinic: Two active options, not treatment against nothing"><p class="eyebrow">In the clinic</p><h3>Two active options, not treatment against nothing</h3><p>Outside a placebo-controlled trial, oncology rarely compares a treatment with nothing. It compares one defensible plan with another, for example concurrent chemoradiation with radiation alone, or a shorter hypofractionated course with a longer conventional one. Read “treatment” here as the more intensive option and “control” as the standard option. Nothing in the method requires either arm to be untreated.</p><p>On that reading, +10 percentage points at five years means that of 100 patients given the intensive option, about 10 more would be alive at five years than if the same 100 had received the standard option. Equivalently, about 10 patients would need the intensive option for one additional survivor at that time.</p></aside>
     <details id="missingness"><summary>A different kind of missing <span>How this connects to MCAR, MAR and MNAR</span></summary><div class="detail-body">
       <p>A missing lab result is a value we might have recorded along the observed path. Hector’s outcome under the other treatment belongs to a path he did not take. Even a perfectly complete record leaves that alternative unobserved.</p>
       <p>Causal inference can itself be formulated as a missing-data problem: treatment assignment determines which potential outcome we observe. Assumptions can let us identify an average contrast without recovering everyone’s missing outcome.</p>
@@ -686,6 +178,7 @@
     <p class="eyebrow">Our worked example / A fair comparison</p>
     <h2>Who receives treatment matters.</h2>
     <p>In this simulation, healthier people are more likely to receive treatment when confounding is present. They also tend to survive longer. A direct comparison can mistake some of that advantage for a treatment effect.</p>
+    <aside class="clinic-note" id="clinic-indication" aria-label="In the clinic: Confounding by indication"><p class="eyebrow">In the clinic</p><h3>Confounding by indication</h3><p>This is the familiar pattern of confounding by indication. The more intensive option tends to go to patients judged fit enough to tolerate it: younger, with better performance status and fewer comorbidities. Those patients would likely have lived longer on either option, so the raw survival gap between arms mixes the effect of the option with the head start of the people who received it.</p><p>Adjustment can only remove the part of that head start the record captured. What the clinician saw but the registry did not, such as frailty noticed in clinic or a patient’s preference, stays in the comparison. The “Hidden confounding” setting under Data &amp; settings below shows what that does to every estimate.</p></aside>
     <p>A <strong>causal survival forest (CSF)</strong> estimates effects while adjusting for measured baseline characteristics and accounting for censoring—when follow-up ends before we observe the event. Like other causal forests, it can explore differences across patient profiles. Its causal interpretation depends on the study design and assumptions.</p>
     <p class="method-link" id="why-adjust"><a href="https://github.com/ishuryak/cast_demo_website#data-generating-model">Adjustment and overlap in the repository ↗</a></p>
   </section>
@@ -715,6 +208,7 @@
       <p class="plot-note">Simulated cohort · <span id="n-label"></span> people · Average survival differences following a baseline treatment decision.</p>
       <p id="fit-note" class="plot-note" hidden>The shading is a 95% pointwise band. It is not a simultaneous band across time.</p>
       <div class="lesson-observation"><span aria-hidden="true">↳</span><p id="observation"></p></div>
+      <aside class="clinic-note" id="clinic-curve" aria-label="In the clinic: Read the curve at the horizon your patient cares about"><p class="eyebrow">In the clinic</p><h3>Read the curve at the horizon your patient cares about</h3><p>The “early benefit, later reversal” pattern has a clinical counterpart: an intensified regimen can buy early disease control and cost late treatment-related deaths, for example cardiac or pulmonary. The survival curves then cross, and a single hazard ratio averages an early gain against a late loss into something close to “no difference”, which is wrong at every individual time point.</p><p>Choose the horizon that matters for the decision in front of you and read the difference there. The shaded band is pointwise, so it describes each time on its own, not the whole curve at once. A peak in the fitted curve describes the curve and is not a recommended time to stop or switch treatment. All of these patients are simulated, and no real regimen is being compared.</p></aside>
       <details data-technical id="data-table"><summary>Data &amp; settings <span>Exact values and hidden confounding</span></summary><div class="detail-body">
         <label class="inline-select">Hidden confounding<select id="unmeas"><option value="0">None</option><option value="0.75">Moderate</option><option value="1.5">Strong</option></select></label>
         <p>Each setting changes the cohort and its answer key. The hidden fitness factor is unavailable to the fitted models.</p>
@@ -750,6 +244,7 @@
       <noscript><p>In this invented example, profile A benefits more early; at a moderate dose, profile B benefits more later. Larger doses can reduce benefit. JavaScript lets you explore the curves.</p></noscript>
       <p class="illustration-note">The curves and units are invented for teaching and have no clinical interpretation. The CAST results above describe a cohort-average comparison of treatment with control; dose-response and subgroup effects would require additional analyses.</p>
     </div>
+    <aside class="clinic-note" id="clinic-whom" aria-label="In the clinic: The patient in front of you"><p class="eyebrow">In the clinic</p><h3>The patient in front of you</h3><p>A cohort average answers a policy question: what happens if patients like these receive one option rather than the other. It does not say whether this particular patient will benefit. Differences across recognized subgroups, for example by age, comorbidity or tumor biology, need to be specified in advance and need enough patients in each subgroup to estimate them with useful precision.</p></aside>
     <div class="section-lead profile-close"><p>A fuller analysis would estimate how specified doses affect outcomes over time for people with different baseline profiles. It would need suitable data, clearly defined contrasts and uncertainty estimates. These would still be profile averages: Hector’s individual counterfactual would remain unknown.</p>
     <details id="profile-target"><summary>State the target <span>One dose at baseline, one profile, one horizon</span></summary><div class="detail-body"><p class="formula">τ(a, t, x) = E[Yᵃ(t) − Y⁰(t) | X = x]</p><p>Here a is a specified baseline dose, t is follow-up time, and x describes baseline characteristics. This motivating target compares dose a with zero dose on the same outcome scale. A sequence of doses chosen as health changes defines a different intervention, returning us to the longitudinal-policy question.</p></div></details>
     <p class="method-link" id="math-conditional"><a href="https://github.com/ishuryak/cast_demo_website#data-generating-model">Effect heterogeneity in the source model ↗</a></p>
@@ -760,6 +255,7 @@
     <p>Before choosing an estimator, specify <strong>the question, the available data and the assumptions connecting them.</strong> Identification asks whether the causal quantity can be expressed in terms of the observed data distribution.</p>
     <figure class="notebook-figure inference-figure"><a href="assets/art/inference-contract.png" target="_blank" rel="noopener"><img src="assets/art/inference-contract.png" width="1944" height="1425" loading="lazy" alt="A hand-drawn inference contract: question Q, data D and model or assumptions M. Can Q be answered given D and M? Yes leads to estimation; no means reformulating the question or gathering different information."></a><figcaption>Identification comes first. Then ask whether this finite sample supports a useful estimate. <a href="assets/art/inference-contract.png" target="_blank" rel="noopener">Open the original sketch ↗</a></figcaption></figure>
     <p>A causal diagram can express part of that contract. We also need well-defined treatments, relevant treatment support, assumptions about confounding and censoring, and enough information for useful precision.</p>
+    <aside class="clinic-note" id="clinic-registry" aria-label="In the clinic: Can a registry answer it?"><p class="eyebrow">In the clinic</p><h3>Can a registry answer it?</h3><p>Before trusting an adjusted comparison, ask three questions of the data. Were the characteristics that drove the choice recorded before the decision was made? Could a patient of each type plausibly have received either option, or did one type always get the same one? Is follow-up long enough to reach the horizon that matters, with censoring unrelated to prognosis? If any answer is no, a more flexible estimator will not repair it.</p><p>For the same simulated cohorts framed as Option A against Option B, with every estimate beside the known truth, see the <a href="../tutorial_v2/">oncology version of this demo</a>.</p></aside>
     <p>The <a href="https://doi.org/10.1097/EDE.0000000000000078">causal roadmap</a> organizes these steps, from defining the question through identification, estimation and interpretation. CSF and CAST contribute to the estimation step.</p>
     <a class="text-link" href="https://navigator.tao-rwd.com/">Plan a study in the Causal Navigator <span aria-hidden="true">↗</span></a>
 
@@ -771,84 +267,8 @@
     <p class="method-link"><a href="class-kit/study-guide.pdf">Study guide (PDF) ↗</a><a href="class-kit/slides.pdf">Draft slides (PDF) ↗</a></p>
   </section>
 
-  <section class="reading section source-section" id="sources"><div class="section-heading"><h2>Sources</h2></div><ol class="source-list"><li><a href="https://arxiv.org/abs/2505.06367">Yang et al. · CAST</a><span>Time-varying treatment effects; the methods preprint.</span></li><li><a href="https://academic.oup.com/jrsssb/article/85/2/179/7058918">Cui et al. · Causal survival forests</a><span>Heterogeneous effects with right-censored outcomes.</span></li><li><a href="https://miguelhernan.org/whatifbook">Hernán &amp; Robins · Causal Inference: What If</a><span>Individual and average causal effects, identification, and generalization.</span></li><li><a href="https://github.com/ishuryak/cast_demo_website">Igor Shuryak · CAST repository and R source</a><span>Simulation, methods, audit history, and MIT license.</span></li></ol></section>
-<section class="reading section" id="longitudinal">
-    <p class="eyebrow">02 / Bring in time</p>
-    <h2>What changes over time?</h2>
-    <p>Longitudinal analysis follows people through time. It can describe changing outcomes; causal longitudinal analysis asks how those outcomes would change under different treatment choices or histories.</p>
-    <p>We might compare <strong>one decision at the start</strong> and follow its effects over time, or study <strong>decisions that change during follow-up</strong> in response to a person’s history.</p>
-    <div class="problem-card" id="problem-shape">
-      <div class="card-heading"><span class="eyebrow">Two shapes of question</span><button class="turn-card" id="turn-problem" type="button" aria-expanded="false" aria-controls="repeated-decisions" hidden>Turn to repeated decisions <span aria-hidden="true">↻</span></button></div>
-      <div id="baseline-decision" class="card-face">
-        <h3>Follow a baseline treatment decision.</h3>
-        <p>Compare survival under treatment and control at several times after the baseline decision.</p>
-        <svg class="question-sketch" viewBox="0 0 620 220" role="img" aria-labelledby="baseline-sketch-title baseline-sketch-desc">
-          <title id="baseline-sketch-title">One baseline choice, several follow-up horizons</title><desc id="baseline-sketch-desc">Treatment and control are alternative baseline interventions. Each has follow-up at the same three times. The vertical marks are evaluation horizons, not new treatment decisions.</desc>
-          <g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M45 111 Q77 112 108 65 L575 65" stroke="#087e8b" stroke-width="2.5"/><path d="M45 111 Q77 114 108 155 L575 155" stroke="#a65736" stroke-width="2.5" stroke-dasharray="7 5"/><path d="M265 42 L267 180 M401 42 L399 180 M531 42 L533 180" stroke="#656c68" stroke-width="1.2" stroke-dasharray="3 6"/></g>
-          <g fill="#087e8b"><circle cx="266" cy="65" r="5"/><circle cx="400" cy="65" r="5"/><circle cx="532" cy="65" r="5"/></g><g fill="#a65736"><circle cx="266" cy="155" r="5"/><circle cx="400" cy="155" r="5"/><circle cx="532" cy="155" r="5"/></g>
-          <g class="sketch-label"><text x="115" y="50">Treatment</text><text x="115" y="141">Control</text><text x="20" y="206">Baseline</text><text x="266" y="206" text-anchor="middle">Early</text><text x="400" y="206" text-anchor="middle">Middle</text><text x="532" y="206" text-anchor="middle">Later</text></g>
-        </svg>
-        <p class="card-takeaway">This demo asks <strong>how survival benefit changes after a baseline treatment decision.</strong></p>
-      </div>
-      <div id="repeated-decisions" class="card-face">
-        <h3>Adapt treatment as new information arrives.</h3>
-        <p>A treatment rule can respond to changing health measurements at each visit. Earlier treatment can affect those measurements and subsequent decisions.</p>
-        <figure class="notebook-figure"><a href="assets/art/longitudinal-policy.png" target="_blank" rel="noopener"><img src="assets/art/longitudinal-policy.png" width="1777" height="1138" loading="lazy" alt="A pink characteristic L changes across two periods. A threshold rule assigns treatment when L is below zero; the target is the expected outcome following that rule."></a><figcaption>A dynamic threshold rule: use the information available at each decision. <a href="assets/art/longitudinal-policy.png" target="_blank" rel="noopener">Open the original sketch ↗</a></figcaption></figure>
-        <p class="card-takeaway">Here the target is an outcome under a <strong>treatment history or policy</strong>. LTMLE is one approach to estimating such targets.</p>
-        <p class="sketch-note">At decision 2, read the characteristic as L₂. This threshold sketch illustrates a dynamic rule; a modified treatment policy can additionally depend on the treatment value that would naturally occur.</p>
-      </div>
-    </div>
-    <p class="quiet-note">Choosing an approach depends on the intervention, outcome and treatment history being studied.</p>
-    <details id="method-family"><summary>Related approaches <span>Where TMLE, LTMLE, LMTP and CAST meet</span></summary><div class="detail-body">
-      <p>These approaches contribute different parts of a causal analysis, from defining an intervention to estimating and summarizing its effects. Work on intervention policies and effect trajectories builds on established estimation frameworks.</p>
-      <dl class="method-definitions">
-        <div><dt><a href="https://www.jstatsoft.org/article/view/v051i13">TMLE</a><span>An estimation framework</span></dt><dd>Targeted maximum likelihood (or minimum loss-based) estimation updates an initial estimate toward a specified target. It can combine flexible prediction with causal estimation under appropriate assumptions.</dd></div>
-        <div><dt><a href="https://www.jstatsoft.org/article/view/v081i01">LTMLE</a><span>Longitudinal estimation</span></dt><dd>Applies targeted estimation through an ordered history of measurements, treatments and censoring. It can estimate outcomes under specified treatment regimes, including rules that respond to evolving covariates.</dd></div>
-        <div><dt><a href="https://github.com/nt-williams/lmtp">LMTP</a><span>A class of intervention policies</span></dt><dd>Longitudinal modified treatment policies can modify a naturally occurring treatment value using the available history—for example, a specified dose reduction where supported. Their effects can be estimated using TMLE or sequentially doubly robust estimators.</dd></div>
-        <div><dt><a href="https://arxiv.org/html/2505.06367v1">CSF → CAST</a><span>The survival branch explored here</span></dt><dd>Causal survival forests supply effect estimates at chosen horizons. CAST models their trajectory. This demonstration follows a binary baseline decision and displays cohort averages.</dd></div>
-      </dl>
-      <p>TMLE-based methods can also address baseline treatments and survival outcomes. For repeated decisions, treatment–confounder feedback may also need to be addressed. The choice of estimator depends on the target and assumptions about treatment assignment, support and censoring.</p>
-      <figure class="notebook-figure"><a href="assets/art/methods-landscape.png" target="_blank" rel="noopener"><img src="assets/art/methods-landscape.png" width="2048" height="2048" loading="lazy" alt="Hand-drawn map titled Methods at the service of a goal. Statistical, causal and machine-learning branches connect to a goal such as an average treatment effect. CAST is highlighted on the causal branch; a note traces causal question to CSF, horizon estimates and CAST."></a><figcaption>Methods at the service of a goal, with CAST highlighted on the causal branch. <a href="assets/art/methods-landscape.png" target="_blank" rel="noopener">Explore the drawing ↗</a></figcaption></figure>
-      <div class="cast-branch"><span>Our place on the map</span><p>Causal question <b aria-hidden="true">→</b> survival contrast <b aria-hidden="true">→</b> causal survival forests <b aria-hidden="true">→</b> <strong>CAST trajectory</strong></p></div>
-      <p>Start by specifying the causal target and assumptions, then choose estimation tools. Target-trial emulation provides a design framework; prediction and simulation can support an analysis within that design. Causal identification still depends on the data and assumptions.</p>
-    </div></details>
-  </section>
-<section class="reading section" id="causal-roadmap">
-    <p class="eyebrow">05 / From a question to data</p><h2>Can these data answer it?</h2>
-    <p>Before choosing an estimator, specify <strong>the question, the available data and the assumptions connecting them.</strong> Identification asks whether the causal quantity can be expressed in terms of the observed data distribution.</p>
-    <figure class="notebook-figure inference-figure"><a href="assets/art/inference-contract.png" target="_blank" rel="noopener"><img src="assets/art/inference-contract.png" width="1944" height="1425" loading="lazy" alt="A hand-drawn inference contract: question Q, data D and model or assumptions M. Can Q be answered given D and M? Yes leads to estimation; no means reformulating the question or gathering different information."></a><figcaption>Identification comes first. Then ask whether this finite sample supports a useful estimate. <a href="assets/art/inference-contract.png" target="_blank" rel="noopener">Open the original sketch ↗</a></figcaption></figure>
-    <p>A causal diagram can express part of that contract. We also need well-defined treatments, relevant treatment support, assumptions about confounding and censoring, and enough information for useful precision.</p>
-    <p>The <a href="https://doi.org/10.1097/EDE.0000000000000078">causal roadmap</a> organizes these steps, from defining the question through identification, estimation and interpretation. CSF and CAST contribute to the estimation step.</p>
-    <a class="text-link" href="https://navigator.tao-rwd.com/">Plan a study in the Causal Navigator <span aria-hidden="true">↗</span></a>
-
-  </section>
-<section class="reading section" id="class-kit">
-    <span id="try-r"></span><h2>For causal educators.</h2>
-    <p>Teach the story with runnable R code, synthetic data, a study guide and draft slides. Both documents include editable LaTeX sources and ready-to-use PDFs.</p>
-    <div class="exercise-links"><a class="button" href="downloads/causal-educators-class-kit.zip" download>Download the class kit <span aria-hidden="true">↓</span></a></div>
-    <p class="method-link"><a href="class-kit/study-guide.pdf">Study guide (PDF) ↗</a><a href="class-kit/slides.pdf">Draft slides (PDF) ↗</a></p>
-  </section>
-
-<section class="provenance">
-    <p><strong>Method provenance.</strong> CAST is the work of Yang et al.
-    (arXiv:2505.06367); this site demonstrates it and is not the analysis code of
-    that paper. The CSF fits use
-    <code>grf::causal_survival_forest</code> (survival.probability target). The CAST layer
-    (<code>ledoit_wolf_shrinkage</code>, the cross-horizon influence-function
-    covariance, and the covariance-aware quadratic trajectory fit) is ported from
-    the production glioma CAST pipeline. All cohorts are simulated, with no
-    patient data.</p>
-    <p><strong>Source code.</strong> Every number and figure on this page is
-    reproduced by the R pipeline at
-    <a href="https://github.com/ishuryak/cast_demo_website">github.com/ishuryak/cast_demo_website</a>,
-    which also documents the full data-generating model, the provenance of every
-    simulation parameter, and the known limitations of this demo.</p>
-    <p class="gen" id="gen-stamp"></p>
-  </section>
+  <section class="reading section source-section" id="sources"><div class="section-heading"><h2>Sources</h2></div><ol class="source-list"><li><a href="https://arxiv.org/abs/2505.06367">Yang et al. · CAST</a><span>Time-varying treatment effects; the methods preprint.</span></li><li><a href="https://academic.oup.com/jrsssb/article/85/2/179/7058918">Cui et al. · Causal survival forests</a><span>Heterogeneous effects with right-censored outcomes.</span></li><li><a href="https://miguelhernan.org/whatifbook">Hernán &amp; Robins · Causal Inference: What If</a><span>Individual and average causal effects, identification, and generalization.</span></li><li><a href="../tutorial_v2/">Oncology version · Option A or Option B?</a><span>The same simulated cohorts, framed as two active treatment options, with every method graded against the truth.</span></li><li><a href="https://github.com/ishuryak/cast_demo_website">Igor Shuryak · CAST repository and R source</a><span>Simulation, methods, audit history, and MIT license.</span></li></ol></section>
 </main>
-
-<script type="module" src="app.mjs"></script>
-<script type="module" src="narrative.mjs"></script>
-<script type="module" src="profile-illustration.mjs"></script>
+<footer class="site-footer reading-wide"><p>Simulation and implementation by <a href="https://github.com/ishuryak/cast_demo_website">Igor Shuryak</a>. Tutorial with <a href="https://www.tao-rwd.com/about">Andy Wilson and Aimee Harrison</a>.</p><span>Synthetic examples throughout.</span></footer>
 </body>
 </html>
