@@ -38,6 +38,18 @@
 # finding it attests to still holds against the new content; where an edit was
 # prose-only, that is recorded beside the entry.
 #
+# 2026-09-21. FOUR hashes re-taken, all docs/tutorial/index.html, under
+# manuscript-audit and reader-first-audit. The edit added a fifth reader path
+# ("Clinician or oncologist", placed first) with its itinerary, a no-JavaScript
+# fallback link, and a CSS class on the one stop that leaves the walkthrough. It
+# adds no number and changes no display item, so the manuscript-audit finding is
+# untouched; and it gives an audience that previously had none a route through
+# the page, which is a reader-first improvement rather than a regression, so the
+# reader-first finding still holds. Re-taking both is therefore honest. Pinned
+# going forward by tutorial/tests/narrative.test.mjs, which asserts the path set,
+# the clinician path's first position, the three-stop count each itinerary
+# announces, and the outbound link in both the scripted and no-script routes.
+#
 # 2026-09-20. ONE hash re-taken: README.md, under paper-code-audit. The edit added
 # the oncology view to the header links and the layout tree, corrected two suite
 # counts, and stated that the clinical and oncology views are not yet published.
@@ -180,13 +192,13 @@ auditors:
       inputs:
         - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
         - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
-        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+        - {path: docs/tutorial/index.html, sha256: sha256:48a86cf78fb3eb6e843bd768c291f52eac56c8b4b17a2f9da8521f5e0f092d2b}
         - {path: evidence_ledger.yaml, sha256: sha256:7349672b3fb7445a9f8fb30899e85dcecbbc88d0b8a61590d02d0a42aa218d8d}
     completion:
       inputs:
         - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
         - {path: docs/data/scenarios.json, sha256: sha256:0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4}
-        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+        - {path: docs/tutorial/index.html, sha256: sha256:48a86cf78fb3eb6e843bd768c291f52eac56c8b4b17a2f9da8521f5e0f092d2b}
       report: development/2026_08_25_public-release-audit.md
       report_sha256: sha256:e2b73d8908bcf1e2698d39a87b2c55d06e294cbbb52adc6ae4b25a303441acec
       reviewed_on: 2026-08-26
@@ -300,18 +312,24 @@ auditors:
       disclosure, not deleted. This is pinned by tests/test_intro_contract.mjs which asserts:
       introduction precedes controls, answers all four questions, every app.js method has a
       glossary line, word cap enforced, 29 specialist terms blocked, folded lead survives.
-      The tutorial site has its own narrative structure with four learning pathways.
+      The tutorial site has its own narrative structure with FIVE learning pathways
+      (2026-09-21): a clinician path was added first, because the page opens by
+      asking "How would you describe yourself?" and its four previous answers
+      (Statistics student, Researcher, Causal convert, Educator) gave an
+      oncologist reading a page about cancer survival no answer. Its third stop
+      leaves for docs/oncology/, the version written for a clinical reader. The
+      set is pinned by tutorial/tests/narrative.test.mjs.
     run:
       document: docs/index.html
       config: tests/test_intro_contract.mjs
       inputs:
         - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
-        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+        - {path: docs/tutorial/index.html, sha256: sha256:48a86cf78fb3eb6e843bd768c291f52eac56c8b4b17a2f9da8521f5e0f092d2b}
         - {path: tests/test_intro_contract.mjs, sha256: sha256:263b46bc6e38e2499b386ef7b28027206b19ac1699a20945898c1085ec4a72a0}
     completion:
       inputs:
         - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
-        - {path: docs/tutorial/index.html, sha256: sha256:a3b4d4f5683abd4d1077d09fbb25dbccae1c04bcf4f42b58ef6e4b04942a90a4}
+        - {path: docs/tutorial/index.html, sha256: sha256:48a86cf78fb3eb6e843bd768c291f52eac56c8b4b17a2f9da8521f5e0f092d2b}
         - {path: tests/test_intro_contract.mjs, sha256: sha256:263b46bc6e38e2499b386ef7b28027206b19ac1699a20945898c1085ec4a72a0}
       report: development/2026_08_29_reader-first-introduction.md
       report_sha256: sha256:d3c8c10e9d09f7081fe259500c353fb66f3bdef61c150c70e1e64a6eb2482a8f

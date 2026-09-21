@@ -31,10 +31,15 @@
     <section class="reader-entry" id="choose-path" aria-labelledby="reader-heading">
       <div class="reader-intro"><h2 id="reader-heading">How would you describe yourself?</h2><p>Choose a starting point. The whole story is yours to explore.</p></div>
       <div class="reader-choices" role="group" aria-labelledby="reader-heading" hidden>
+        <button type="button" data-reader-path="clinician" aria-pressed="false" aria-controls="path-clinician">Clinician or oncologist</button>
         <button type="button" data-reader-path="student" aria-pressed="false" aria-controls="path-student">Statistics student</button>
         <button type="button" data-reader-path="researcher" aria-pressed="false" aria-controls="path-researcher">Researcher</button>
         <button type="button" data-reader-path="convert" aria-pressed="false" aria-controls="path-convert">Causal convert</button>
         <button type="button" data-reader-path="educator" aria-pressed="false" aria-controls="path-educator">Educator</button>
+      </div>
+      <div class="reader-itinerary" id="path-clinician" hidden>
+        <div><h3>Start with the patient in front of you.</h3><p>Meet the missing counterfactual through Hector, read the survival difference over follow-up, then move to the version written for a clinical reader, where the arms are two active treatment options rather than treatment and control.</p></div>
+        <ol aria-label="Clinician path"><li><a href="#question">Meet the missing counterfactual</a></li><li><a href="#explore">Read the survival difference over follow-up</a></li><li><a class="leaves-walkthrough" href="../oncology/">Continue in the oncology version: Option A versus Option B <span aria-hidden="true">&#8599;</span></a></li></ol>
       </div>
       <div class="reader-itinerary" id="path-student" hidden>
         <div><h3>Start with the counterfactual.</h3><p>Begin with the missing path. Try two possible worlds, then watch an average effect change through time.</p></div>
@@ -54,7 +59,7 @@
       </div>
       <button class="reader-reset" id="reader-reset" type="button" hidden>Clear my choice</button>
       <p class="sr-only" id="reader-status" role="status" aria-atomic="true"></p>
-      <noscript><nav class="reader-fallback" aria-label="Choose a starting point"><a href="#question">Statistics student: start with the missing path</a><a href="#causal-roadmap">Researcher: start with the question and assumptions</a><a href="#missingness">Causal convert: revisit missingness</a><a href="#class-kit">Educator: explore the teaching kit</a></nav></noscript>
+      <noscript><nav class="reader-fallback" aria-label="Choose a starting point"><a href="../oncology/">Clinician or oncologist: read the oncology version, Option A versus Option B</a><a href="#question">Statistics student: start with the missing path</a><a href="#causal-roadmap">Researcher: start with the question and assumptions</a><a href="#missingness">Causal convert: revisit missingness</a><a href="#class-kit">Educator: explore the teaching kit</a></nav></noscript>
     </section>
     <figure class="hero-art" id="hero-art">
       <div id="hero-art-fallback">

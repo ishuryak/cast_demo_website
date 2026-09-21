@@ -33,6 +33,10 @@ p+p{margin-top:1.2em}
 .reader-itinerary p{font-size:15px;line-height:1.75;max-width:38em}
 .reader-itinerary ol{padding-left:22px;margin:0;font-size:14px;line-height:1.7;align-self:center}
 .reader-itinerary li{padding-left:7px}
+/* The one itinerary stop that leaves this walkthrough. Marked so a reader
+   knows before clicking that it opens the oncology version of the demo
+   rather than another section of this page. */
+.reader-itinerary a.leaves-walkthrough{font-weight:600;color:var(--teal-dark)}
 .reader-itinerary li::marker{color:var(--teal-dark);font-size:11px}
 .reader-itinerary li a{display:inline-block;padding:10px 0;min-height:44px}
 .reader-reset{display:block;min-height:44px;padding:8px 0;background:transparent;border:0;color:var(--teal-dark);font-size:12px;margin-top:6px;text-decoration:underline;text-underline-offset:4px}

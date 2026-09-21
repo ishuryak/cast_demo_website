@@ -13,6 +13,48 @@ Entries are newest first.
 
 ---
 
+## 2026-09-21 (framing) · The walkthrough now offers a clinician a way in
+
+**Moves published numbers: no.** Markup, one CSS rule and tests. No R script,
+no pipeline run, and `docs/data/scenarios.json` is unchanged.
+
+### 44. The walkthrough's audience picker still had no clinical answer
+
+- **What was wrong.** Entry 37 added a clinician path to the new oncology page
+  and deliberately left `docs/tutorial/` alone, so the published walkthrough
+  kept asking "How would you describe yourself?" and kept offering only
+  Statistics student, Researcher, Causal convert and Educator. A clinician
+  landing on the walkthrough had no route, and no link to the version written
+  for them.
+- **The proof it was real.** Four `data-reader-path` buttons in
+  `tutorial/index.html`, none clinical, and no test in `tutorial/tests/`
+  referenced `reader-path`, so the set could change with nothing noticing.
+- **The fix.** A fifth path, **"Clinician or oncologist", placed first**, with
+  three stops: the missing counterfactual, the survival difference over
+  follow-up, and then an outbound link to `../oncology/`. The outbound stop
+  carries a `leaves-walkthrough` class so a reader knows before clicking that it
+  opens a different version rather than another section. The no-JavaScript
+  fallback offers the same five routes, because a path that exists only for
+  scripted readers is not a path.
+- **The test that now pins it.** `tutorial/tests/narrative.test.mjs` gains three
+  tests: the exact path set in document order with the clinician first, the
+  three-stop count every itinerary announces through `narrative.mjs`'s status
+  message, and the outbound link in both the scripted and the no-script routes.
+  **Each confirmed to fail** against a deliberate break: removing the button
+  gives 1 failure, demoting it to last 1, dropping the outbound link 2, and
+  dropping the no-script fallback link 1.
+- **Verification.** `node tutorial/tests/run.mjs`: 15 tests, 0 failures.
+  Behaviour checked in a real browser rather than inferred from markup: clicking
+  the button sets `aria-pressed="true"`, reveals the clinician itinerary, hides
+  the other four, resolves its three stops to `#question`, `#explore` and
+  `../oncology/`, and announces "Clinician or oncologist path selected. Start
+  with the patient in front of you. Three suggested stops are below."
+  `bash tests/run_tests.sh` on 2026-09-21: 16 suites, 0 failures.
+- **One consequence worth stating.** The outbound link resolves only where
+  `docs/oncology/` is served. Both live on this branch and would be published
+  together, so the live walkthrough cannot acquire a broken link: today's
+  published walkthrough is built from `main` and has no such button.
+
 ## 2026-09-20 (framing) · A third version of the site, written for an oncologist
 
 **Moves published numbers: no.** No R script is edited, the pipeline is not

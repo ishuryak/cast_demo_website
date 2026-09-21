@@ -172,12 +172,54 @@ false statement is not a rewrite of a version, so it was made in place.
   a wrapping HTML caption and stacking the table into labelled blocks on narrow
   screens, so no value is hidden or placed behind a sideways scroll.
 
+## Addendum, 2026-09-21: the walkthrough gets the clinician path too
+
+The 2026-09-20 pass deliberately left `docs/tutorial/` untouched, on Igor's
+instruction to build a new version rather than overwrite the existing ones. He
+then asked whether the new option could be linked from the walkthrough so that
+"oncologist" is a choice to click there. That reverses one boundary of the
+previous day's decision, narrowly and on purpose, so it is recorded rather than
+folded silently into the earlier entry.
+
+**What was decided, and why this is not the thing the boundary was protecting.**
+The boundary existed so the two published versions stayed available for
+comparison. Adding a fifth reader path does not replace or reframe the
+walkthrough: its four existing paths, its narrative, its chart and every number
+on it are untouched. What changes is that an audience which previously had no
+route now has one, and that route ends by handing the reader to the version
+written for them. A reader who does not click the new button sees exactly the
+page that was there before.
+
+**The ordering question, and how it was settled.** The outbound link could have
+been the first stop, which sends a clinician straight to the oncology page, or
+the last, which walks them through the part of this page that already works for
+a clinical reader first. The last was chosen: Hector is the best clinical
+explainer anywhere in this project, and sending a clinician past it to another
+page would waste the one asset the walkthrough has for that audience. So the
+path is the missing counterfactual, then the survival difference over follow-up,
+then the handover.
+
+**Why the live site cannot acquire a broken link.** `../oncology/` resolves only
+where `docs/oncology/` is served, and that is not on `main`. The published
+walkthrough is built from `main` and therefore has no such button. The two land
+together or not at all.
+
+**Costs.** Three tests added to `tutorial/tests/narrative.test.mjs`, each
+confirmed to fail against a deliberate break (1, 1, 2 and 1 failures across four
+mutations). Behaviour verified in a real browser rather than inferred from the
+markup, because the markup contract and the runtime behaviour are different
+claims: the click sets `aria-pressed`, reveals the clinician itinerary, hides
+the other four, and announces the correct status string. Four attestation hashes
+for `docs/tutorial/index.html` re-taken, with the reason recorded in
+`audit_manifest.yaml`.
+
 ## Open work, deliberately not done here
 
 1. **Compute `smd_stage`** and add stage to the balance card on all three
    surfaces. Two lines plus a pipeline re-run, and it moves no published number.
-2. **Backport findings 1, 3, 4, 5 and 6 to `docs/tutorial/` and
-   `docs/clinical/`**, or retire one of them. Three parallel versions of the
+2. **Backport findings 3, 4, 5 and 6 to `docs/tutorial/` and `docs/clinical/`**,
+   or retire one of them. Finding 1 was addressed for the walkthrough on
+   2026-09-21, see the addendum above. Three parallel versions of the
    same demo is a maintenance cost, and two of them now carry defects the third
    does not.
 3. **Measure coverage properly.** `R/04_replicate_seeds.R` already redraws a
