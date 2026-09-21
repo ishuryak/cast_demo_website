@@ -1,6 +1,10 @@
 # CAST demo website: causal survival trajectories on simulated oncology data
 
-[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/) · [Clinical view](https://ishuryak.github.io/cast_demo_website/clinical/)
+[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/) · [Clinical view](https://ishuryak.github.io/cast_demo_website/clinical/) · [Oncology view](https://ishuryak.github.io/cast_demo_website/oncology/)
+
+**The clinical and oncology views are not yet published.** GitHub Pages serves
+`main:/docs`, and both live on feature branches, so those two links resolve only
+after their branch is merged.
 
 An interactive teaching demo that shows, on **simulated** cancer-survival
 cohorts where the true treatment effect is known:
@@ -111,7 +115,7 @@ cast_demo_website/
     04_replicate_seeds.R re-draw one scenario at N seeds; what replicates
     install_packages.R   one-time dependency install
   tests/
-    run_tests.sh             one command; runs the fourteen suites below
+    run_tests.sh             one command; runs the sixteen suites below
     test_data_contract.mjs   every field the site reads exists and lines up
     test_render_smoke.mjs    app.js actually runs at all 24 control settings
     test_export_labels.R     figure labels track gamma, not control position
@@ -129,6 +133,10 @@ cast_demo_website/
     test_readme_claims.mjs   every number this README quotes, recomputed from
                              the shipped export and from R/02_fit_methods.R
     test_repo_hygiene.mjs    no gitlink, no backup or scratch files in the tree
+    test_oncology_contract.mjs  docs/oncology/: the five reader paths and their
+                             order, Option A/B framing, the refusal to interpret
+                             under unrecorded confounding, the clustered coverage
+                             interval, and the number needed to treat
   docs/                              <- the published static site (GitHub Pages root)
     index.html  app.js  style.css      methods view (Plotly, no build step)
     clinical/                          clinical view: the same estimates in
@@ -136,6 +144,15 @@ cast_demo_website/
                                        against the known truth recomputed in the
                                        browser. Reads ../data/scenarios.json, so
                                        it cannot disagree with the methods view.
+    oncology/                          oncology view: the same estimates framed as
+                                       a choice between two active options
+                                       (Option A vs Option B) rather than
+                                       treatment vs control, with a clinician
+                                       reader path, the unrecorded-confounding
+                                       control on the face rather than behind a
+                                       disclosure, a number needed to treat, and
+                                       every plotted value repeated in a table so
+                                       nothing is hover-only
     tutorial/                          generated walkthrough; source in tutorial/
     data/scenarios.json                aggregate results (safe to publish)
     figs/*.png                         600-DPI fallback figures
@@ -147,7 +164,7 @@ cast_demo_website/
   References/README.md   the same two sources, with licences (no PDFs committed)
   FIXES.md               landed fixes, with the evidence for each
   development/           the audits and decisions behind those fixes
-  .github/workflows/     CI: the nine node suites + a docs/ completeness check
+  .github/workflows/     CI: the eleven node suites + a docs/ completeness check
   output/                R intermediates, output/preview/ for smoke-test exports,
                          and replicate_seeds.csv (all gitignored)
 ```

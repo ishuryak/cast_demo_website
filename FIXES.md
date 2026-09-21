@@ -13,6 +13,177 @@ Entries are newest first.
 
 ---
 
+## 2026-09-20 (framing) · A third version of the site, written for an oncologist
+
+**Moves published numbers: no.** No R script is edited, the pipeline is not
+re-run, and `docs/data/scenarios.json` is byte-identical to the previous commit.
+The new page reads that same export. What is added is a third presentation of
+the same estimates, a test suite that pins its framing decisions, and one
+correction to a published sentence in the walkthrough.
+
+Two clinician reviewers and one biostatistician read the existing methods,
+clinical and walkthrough pages. The reasoning, the findings that were dismissed,
+and the decision to build a new version rather than edit the existing two are in
+[`development/2026_09_20_oncology-framing.md`](development/2026_09_20_oncology-framing.md).
+
+### 37. The walkthrough asked a clinician to identify themselves and offered no option
+
+- **What was wrong.** `docs/tutorial/index.html` opens with "How would you
+  describe yourself?" and four choices: Statistics student, Researcher, Causal
+  convert, Educator. An oncologist has no answer, and "causal convert" does not
+  parse for one. The first interaction on a teaching page told a clinical reader
+  the page was not for them.
+- **The proof it was real.** Four `data-reader-path` buttons in
+  `docs/tutorial/index.html:34-37`, none clinical, and no test anywhere in the
+  repository referenced `reader-path`, so the set could shrink or drift with
+  nothing noticing.
+- **The fix.** The new `docs/oncology/` page carries five paths with
+  **Clinician or oncologist first**, each routing to three stops. The existing
+  walkthrough is unchanged; this is a separate version, not an edit of it.
+- **The test that now pins it.** `tests/test_oncology_contract.mjs` section 1
+  asserts the count, the exact set, the clinician path's presence and its first
+  position, that every path points at an itinerary that exists, that each
+  itinerary has exactly three stops (the announced status string promises
+  "Three suggested stops"), and that the no-JavaScript fallback offers all five.
+  **Confirmed to fail** against `--mutate=drop-clinician-path`: 5 failures.
+- **Verification.** `node tests/test_oncology_contract.mjs` on 2026-09-20:
+  PASS, 375 checks, 0 failures.
+
+### 38. Treatment versus control is the wrong frame for oncology
+
+- **What was wrong.** All three existing surfaces label the arms "treatment" and
+  "control": 27 uses on the walkthrough, 10 on the methods page, 5 on the
+  clinical view. Outside a placebo trial oncology compares two active options,
+  and the "control" label implies a no-treatment reference the estimand never
+  required.
+- **The proof it was real.** The estimand is
+  `E[S1(t)] - E[S0(t)]`, a contrast between two arms with no requirement that
+  either be untreated. The generator agrees: `R/01_simulate.R:92` makes fitter
+  patients more likely to receive `W = 1`, which is exactly how the more
+  intensive of two options is selected in practice. No modality, drug or
+  schedule is named anywhere on the three pages; the closest clinical analogy
+  shipped is "a protective spell" and "a well-fitting suit of armor"
+  (`docs/tutorial/index.html:219`).
+- **What it changes scientifically.** The flagship "early benefit, later
+  reversal" scenario is hard to credit as treat-versus-nothing and entirely
+  credible as intensive-versus-standard, where an early gain is paid back in
+  late toxicity. Relabelling makes the demo's headline case more plausible, not
+  less.
+- **The fix.** `docs/oncology/` names the arms Option A (more intensive) and
+  Option B (standard) throughout, states why in its opening section, and names
+  the real comparisons the framing covers.
+- **The test that now pins it.** Same suite, section 2: no arm is labelled
+  "control", both option labels appear at least ten times, the page explains the
+  choice, and the technical section states that relabelling changes no
+  computation. **Confirmed to fail** against `--mutate=reinstate-control`, which
+  re-introduces one occurrence of control-arm language: 1 failure. The mutation
+  itself throws if it turns out to be a no-op, because the first version of it
+  silently matched nothing and proved nothing.
+
+### 39. The walkthrough asserts causal assumptions at settings that break them
+
+- **What was wrong.** `docs/tutorial/app.mjs:66` prints "The adjusted estimate
+  favors treatment at this horizon, under the causal assumptions" at every
+  control position, including Hidden confounding = Strong, where the simulation
+  has violated those assumptions on purpose. Line 74 appends "adjustment cannot
+  use it" but never retracts the claim.
+- **The proof it was real.** The string is emitted unconditionally from the sign
+  of the estimate; `state.unmeas` is consulted only to append a sentence.
+- **The fix.** On the new page the interpretation refuses: at any setting with
+  an unrecorded confounder the headline reads "This estimate should not be
+  interpreted", says why, and reports what the truth actually is.
+- **The test that now pins it.** Section 3 drives all 120 scenario-horizon
+  positions and asserts the refusal appears at every one of the 80 with an
+  unrecorded confounder and at none of the 40 without.
+  **Confirmed to fail** against `--mutate=interpret-anyway`: 1 failure.
+- **Verification.** Included in the 375 checks above.
+
+### 40. Three display defects carried over from the clinical view
+
+- **What was wrong.** (a) `docs/clinical/app.js:20-22` gives CSF and CAST the
+  identical colour `#009e73` while the accuracy card distinguishes them by
+  colour alone. (b) Per-point values and every truth marker on the walkthrough
+  live in SVG `<title>` elements, which do not exist on a tablet. (c) The
+  hidden-confounder card prints `+shift` in its headline and "a move of
+  `-shift`" two sentences below, so the number changes sign inside its own card.
+- **The proof it was real.** (a) `COLORS.csf === COLORS.cast`, verified by
+  reading the object. (b) `docs/tutorial/app.mjs` writes each point's value into
+  a `<title>`; the click target carries `aria-hidden="true"`. (c) `app.js:385`
+  against `app.js:389` in `docs/clinical/`.
+- **The fix.** On the new page CAST is `#00356b` and is the only filled band,
+  CSF is drawn as markers so the two never rely on colour alone; every figure
+  value is repeated in a table that stacks into labelled blocks on a phone
+  rather than scrolling sideways; and the hidden-factor headline and body are
+  generated from one `shift` value with the direction word derived from its sign.
+- **The test that now pins it.** Sections 4, 5 and 6. The sign check runs on all
+  80 panel-horizon positions that have a hidden factor and asserts headline,
+  direction word and both quoted endpoints agree. **Confirmed to fail**:
+  `--mutate=flip-hidden-sign` gives 160 failures, `--mutate=share-colour` 1, and
+  `--mutate=drop-table-rows` 2.
+
+### 41. The clinical view reports coverage as if 120 cells were 120 trials
+
+- **What was wrong.** The clinical view states that a 95% band "can be checked
+  directly instead of assumed" and reports 41 of 120. Those 120 cells are 24
+  simulated cohorts: the five horizons in a panel come from one draw and move
+  together.
+- **The proof it was real.** Recomputed from the shipped export: 3 panels hit
+  5 of 5, 10 panels miss 0 of 5, and only 11 are mixed. The cluster standard
+  error over panels is 0.0737 against a binomial 0.0433 over cells, a design
+  effect of 2.90, so the reported 34% carries an interval of 20% to 49% rather
+  than plus or minus 4 points. `README.md:639` already said this in words
+  ("the effective replicate count is six") and `R/04_replicate_seeds.R` contains
+  no coverage logic, so no calibration study exists in the repository.
+- **The fix.** The new page reports the same point figures and prints the
+  cluster interval beside them, and its limitations section states in words that
+  the 120 cells are 24 draws.
+- **The test that now pins it.** Section 7 recomputes coverage and the cluster
+  interval independently of the page's own helper, and additionally asserts the
+  reported interval is at least 20% wider than a binomial one over cells, so the
+  page cannot quietly revert to the independence claim it exists to retract.
+  **Confirmed to fail** against `--mutate=binomial-ci`: the page reports
+  26% to 43% where the cluster interval is 20% to 49%.
+
+### 42. A published walkthrough page still called the export tuned
+
+- **What was wrong.** `docs/tutorial/labs/README.md:11` read "not an exact rerun
+  of the 2,000-person **tuned** website export". The tuning claim was retired on
+  2026-09-18 (entry 32) after grf was shown to ignore `tune.parameters` when the
+  propensity is supplied. This file is served by GitHub Pages, so the retracted
+  claim was live.
+- **The proof it was real.** It was the only surviving instance in the published
+  walkthrough; the other three mentions all correctly read "untuned", and the
+  class-kit ZIP does not contain this file.
+- **The fix.** The word removed and the mechanism stated in its place, in both
+  `tutorial/labs/README.md` and the generated `docs/tutorial/labs/README.md`.
+- **The test that now pins it.** `tests/test_readme_claims.mjs` already fails if
+  the repository claims the forests are tuned; the new suite additionally
+  asserts the oncology page states they are not. A grep for "tuned website
+  export" across `tutorial/` and `docs/` now returns nothing tracked.
+- **Verification.** `bash tests/run_tests.sh` on 2026-09-20: 16 suites, 0 failures.
+
+### 43. The viewport suite could only ever measure the site root
+
+- **What was wrong.** `tests/test_viewport_overflow.mjs` hardcoded the measured
+  page as `/index.html`, so `docs/clinical/` had never been measured at any
+  width and neither could any future page.
+- **The proof it was real.** The iframe source was a literal, and the control
+  copy was served from the root, where a subdirectory page's relative
+  stylesheet, script and data references would not resolve.
+- **The fix.** An optional third argument names the page; the control copy is
+  now served from that page's own directory so relative references resolve. The
+  default is unchanged, so every existing invocation behaves exactly as before.
+- **What it caught immediately.** Two real layout defects in the new page, found
+  by running it rather than by reading it: Plotly lays a title out at its full
+  string width and never wraps it, so the scenario title overflowed the chart at
+  360, 420 and 620 pixels; and a ten-column numeric table cannot fit a phone,
+  reaching 435 pixels against a 345-pixel viewport even after the minimum width
+  and nowrap were removed. The title became a wrapping HTML caption and the
+  table now stacks into labelled blocks.
+- **Verification.** `node tests/test_viewport_overflow.mjs` (site root) and
+  `node tests/test_viewport_overflow.mjs docs oncology/index.html` on
+  2026-09-20: both PASS, 0 failures, at all six widths.
+
 ## 2026-09-18 (audit) · Repository hygiene, and four claims the data contradicted
 
 **Moves published numbers: no.** Every estimate in `docs/data/scenarios.json` is

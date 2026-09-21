@@ -8,7 +8,7 @@ source("cast-exercise.R")
 result <- run_cast_exercise()
 ```
 
-From a cloned repository, use `source("tutorial/labs/cast-exercise.R")` instead. The default run uses 600 simulated people, five horizons, 300 trees, two threads, and no tuning. It is a learning exercise, not an exact rerun of the 2,000-person tuned website export.
+From a cloned repository, use `source("tutorial/labs/cast-exercise.R")` instead. The default run uses 600 simulated people, five horizons, 300 trees, two threads, and no tuning. It is a learning exercise, not an exact rerun of the 2,000-person website export. (The website's causal survival forests are themselves untuned: grf applies `tune.parameters` only when it estimates the propensity itself, and the pipeline supplies one.)
 
 The function downloads Igor's simulation and CAST math from commit `43a00101100801eb6c048800d24788455fac0f8b` over HTTPS, then sources them in a temporary workspace with export execution disabled. Read those files before running if you want to inspect the generating mechanism. The original MIT notice is at https://github.com/ishuryak/cast_demo_website/blob/43a00101100801eb6c048800d24788455fac0f8b/LICENSE.
 

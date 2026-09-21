@@ -4,7 +4,7 @@
 # docs/data/scenarios.json (pass a different path as $1 to check another export,
 # e.g. output/preview/data/scenarios.json after a smoke test).
 #
-# Fourteen suites: five R (need Rscript) and nine node. Two groups have an
+# Sixteen suites: five R (need Rscript) and eleven node. Two groups have an
 # optional dependency and SKIP rather than fail without it: the five R suites
 # need Rscript, and the viewport suite needs a Chrome or Edge.
 #
@@ -47,12 +47,14 @@ if command -v node >/dev/null 2>&1; then
   run "intro contract"     node tests/test_intro_contract.mjs
   run "FIXES.md order"    node tests/test_fixes_order.mjs
   run "clinical contract"  node tests/test_clinical_contract.mjs "$JSON"
+  run "oncology contract"  node tests/test_oncology_contract.mjs "$JSON"
   run "README claims"      node tests/test_readme_claims.mjs "$JSON"
   run "repo hygiene"       node tests/test_repo_hygiene.mjs
   # Needs a browser. Skips (exit 0) with a message when none is found, so a
   # machine without Chrome still runs the other eight node suites rather than
   # failing.
   run "viewport overflow"  node tests/test_viewport_overflow.mjs
+  run "viewport (oncology)" node tests/test_viewport_overflow.mjs docs oncology/index.html
 else
   echo "--- SKIP: node not found; the site data contract was not checked"
   echo

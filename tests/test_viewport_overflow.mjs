@@ -46,6 +46,13 @@ import { join, extname, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 const DOCS = resolve(process.argv[2] || "docs");
+// Optional third argument: which page under DOCS to measure. Defaults to the
+// site root, so every existing invocation behaves exactly as before. The
+// control copy is served from the SAME directory as the page, because a page
+// in a subdirectory resolves its stylesheet, script and data relatively.
+const PAGE = ("/" + (process.argv[3] || "index.html")).replace(/\/+/g, "/");
+const PAGE_DIR = PAGE.slice(0, PAGE.lastIndexOf("/"));
+const CONTROL_URL = `${PAGE_DIR}/__overflow_control.html`;
 const WIDTHS = [360, 420, 620, 720, 1024, 1440];
 
 function findChrome() {
@@ -67,9 +74,9 @@ const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css
 
 // The harness measures every width in ONE page load: it resizes a single iframe
 // and re-reads it, so the whole suite costs one browser launch.
-const HARNESS = (widths) => `<!doctype html><meta charset="utf-8"><body style="margin:0">
-<iframe id="f" src="/index.html" style="border:0;width:${widths[0]}px;height:1400px"></iframe>
-<iframe id="neg" src="/__overflow_control.html" style="border:0;width:400px;height:1400px"></iframe>
+const HARNESS = (widths, page, controlUrl) => `<!doctype html><meta charset="utf-8"><body style="margin:0">
+<iframe id="f" src="${page}" style="border:0;width:${widths[0]}px;height:1400px"></iframe>
+<iframe id="neg" src="${controlUrl}" style="border:0;width:400px;height:1400px"></iframe>
 <pre id="out">pending</pre>
 <script>
 const WIDTHS = ${JSON.stringify(widths)};
@@ -118,13 +125,13 @@ if (!chrome) {
   console.log("viewport overflow: SKIP (no Chrome/Edge found; set CHROME=/path/to/chrome)");
   process.exit(0);
 }
-if (!existsSync(join(DOCS, "index.html"))) {
-  console.error(`viewport overflow: FAIL (no index.html under ${DOCS})`);
+if (!existsSync(join(DOCS, PAGE.replace(/^\/+/, "")))) {
+  console.error(`viewport overflow: FAIL (no ${PAGE} under ${DOCS})`);
   process.exit(1);
 }
 
 // The negative control is the real page plus one element wider than any phone.
-const control = readFileSync(join(DOCS, "index.html"), "utf8").replace(
+const control = readFileSync(join(DOCS, PAGE.replace(/^\/+/, "")), "utf8").replace(
   "</body>",
   '<div id="deliberate-overflow" style="width:1600px;height:8px"></div></body>');
 
@@ -139,13 +146,13 @@ const server = createServer((req, res) => {
     req.on("end", () => { res.writeHead(204); res.end(); resolveResult(body); });
     return;
   }
-  if (url === "/__overflow_control.html") {
+  if (url === CONTROL_URL) {
     res.writeHead(200, { "content-type": "text/html" });
     return res.end(control);
   }
   if (url === "/__harness.html") {
     res.writeHead(200, { "content-type": "text/html" });
-    return res.end(HARNESS(WIDTHS));
+    return res.end(HARNESS(WIDTHS, PAGE, CONTROL_URL));
   }
   const file = join(DOCS, url === "/" ? "index.html" : url.replace(/^\/+/, ""));
   if (!file.startsWith(DOCS) || !existsSync(file)) { res.writeHead(404); return res.end("nope"); }
@@ -207,7 +214,7 @@ server.listen(0, isWindowsChrome ? "0.0.0.0" : "127.0.0.1", async () => {
   let fails = 0;
   const ok = (msg, cond) => { if (!cond) fails++; console.log(`  ${cond ? "ok  " : "FAIL"}  ${msg}`); };
 
-  console.log("viewport overflow: " + DOCS);
+  console.log("viewport overflow: " + DOCS + PAGE);
   // The control first: everything after it is only meaningful if it fires.
   ok(`the measurement detects a real overflow (control: ${data.control.n} element(s), scrollWidth ${data.control.scrollW} > ${data.control.vw})`,
      data.control.n >= 1 && data.control.scrollW > data.control.vw);

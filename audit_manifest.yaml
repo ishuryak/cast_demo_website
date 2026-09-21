@@ -37,6 +37,13 @@
 # so neither form can return silently. Re-taking a hash is only honest when the
 # finding it attests to still holds against the new content; where an edit was
 # prose-only, that is recorded beside the entry.
+#
+# 2026-09-20. ONE hash re-taken: README.md, under paper-code-audit. The edit added
+# the oncology view to the header links and the layout tree, corrected two suite
+# counts, and stated that the clinical and oncology views are not yet published.
+# It touched no description of what the R code computes, so the paper-code
+# correspondence that hash attests to is unchanged and re-taking it is honest.
+# No other attested file was edited in this pass.
 
 project: cast_demo_website
 generated_on: 2026-09-18
@@ -46,6 +53,18 @@ deliverables:
                  # document deliverable exists or is planned. The public-facing
                  # teaching website lives at https://ishuryak.github.io/cast_demo_website/
                  # The illustrated CAST walkthrough at https://ishuryak.github.io/cast_demo_website/tutorial/
+                 #
+                 # FOUR READER-FACING SURFACES now share one export:
+                 #   docs/               methods and diagnostics (published)
+                 #   docs/tutorial/      illustrated walkthrough (published)
+                 #   docs/clinical/      clinical view (branch clinical-version, NOT published)
+                 #   docs/oncology/      oncology view, Option A vs Option B
+                 #                       (branch clinical-framing, NOT published)
+                 # Added 2026-09-20, because the 2026-09-18 pass regenerated this
+                 # record on the same day docs/clinical/ was created and never
+                 # named it here. A coverage record that does not mention a
+                 # surface is not covering it, and the omission is exactly the
+                 # kind this file exists to make visible.
 
 canonical_artifacts:
   analysis_code:
@@ -116,7 +135,7 @@ auditors:
         - {path: R/cast_core.R, sha256: sha256:41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea}
         - {path: R/03_export.R, sha256: sha256:e42988642d9616705eb012bbf046f4af2dab6f2cb1084ac58b645fad398cb6b6}
         - {path: R/scenario_labels.R, sha256: sha256:f38c9a3e9702a13d736b24a4f6b63663347ebae166e1e0618bb39ae86c10efa1}
-        - {path: README.md, sha256: sha256:7947ff1644f5ce46655ea3c48ed083d6b8997ca83058407959562aae31455db8}
+        - {path: README.md, sha256: sha256:6492c4741d2bf85886bbd570ab76e5bec91e239a0a2ab5c9f30876b74d209dd5}
         - {path: docs/index.html, sha256: sha256:ec6a4c4009827c5c28e33baac2a6f3a0dca79dadd8bdf422513d04bdd995a598}
       report: development/2026_08_25_public-release-audit.md
       report_sha256: sha256:e2b73d8908bcf1e2698d39a87b2c55d06e294cbbb52adc6ae4b25a303441acec

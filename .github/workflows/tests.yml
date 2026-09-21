@@ -1,6 +1,6 @@
 # Run the site-facing test suites on every push and pull request.
 #
-# Scope is deliberate: the nine node suites need no R and no pipeline run, so
+# Scope is deliberate: the eleven node suites need no R and no pipeline run, so
 # they execute in seconds on a stock runner and cover the failures that have
 # actually broken this site before -- the front end and the exported
 # scenarios.json drifting apart, CSS that silently refuses to size an element the
@@ -8,7 +8,7 @@
 # five R suites (cast_core math, export labels, fit contract, source guards, sim
 # provenance) need R plus grf, which would turn a ten-second job into a
 # multi-minute one; run those locally with ./tests/run_tests.sh, which runs all
-# fourteen.
+# sixteen.
 #
 # KNOWN GAP, stated rather than left to be discovered: because the R suites do
 # not run here, the CAST golden-value math is not covered by CI. A change to
@@ -52,6 +52,9 @@ jobs:
       - name: Clinical page contract (units, coverage, acronyms, shared data)
         run: node tests/test_clinical_contract.mjs docs/data/scenarios.json
 
+      - name: Oncology page contract (reader paths, Option A/B framing, refusal, coverage)
+        run: node tests/test_oncology_contract.mjs docs/data/scenarios.json
+
       - name: README claims (every quoted number recomputed from the export)
         run: node tests/test_readme_claims.mjs docs/data/scenarios.json
 
@@ -63,13 +66,18 @@ jobs:
       - name: Viewport overflow (the page fits a phone, measured not screenshotted)
         run: node tests/test_viewport_overflow.mjs
 
+      - name: Viewport overflow, oncology page (ten numeric columns on a 360px screen)
+        run: node tests/test_viewport_overflow.mjs docs oncology/index.html
+
       - name: Shipped site is complete
         run: |
           set -euo pipefail
           for f in docs/index.html docs/app.js docs/style.css \
                    docs/data/scenarios.json \
                    docs/clinical/index.html docs/clinical/app.js \
-                   docs/clinical/style.css; do
+                   docs/clinical/style.css \
+                   docs/oncology/index.html docs/oncology/app.js \
+                   docs/oncology/style.css; do
             test -s "$f" || { echo "::error::missing or empty: $f"; exit 1; }
           done
           # .nojekyll is legitimately EMPTY (its presence is the signal that
