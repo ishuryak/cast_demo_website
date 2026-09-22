@@ -51,6 +51,9 @@ jobs:
       - name: Tutorial variants (v1, v2, v3 and the /oncology/ redirect are whole, separate pages)
         run: node tests/test_tutorial_variants.mjs docs
 
+      - name: Clinical display accuracy and narrative contracts
+        run: npm run test:clinical
+
       - name: Viewport overflow on the tutorial variants
         run: |
           node tests/test_viewport_overflow.mjs docs/tutorial
@@ -75,5 +78,5 @@ jobs:
         run: |
           npm test
           npm run build:pages
-          git diff --exit-code -- docs/tutorial docs/tutorial_v3 tutorial/class-kit tutorial/downloads
-          test -z "$(git ls-files --others --exclude-standard -- docs/tutorial docs/tutorial_v3)"
+          git diff --exit-code -- docs tutorial/class-kit tutorial/downloads
+          test -z "$(git ls-files --others --exclude-standard -- docs)"

@@ -20,3 +20,5 @@ await cp(path.join(root,'tutorial/dist'),output,{recursive:true});
 console.log('Staged the full walkthrough in docs/tutorial/ for GitHub Pages.');
 // The clinical edition is derived from the walkthrough just staged, so it is rebuilt with it.
 await import('./build-tutorial-v3.mjs');
+
+await import('./build-clinical-editions.mjs');

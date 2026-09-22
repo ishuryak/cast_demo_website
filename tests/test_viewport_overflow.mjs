@@ -31,10 +31,13 @@
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import { readFileSync, existsSync, writeFileSync, mkdtempSync } from "node:fs";
-import { join, extname, resolve } from "node:path";
+import { join, extname, resolve, dirname, basename } from "node:path";
 import { tmpdir } from "node:os";
 
 const DOCS = resolve(process.argv[2] || "docs");
+const variant = ['tutorial','tutorial_v2','tutorial_v3'].includes(basename(DOCS));
+const SERVE_ROOT = variant ? dirname(DOCS) : DOCS;
+const PAGE_BASE = variant ? '/' + basename(DOCS) + '/' : '/';
 const WIDTHS = [360, 420, 620, 720, 1024, 1440];
 
 function findChrome() {
@@ -43,6 +46,8 @@ function findChrome() {
   // would make the suite report on a binary the caller did not ask for.
   if (process.env.CHROME) return existsSync(process.env.CHROME) ? process.env.CHROME : null;
   const candidates = [
+    "C:/Program Files/Google/Chrome/Application/chrome.exe",
+    "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
     "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
     "/mnt/c/Program Files (x86)/Google/Chrome/Application/chrome.exe",
     "/mnt/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
@@ -51,13 +56,13 @@ function findChrome() {
   return candidates.find(p => existsSync(p)) || null;
 }
 
-const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css",
+const MIME = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css",
                ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml" };
 
 // The harness measures every width in ONE page load: it resizes a single iframe
 // and re-reads it, so the whole suite costs one browser launch.
 const HARNESS = (widths) => `<!doctype html><meta charset="utf-8"><body style="margin:0">
-<iframe id="f" src="/index.html" style="border:0;width:${widths[0]}px;height:1400px"></iframe>
+<iframe id="f" src="${PAGE_BASE}index.html" style="border:0;width:${widths[0]}px;height:1400px"></iframe>
 <iframe id="neg" src="/__overflow_control.html" style="border:0;width:400px;height:1400px"></iframe>
 <pre id="out">pending</pre>
 <script>
@@ -106,7 +111,7 @@ if (!existsSync(join(DOCS, "index.html"))) {
 }
 
 // The negative control is the real page plus one element wider than any phone.
-const control = readFileSync(join(DOCS, "index.html"), "utf8").replace(
+const control = readFileSync(join(DOCS, "index.html"), "utf8").replace("<head>", `<head><base href="${PAGE_BASE}">`).replace(
   "</body>",
   '<div id="deliberate-overflow" style="width:1600px;height:8px"></div></body>');
 
@@ -120,8 +125,8 @@ const server = createServer((req, res) => {
     res.writeHead(200, { "content-type": "text/html" });
     return res.end(HARNESS(WIDTHS));
   }
-  const file = join(DOCS, url === "/" ? "index.html" : url.replace(/^\/+/, ""));
-  if (!file.startsWith(DOCS) || !existsSync(file)) { res.writeHead(404); return res.end("nope"); }
+  const file = join(SERVE_ROOT, url === "/" ? "index.html" : url.replace(/^\/+/, ""));
+  if (!file.startsWith(SERVE_ROOT) || !existsSync(file)) { res.writeHead(404); return res.end("nope"); }
   res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream" });
   res.end(readFileSync(file));
 });

@@ -11,9 +11,10 @@
 
 import fs from "fs";
 import path from "path";
+import {fileURLToPath} from "node:url";
 import vm from "vm";
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const jsonPath = process.argv[2] || path.join(root, "docs", "data", "scenarios.json");
 const appSrc = fs.readFileSync(path.join(root, "docs", "app.js"), "utf8");
 const htmlSrc = fs.readFileSync(path.join(root, "docs", "index.html"), "utf8");

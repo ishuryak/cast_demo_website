@@ -6,7 +6,10 @@
     "test": "node tutorial/tests/run.mjs",
     "build": "node scripts/build-site.mjs",
     "build:pages": "node scripts/build-pages.mjs",
-    "build:v3": "node scripts/build-tutorial-v3.mjs"
+    "build:v3": "node scripts/build-pages.mjs",
+    "test:clinical": "node tests/test_clinical_review.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
