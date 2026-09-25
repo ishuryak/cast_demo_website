@@ -7,13 +7,19 @@ cohorts where the true treatment effect is known:
 
 1. how confounding by indication biases a **naive** unadjusted effect;
 2. how a **Causal Survival Forest (CSF)** substantially reduces that
-   confounding (with residual bias only when strong confounding pushes
-   treatment propensities toward 0 or 1, a positivity/overlap limit);
+   confounding, though not to zero: residual bias grows with confounding as
+   propensities are pushed toward 0 or 1 (a positivity/overlap limit), and a
+   further part of it is simply one cohort's sampling error, which is why the
+   plateau panel at γ = 0 carries a bias comparable to the one at γ = 2 even
+   though nothing is confounded there;
 3. which assumption each standard baseline needs, and the regime where each one
    breaks: **Cox** regression (correctly specified on the plateau shape, so it
    wins there, and unable to represent the reversal) and a **Random Survival
-   Forest (RSF)** as both an S-learner and a T-learner (two different failure
-   modes);
+   Forest (RSF)** fitted two ways, as an S-learner (treatment is one feature
+   among many, so a forest can split away from it) and as a T-learner (a
+   separate forest per arm, so neither sees the other's patients). Neither is
+   orthogonalized, and on this grid the S-learner has the lower RMSE in 20 of
+   the 24 panels, so read them as two constructions rather than as a ranking;
 4. what an **unmeasured confounder** does to all of them at once, CSF and CAST
    included, while every visible diagnostic still looks healthy; and
 5. how **CAST** extends CSF from per-horizon points to a smooth treatment-effect
@@ -105,7 +111,7 @@ cast_demo_website/
     04_replicate_seeds.R re-draw one scenario at N seeds; what replicates
     install_packages.R   one-time dependency install
   tests/
-    run_tests.sh             one command; runs the eleven suites below
+    run_tests.sh             one command; runs the thirteen suites below
     test_data_contract.mjs   every field the site reads exists and lines up
     test_render_smoke.mjs    app.js actually runs at all 24 control settings
     test_export_labels.R     figure labels track gamma, not control position
@@ -117,8 +123,15 @@ cast_demo_website/
     test_intro_contract.mjs  the page opens with something a non-specialist reads
     test_viewport_overflow.mjs the page fits a phone, measured in a real
                              viewport rather than read off a screenshot
+    test_fixes_order.mjs     FIXES.md matches the ordering contract it states
+    test_readme_claims.mjs   every number this README quotes, recomputed from
+                             the shipped export and from R/02_fit_methods.R
+    test_repo_hygiene.mjs    no gitlink, no backup or scratch files in the tree
   docs/                              <- the published static site (GitHub Pages root)
-    index.html  app.js  style.css      static site (Plotly, no build step)
+    index.html  app.js  style.css      methods view (Plotly, no build step)
+    tutorial/                          generated walkthrough; source in tutorial/
+    tutorial_v2/  tutorial_v3/         oncology version and clinical edition
+                                       (see "Publish on GitHub Pages")
     data/scenarios.json                aggregate results (safe to publish)
     figs/*.png                         600-DPI fallback figures
   run_all.sh             orchestration (simulate -> fit -> export)
@@ -129,7 +142,7 @@ cast_demo_website/
   References/README.md   the same two sources, with licences (no PDFs committed)
   FIXES.md               landed fixes, with the evidence for each
   development/           the audits and decisions behind those fixes
-  .github/workflows/     CI: the six node suites + a docs/ completeness check
+  .github/workflows/     CI: the nine node suites + a docs/ completeness check
   output/                R intermediates, output/preview/ for smoke-test exports,
                          and replicate_seeds.csv (all gitignored)
 ```
@@ -156,8 +169,10 @@ math that are pure R and must not move at all.
 
 ```bash
 # full run (N=2000; 2 shapes x 4 measured x 3 unmeasured levels = 24 scenarios).
-# Writes docs/data/scenarios.json and docs/figs/*.png. About 8 minutes with all
-# forests tuned (measured: 7 min 32 s, R 4.5.1, 24 scenarios).
+# Writes docs/data/scenarios.json and docs/figs/*.png. About 8 minutes at
+# DEMO_TUNE=all (measured: 7 min 32 s, R 4.5.1, 24 scenarios). That tunes the
+# propensity and the RSF baselines; it does NOT reach CSF (see Hyperparameter
+# tuning below).
 ./run_all.sh
 
 # fast smoke test (smaller N, fewer trees, reduced grid, no tuning).
@@ -177,15 +192,34 @@ would replace the published site data with a smoke-test artifact, so it goes to
 `scenarios.json` is reproducible across runs), and `DEMO_TUNE` (hyperparameter
 tuning; default `all` for a full run, `none` for the smoke test).
 
-**Hyperparameter tuning.** On a full run all forests are tuned, which is slower
-but more accurate. The propensity (`grf::regression_forest`) and CSF
-(`grf::causal_survival_forest`) use grf's built-in `tune.parameters = "all"`
-cross-validation over `sample.fraction`, `mtry`, `min.node.size`, the honesty
-fractions, `alpha`, and `imbalance.penalty`. The RSF (`grf::survival_forest`,
-which has no built-in tuner) is tuned with a small grid over `min.node.size`
-∈ {5, 15, 50}, `sample.fraction` ∈ {0.35, 0.5}, and `mtry`, selected by
-out-of-bag concordance at a mid-window horizon. Set `DEMO_TUNE=none` to skip
-tuning for a fast check.
+**Hyperparameter tuning, and what `DEMO_TUNE` does and does not reach.** Two of
+the three tuned things are tuned; the causal survival forests are not, and the
+argument that appears to tune them has no effect.
+
+- **The propensity** (`grf::regression_forest`, `R/02_fit_methods.R:141`) is
+  tuned by grf's built-in `tune.parameters = "all"` cross-validation over
+  `sample.fraction`, `mtry`, `min.node.size`, the honesty fractions, `alpha` and
+  `imbalance.penalty`. This one takes effect.
+- **The RSF baselines** (`grf::survival_forest`, which has no built-in tuner)
+  are tuned by a hand grid over `min.node.size` ∈ {5, 15, 50},
+  `sample.fraction` ∈ {0.35, 0.5} and `mtry`, selected by out-of-bag
+  concordance at a mid-window horizon (`:69-91`). This one takes effect.
+- **CSF is NOT tuned.** `R/02_fit_methods.R:220` passes
+  `tune.parameters = TUNE` to `causal_survival_forest`, and grf ignores it. In
+  grf 2.5.0 that argument is referenced in exactly one place inside the
+  function: it is forwarded to the propensity forest grf fits *for itself*,
+  inside `if (is.null(W.hat))`. This pipeline supplies `W.hat`, so the branch
+  never runs and nothing else consumes the argument. The nuisance survival and
+  censoring forests do not receive it either. Every CSF fit in all 24 scenarios
+  therefore runs at grf's defaults, and no error or warning says so.
+
+This matters for reading the comparison rather than for trusting the numbers:
+the promoted estimator is running untuned while one of its baselines is tuned,
+which is an asymmetry in the opposite direction from the one that would flatter
+it. Making CSF genuinely tuned would change every published estimate and is not
+a documentation fix; it is noted in `development/` as open work.
+
+Set `DEMO_TUNE=none` to skip the two that do take effect, for a fast check.
 
 ## View the site locally
 
@@ -468,7 +502,7 @@ It writes nothing into `docs/` and does not touch `output/sim.rds` or
 
 This is where the two replication claims in [How to read the results
 honestly](#how-to-read-the-results-honestly) come from. On the shipped defaults
-(plateau, γ = 1, Γ = 0, n = 2000, 5 seeds, all forests tuned):
+(plateau, γ = 1, Γ = 0, n = 2000, 5 seeds, `DEMO_TUNE=all`):
 
 | | Naive | Cox | RSF-S | RSF-T | CSF | CAST |
 |---|---|---|---|---|---|---|
@@ -486,7 +520,7 @@ re-run it rather than trusting this table if the numbers matter to you.
 ./tests/run_tests.sh
 ```
 
-Eleven suites, all runnable without a full pipeline run (pass a different
+Thirteen suites, all runnable without a full pipeline run (pass a different
 `scenarios.json` as the first argument to check another export, e.g.
 `./tests/run_tests.sh output/preview/data/scenarios.json` after a smoke test):
 
@@ -555,6 +589,16 @@ Eleven suites, all runnable without a full pipeline run (pass a different
   values appear more than once (0.45 is a smoking prevalence *and* two different
   coefficients), so a file-wide search passes while the code says something else.
 
+- **`test_readme_claims.mjs`** (node) recomputes every number this README
+  quotes about the shipped grid (interval coverage, the RSF and CAST RMSE
+  comparisons, the reversal worked example, the condition-number range) from
+  `docs/data/scenarios.json`, and reads `R/02_fit_methods.R` to confirm that the
+  CSF call still supplies `W.hat`, which is what makes "CSF is not tuned" true.
+- **`test_repo_hygiene.mjs`** (node) checks that no undeclared gitlink, backup
+  folder or debugging scratch file is tracked or can return through
+  `git add -A`, and that every attestation hash in `audit_manifest.yaml` is a
+  real sha256 of the file it names.
+
 Every one of these was confirmed to fail against the defect it guards before
 being accepted; see `FIXES.md`.
 
@@ -565,7 +609,7 @@ script's executable bit**. After adding an executable script, run
 
 ### How to read the results honestly
 
-The demo is built to be looked at critically, so five things are worth stating
+The demo is built to be looked at critically, so six things are worth stating
 plainly rather than leaving for a reader to discover. The first two are
 measurements, not impressions: `R/04_replicate_seeds.R` re-draws a scenario at
 five independent cohort seeds and prints the table they come from, so both can
@@ -603,10 +647,21 @@ be checked rather than taken on trust (see [Replication](#replication)).
    excludes the truth at that one horizon. This is not confounding and not a
    bug. With random assignment all three estimate the same quantity from the
    same empirical survival curves, so they share one draw's fluctuation, and Cox
-   (correctly specified here) lands on the truth. Over the Γ = 0 panels with
-   γ ≤ 1 the CSF interval covers the truth at 28 of 30 horizons, which is what
-   nominal coverage looks like. Read the γ = 0 panel as one draw, not as a
-   calibration check.
+   (correctly specified here) lands on the truth. Read the γ = 0 panel as one
+   draw, not as a calibration check.
+6. **Nothing here measures coverage, and the intervals do not achieve it across
+   the grid.** Over the Γ = 0 panels with γ ≤ 1 the CSF interval contains the
+   truth at 28 of 30 horizons. That subset is the easy corner of the grid, and
+   it is six cohorts rather than thirty independent trials: the five horizons
+   within a panel come from one draw and move together, so the effective
+   replicate count is six. Across the whole grid, recomputed from the shipped
+   `docs/data/scenarios.json`, the CSF intervals contain the truth at 44 of 120
+   horizons and the CAST band at 41 of 120; at the strongest hidden confounding
+   both are 0 of 40. A nominal 95% interval is not a measured 95% interval, and the
+   honest statement is that this demo does not measure one: a coverage study
+   would re-draw each scenario at many seeds and tally interval hits, which
+   `R/04_replicate_seeds.R` is the right place for and does not currently do
+   (it records RMSE only).
 
 A full run prints several dozen warnings of the form *"estimated treatment
 propensities take values very close to 0 or 1"*. These come from `grf` and are
@@ -640,6 +695,23 @@ in `constant_registry.yaml`.
 The 95% band is the covariance-aware sandwich
 `Var(β̂) = (XᵀWX)⁻¹ XᵀWΣ̂WX (XᵀWX)⁻¹`, so the shrunk cross-horizon covariance
 propagates into the uncertainty rather than treating horizons as independent.
+
+**What the band is a band for.** `Var(β̂)` is the sampling variance of the
+quadratic's coefficients. It carries no lack-of-fit term, so the quantity the
+band covers is the best quadratic approximation to ATE(t) under Σ̂, not ATE(t)
+itself. Where the truth is quadratic to within sampling error the distinction
+does not bite; where it is not, it does, and the reversal shape is the case in
+point, since its truth comes from a logistic transition in the log-hazard ratio
+(`R/01_simulate.R`) rather than a polynomial. That is visible in the shipped
+grid: the CAST trajectory has a LARGER RMSE than the CSF points it smooths in 9
+of the 24 scenarios, 7 of them on the reversal, and on the reversal at γ = 0.5
+the RMSE goes from 0.006 for CSF to 0.037 for CAST. The trajectory buys
+smoothness and a cross-horizon-aware interval; on a shape a quadratic cannot
+follow, it pays for them in accuracy. Two further caveats belong with the band
+rather than beside it: it is pointwise at each horizon rather than simultaneous
+over the trajectory, and the GLS-versus-WLS branch is selected using the same
+five estimates the band is then computed from, which the sandwich treats as
+fixed.
 
 ## Data note
 

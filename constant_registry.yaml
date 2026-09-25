@@ -29,6 +29,23 @@ exclude_paths:
   - "docs/data/**"         # exported results, not source
   - "development/**"       # the committed development record quotes old values
   - "FIXES.md"             # the evidence record quotes the values it retired
+  # Generated copies. `npm run build:pages` copies tutorial/ (including the
+  # class kit's R files) into docs/tutorial/ and docs/tutorial_v3/, and
+  # tutorial/dist/ is its staging area. Sweeping them reports each literal once
+  # per copy, as if every copy were a separate arm of the analysis. The sources
+  # under tutorial/ are still swept.
+  - "docs/tutorial/**"
+  - "docs/tutorial_v2/**"
+  - "docs/tutorial_v3/**"
+  - "tutorial/dist/**"
+  # Vendored snapshots inside the educator kit. tutorial/class-kit/R/ holds the
+  # bundled revision of R/01_simulate.R and R/cast_core.R, and
+  # tutorial/class-kit/cast-exercise.R is the kit's copy of
+  # tutorial/labs/cast-exercise.R. Each is pinned by hash in
+  # tutorial/class-kit/provenance.json, so drift from the live source is
+  # recorded there on purpose; the live sources are still swept.
+  - "tutorial/class-kit/R/**"
+  - "tutorial/class-kit/cast-exercise.R"
 
 constants:
 
@@ -41,8 +58,11 @@ constants:
       which the point fit uses GLS (weight = Sigma^-1) rather than falling back
       to WLS. Above roughly 100 the inverse of Sigma amplifies estimation noise
       in the covariance more than correct weighting gains. On the
-      survival-probability scale the realized condition numbers are single
-      digits, so GLS engages in all 24 scenarios; on the cumulative-RMST scale
+      survival-probability scale the realized condition numbers run from 8.1 to
+      17.6 across the 24 shipped scenarios (docs/data/scenarios.json,
+      shrinkage.cond_after), far below the threshold, so GLS engages in all 24;
+      this text read "are single digits" until 2026-09-18, which was true of an
+      earlier export and not of the current one. On the cumulative-RMST scale
       of the production pipeline the horizons are near-collinear and the same
       threshold sends the fit to WLS. Depends on horizon spacing: horizons
       closer together than the current 24 months would raise the condition
@@ -237,3 +257,20 @@ constants:
       (random_dropout_mean_months).
     sites:
       - "R/01_simulate.R:@CENS_MEAN <-"
+
+  # ---- educator kit -------------------------------------------------------
+  class_kit_cohort_n:
+    value: 600
+    provenance: design
+    why: >
+      Size of the educator kit's teaching cohort (tutorial/class-kit/data/
+      demo-cohort.csv), small enough that the class lab fits in seconds on a
+      laptop. It is also why the lab's forest propensity under-adjusts: over
+      fresh 600-person cohorts the forest-propensity CSF intervals contain the
+      answer key less often than 95%, and a logistic propensity restores
+      nominal coverage (development/2026_09_25_claim-parity-ci-class-lab.md).
+      Changing it changes the answer key, every kit provenance hash, and the
+      coverage the kit README reports. The other 600 in the tree, the PNG
+      resolution in R/03_export.R, is an unrelated figure setting.
+    sites:
+      - "tutorial/scripts/prepare-class-kit.R:@simulate_cohort\\(600L"
