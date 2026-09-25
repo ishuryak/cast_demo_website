@@ -1,13 +1,17 @@
-# Run the site-facing test suites on every push and pull request.
+# Run every test suite on every push and pull request, in two jobs.
 #
-# Scope is deliberate: the five node suites need no R and no pipeline run, so
-# they execute in seconds on a stock runner and cover the failures that have
-# actually broken this site before -- the front end and the exported
-# scenarios.json drifting apart, and CSS that silently refuses to size an
-# element the markup sizes. The five R suites (cast_core math, export labels,
-# fit contract, source guards, sim provenance) need R plus grf, which would turn
-# a ten-second job into a multi-minute one; run those locally with
-# ./tests/run_tests.sh, which runs all ten.
+# site-contract: the node suites, which need no R and no pipeline run. They
+# cover the failures that have actually broken this site before -- the front
+# end and the exported scenarios.json drifting apart, CSS that silently refuses
+# to size an element the markup sizes, prose quoting a number the export no
+# longer contains, and files that should never have been published.
+#
+# r-suites: the R suites (cast_core math, export labels, fit contract, source
+# guards, sim provenance) plus the educator kit's R checks. Until 2026-09-25 CI
+# ran no R at all, so a change to R/cast_core.R that broke the CAST golden
+# values went green here and was caught only by a local ./tests/run_tests.sh.
+# The five pipeline suites are base R; grf is installed only for the class-lab
+# check, from Posit Package Manager binaries so the job stays in minutes.
 name: tests
 
 on:
@@ -42,6 +46,12 @@ jobs:
 
       - name: FIXES.md order (the evidence record matches its own claim)
         run: node tests/test_fixes_order.mjs
+
+      - name: README claims (every quoted number recomputed from the export)
+        run: node tests/test_readme_claims.mjs docs/data/scenarios.json
+
+      - name: Repo hygiene (no gitlink, scratch, stale attestation or tool note)
+        run: node tests/test_repo_hygiene.mjs
 
       # The runner image ships Chrome; the suite skips cleanly if a future one
       # does not, so this step can never fail for the absence of a browser.
@@ -80,3 +90,30 @@ jobs:
           npm run build:pages
           git diff --exit-code -- docs tutorial/class-kit tutorial/downloads
           test -z "$(git ls-files --others --exclude-standard -- docs)"
+
+  r-suites:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5"
+          use-public-rspm: true
+
+      - name: Install grf, survival and jsonlite
+        run: Rscript -e 'install.packages(c("grf", "survival", "jsonlite"))'
+
+      - name: Pipeline R suites (the same five ./tests/run_tests.sh runs)
+        run: |
+          set -euo pipefail
+          for t in test_cast_core.R test_export_labels.R test_fit_contract.R \
+                   test_source_guards.R test_sim_provenance.R; do
+            echo "--- $t"
+            Rscript "tests/$t"
+          done
+
+      - name: Educator kit R checks (exercise input validation, class-lab contract)
+        run: |
+          set -euo pipefail
+          Rscript tutorial/tests/exercise.test.R
+          Rscript tutorial/tests/class-lab.test.R

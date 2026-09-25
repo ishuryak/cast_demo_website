@@ -3,13 +3,16 @@
 # install.packages(c("survival", "grf"))  # once, if needed
 # source("class-lab.R")
 # result <- analyze_demo()
+# logistic <- analyze_demo(propensity = "logistic")  # compare the intervals
 #
 # The unchanged CAST implementation is in R/cast_core.R (Igor Shuryak, MIT).
 # No patient answer key, outcome under another treatment, or hidden variable
 # enters X. The oracle averages are read only after estimation, for comparison.
 
 analyze_demo <- function(kit_dir = ".", num_trees = 300L, seed = 20260905L,
-                         output_dir = file.path(kit_dir, "results")) {
+                         output_dir = file.path(kit_dir, "results"),
+                         propensity = c("forest", "logistic")) {
+  propensity_model <- match.arg(propensity)
   stopifnot(length(num_trees) == 1, is.finite(num_trees), num_trees >= 100)
   for (package in c("survival", "grf")) {
     if (!requireNamespace(package, quietly = TRUE))
@@ -26,9 +29,21 @@ analyze_demo <- function(kit_dir = ".", num_trees = 300L, seed = 20260905L,
   sys.source(file.path(kit_dir, "R/cast_core.R"), envir = methods)
   horizons <- c(12, 36, 60, 84, 108)
 
-  # Out-of-bag propensity predictions adjust measured treatment selection.
-  propensity <- grf::regression_forest(X, d$W, num.trees = num_trees,
-                                      num.threads = 2, seed = seed)$predictions
+  # The propensity (probability of treatment given the measured covariates)
+  # adjusts for measured treatment selection. "forest" uses out-of-bag
+  # predictions from a regression forest, as the website pipeline does.
+  # "logistic" uses a main-effects logistic regression on the same covariates.
+  # At n = 600 the forest estimate is pulled toward the average treatment rate,
+  # which leaves part of the selection unadjusted: over 300 freshly simulated
+  # 600-person cohorts, the forest version's 95% CSF intervals contained the
+  # answer key 75-86% of the time, against 94-97% with "logistic" (see README,
+  # "Why an interval can miss").
+  propensity <- if (propensity_model == "forest") {
+    grf::regression_forest(X, d$W, num.trees = num_trees,
+                           num.threads = 2, seed = seed)$predictions
+  } else {
+    stats::fitted(stats::glm(d$W ~ X, family = stats::binomial()))
+  }
   propensity <- pmin(.99, pmax(.01, as.numeric(propensity)))
   scores <- matrix(NA_real_, nrow(d), length(horizons))
   ate <- se <- numeric(length(horizons))
@@ -63,8 +78,8 @@ analyze_demo <- function(kit_dir = ".", num_trees = 300L, seed = 20260905L,
   run_dir <- tempfile("run-", tmpdir = normalizePath(output_dir, mustWork = TRUE))
   dir.create(run_dir)
   write.csv(results, file.path(run_dir, "horizon-results.csv"), row.names = FALSE)
-  writeLines(c("600 synthetic people; baseline treatment; all times in months.",
-    paste("Seed:", seed, "Trees:", num_trees),
+  writeLines(c(paste(nrow(d), "synthetic people; baseline treatment; all times in months."),
+    paste("Seed:", seed, "Trees:", num_trees, "Propensity model:", propensity_model),
     "CSV effects are probability differences. Multiply by 100 for percentage points.",
     "CAST bands are pointwise, not simultaneous; selection and misspecification uncertainty are not fully included.",
     capture.output(sessionInfo())), file.path(run_dir, "run-info.txt"))

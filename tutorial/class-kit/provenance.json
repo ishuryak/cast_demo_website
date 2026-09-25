@@ -32,12 +32,12 @@
     "R/01_simulate.R": "7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007"
   },
   "file_sha256": {
-    "README.md": "4aa0b928b00cdcfffd63fefec546e1b88e87e2cc5b9c8a0fb76129162176f98b",
-    "study-guide.tex": "71ab3b0789a8fe891ec37b25a33d8e5ce2517f06e6bf7d282aed1050fb2cfa3d",
-    "study-guide.pdf": "a3a920401cabbcd4fe981791c607d9bd9ee74584bc2aa348adb0ccd4d650b0e2",
+    "README.md": "51c61a66c5bf4cbaf6b31ca018d3c1bcbeddeffc2fb2809c1e0372ff2432cca7",
+    "study-guide.tex": "3f0a836dc6ccd42c40ab538b37c2607ffd4a5f6edf47153297fb56ef7cea6bbf",
+    "study-guide.pdf": "ec34a9dd6e1541155811bc76de98f73804b66fd83d29b1bccf7449a8c605879c",
     "slides.tex": "fb999c4e57ae988a440921a4b8beb66e5039278bf9f9d019f1ae0cd8957b994b",
     "slides.pdf": "4c287d0b61063d474fe5a3963928cb9125f319523901c3e0dbd32a663ad36f2e",
-    "class-lab.R": "ccd8472783df2460456452a7b8ad9077ad0a46636c4bf4271dfb48e71bc20474",
+    "class-lab.R": "1ff063cf306b1f3a739bfa6822dee888cf2f7a2495ed0a55d1092e63b19df61a",
     "cast-exercise.R": "f31e5e1a61fd28db625e6ad7a59e1f2cc3d416d9ce31d96f73bc45dde9fced1f",
     "R/cast_core.R": "41ff878dda07b7c67c6a89ef41875aa03949ff431e59c3aa31c5dc5b40e2e1ea",
     "R/01_simulate.R": "7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007",

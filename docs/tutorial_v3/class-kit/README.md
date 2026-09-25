@@ -32,6 +32,46 @@ manageable. It writes results and a figure to a new folder under `results/`.
 Installed R packages are needed; the lab itself makes no network requests.
 For more trees, use `analyze_demo(num_trees = 2000)`.
 
+### Why an interval can miss the answer key
+
+Run as above, the causal survival forest (CSF) 95% intervals exclude
+`data/answer-key.csv` at several horizons (36, 60 and 108 months on the
+supplied cohort, with R 4.5.1 and grf 2.5.0). This is not an installation problem. It is a finite-sample lesson, and
+it is measured rather than guessed.
+
+The lab estimates the propensity, each person's probability of treatment given
+the measured covariates, with a regression forest, as the website pipeline does.
+With only 600 people the forest's estimates are pulled toward the average
+treatment rate, so part of the measured selection is left unadjusted. Over 300
+freshly simulated 600-person cohorts of the same design, the CSF point estimate
+was biased upward by about one standard error after 12 months, and the 95%
+intervals contained the answer key only 75-86% of the time, depending on the
+horizon. Tuning the propensity forest or using 2,000 trees did not change this.
+The standard errors themselves were accurate.
+
+Try the lab with a logistic-regression propensity instead:
+
+```r
+logistic <- analyze_demo(propensity = "logistic")
+logistic$results
+```
+
+With it, the same 600-person cohorts gave unbiased CSF estimates and 94-97%
+interval coverage, and on the supplied cohort every CSF interval contains the
+answer key. Do not conclude that logistic regression is generally better: in
+this simulator the true propensity really is a main-effects logistic model, so
+it is correctly specified here by construction. In real data neither model is
+known to be right, which is why overlap and sensitivity checks matter.
+
+The CAST band is a separate matter. It covers the best quadratic approximation
+to the effect curve, not the curve itself. The reversal pattern in this cohort
+is not quadratic, so even with the logistic propensity the CAST band contained
+the answer key only 45% of the time at 36 months and 78% at 84 months. That is
+the smoothness-versus-accuracy trade-off the walkthrough discusses.
+
+The simulation behind these numbers is `tutorial/scripts/class-lab-coverage-study.R`
+in the source repository.
+
 To generate a different study using the bundled source:
 
 ```r
