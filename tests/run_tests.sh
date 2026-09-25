@@ -45,6 +45,8 @@ if command -v node >/dev/null 2>&1; then
   run "site style contract" node tests/test_style_contract.mjs
   run "intro contract"     node tests/test_intro_contract.mjs
   run "FIXES.md order"    node tests/test_fixes_order.mjs
+  run "README claims"      node tests/test_readme_claims.mjs "$JSON"
+  run "repo hygiene"       node tests/test_repo_hygiene.mjs
   # Needs a browser. Skips (exit 0) with a message when none is found, so a
   # machine without Chrome still runs the other nine rather than failing.
   run "viewport overflow"  node tests/test_viewport_overflow.mjs

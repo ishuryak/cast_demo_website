@@ -13,6 +13,164 @@ Entries are newest first.
 
 ---
 
+## 2026-09-25 (parity) · Claim corrections that never reached main, CI that ran no R, and the class lab's intervals
+
+**Moves published numbers: no.** `docs/data/scenarios.json`, every figure and
+every R file under `R/` are byte-identical to `bc633b1`. The pipeline is not
+re-run. The class lab gains an option and its default output is unchanged (entry
+38). What changes is the README, two registry texts, the tests, the CI workflow,
+one data file the pages never display, and the educator kit.
+
+The 2026-09-18 audit corrected four README claims that the shipped export
+contradicted (commit `66bb021`), but it landed on the `clinical-framing` branch,
+which diverged from `main` and was never merged. `main`, and so the public
+README, kept every claim that audit had shown to be false. The corrections are
+ported here by hand rather than merged, because a merge would also have brought
+back a clinical-page prototype that the 2026-09-21 release replaced. The
+reasoning for this pass, and what was deliberately left out of the port, is in
+[`development/2026_09_25_claim-parity-ci-class-lab.md`](development/2026_09_25_claim-parity-ci-class-lab.md).
+The original audit is ported unchanged as
+[`development/2026_09_18_repository-hygiene-and-claim-parity.md`](development/2026_09_18_repository-hygiene-and-claim-parity.md).
+
+### 33. The README said CSF is tuned; grf ignores the argument
+
+- **What was wrong.** "On a full run all forests are tuned ... CSF
+  (`grf::causal_survival_forest`) use grf's built-in `tune.parameters = "all"`".
+  The causal survival forests run at grf defaults in all 24 scenarios.
+- **The proof it was real.** In grf 2.5.0, `tune.parameters` is used inside
+  `causal_survival_forest` only within `if (is.null(W.hat))`, where it is passed
+  to the propensity forest grf would fit for itself. `R/02_fit_methods.R`
+  supplies `W.hat`, so that branch never runs, and the nuisance survival and
+  censoring forests never receive the argument. No error or warning is emitted.
+- **The fix.** The tuning section states which fits are tuned (the propensity and
+  the RSF hand grid) and that CSF is not, with the mechanism. The two other
+  places reading "all forests tuned" now name `DEMO_TUNE=all`.
+- **The test that now pins it.** `tests/test_readme_claims.mjs` asserts that the
+  README records CSF as untuned, and separately that the CSF call still supplies
+  `W.hat`, since the claim is only true while it does. **Confirmed to fail
+  against the unfixed README at `bc633b1`**: 2 of that run's 10 failures.
+- **The verification.** `node tests/test_readme_claims.mjs
+  docs/data/scenarios.json` on 2026-09-25, node v18.19.1: PASS, 0 failures.
+
+### 34. The coverage claim quoted the easy corner of the grid
+
+- **What was wrong.** "Over the Γ = 0 panels with γ ≤ 1 the CSF interval covers
+  the truth at 28 of 30 horizons, which is what nominal coverage looks like."
+- **The proof it was real.** The count is right and the framing is not. Those 30
+  horizons come from six cohorts, since the five horizons of a panel share one
+  draw. Recomputed from the shipped `scenarios.json`, CSF intervals contain the
+  truth at 44 of 120 horizons across the grid and the CAST band at 41 of 120, and
+  at the strongest hidden confounding both are 0 of 40.
+- **The fix.** A sixth item in *How to read the results honestly* gives the
+  whole-grid numbers, states the effective replicate count, and says plainly
+  that no coverage study exists and where one would go.
+- **The test that now pins it.** `tests/test_readme_claims.mjs` recomputes the
+  four tallies and compares them with the prose. **Confirmed to fail against the
+  unfixed README at `bc633b1`**: 4 of that run's 10 failures.
+- **The verification.** As entry 33.
+
+### 35. Three claims about the shipped grid that the shipped grid contradicted
+
+- **What was wrong.** The README attributed CSF's residual bias only to
+  positivity under strong confounding, described the two RSF learners as "two
+  different failure modes", and `constant_registry.yaml` justified
+  `gls_cond_max` with "realized condition numbers are single digits".
+- **The proof it was real.** From `scenarios.json`: on plateau at Γ = 0, the
+  largest absolute CSF bias is 0.0505 at γ = 0, where nothing is confounded,
+  against 0.0700 at γ = 2. The RSF S-learner has the lower RMSE in 20 of 24
+  panels. `shrinkage.cond_after` runs from 8.1 to 17.6. The CAST trajectory has a
+  larger RMSE than the CSF points it smooths in 9 of 24 panels, 7 of them on the
+  reversal, which the README did not say.
+- **The fix.** The three statements are rewritten to what the data show, and a
+  paragraph on what the CAST band covers (the best quadratic approximation to
+  ATE(t), not ATE(t) itself) sits with the band's formula.
+- **The test that now pins it.** `tests/test_readme_claims.mjs` recomputes the 20
+  of 24, the 9 of 24 with 7 on the reversal, the worked example (CSF 0.006
+  against CAST 0.037) and the condition-number range. **Confirmed to fail against
+  the unfixed files at `bc633b1`**: the remaining 4 of that run's 10 failures.
+  `tests/test_repo_hygiene.mjs` also runs from this pass on, and keeps the four
+  paths the 2026-09-18 audit untracked from returning through `git add -A`: 3
+  failures at `bc633b1`, whose `.gitignore` lacked those rules.
+- **The verification.** As entry 33, plus `node tests/test_repo_hygiene.mjs`:
+  PASS, 0 failures.
+
+### 36. CI ran no R, so a change that broke the CAST math passed
+
+- **What was wrong.** `.github/workflows/tests.yml` ran only the node suites. The
+  five R suites, including the CAST golden values in `tests/test_cast_core.R`,
+  ran only when someone ran `./tests/run_tests.sh` locally.
+- **The proof it was real.** Multiplying the CAST band's standard error by 600 at
+  `R/cast_core.R:174` leaves every step of the `bc633b1` workflow green, while
+  `Rscript tests/test_cast_core.R` exits 1 on the same tree (checked on
+  2026-09-25 with Windows R 4.5.1).
+- **The fix.** A second job, `r-suites`, installs R 4.5 with `grf`, `survival`
+  and `jsonlite` from Posit Package Manager binaries, runs the five pipeline R
+  suites, and runs the educator kit's `exercise.test.R` and the new
+  `class-lab.test.R` (entry 38). The site job also runs `test_readme_claims.mjs`
+  and `test_repo_hygiene.mjs`.
+- **The test that now pins it.** The workflow itself. **Confirmed that the suite
+  it now runs fails against the mutation above**: `test_cast_core.R` reports 1
+  failure and exits 1. Unmutated, all five pipeline R suites and
+  `exercise.test.R` exit 0 locally.
+- **The verification.** The pull request's CI run (see the PR for the run link)
+  must show both jobs green.
+
+### 37. An internal tool-process note was served on the public site
+
+- **What was wrong.** `tutorial/assets/art/manifest.json`, copied into
+  `docs/tutorial/` and `docs/tutorial_v3/`, carried a `note` field: "Codex owns
+  this manifest. Claude supplies assets and ART_NOTES.md; integration follows
+  review." The walkthrough never displays it, but GitHub Pages serves the file.
+- **The proof it was real.** The published
+  `ishuryak.github.io/cast_demo_website/tutorial/assets/art/manifest.json`
+  contained the sentence at `bc633b1`.
+- **The fix.** The field is removed from the source manifest (`loadArt()` reads
+  only `hero`), and `npm run build:pages` regenerated the two copies. No other
+  file changed in the rebuild. Disclosure of AI assistance is being agreed with
+  Andy as a sentence readers are meant to see.
+- **The test that now pins it.** `tests/test_repo_hygiene.mjs` section 5 walks
+  `docs/` for tool-process phrasing. **Confirmed to fail** with the old manifest
+  restored in `docs/tutorial/`: it names that file.
+- **The verification.** `node tests/test_repo_hygiene.mjs` on 2026-09-25: PASS,
+  0 failures.
+
+### 38. The class lab's intervals missed its own answer key, and nothing said so
+
+- **What was wrong.** Run as the kit instructs, `analyze_demo()` gives CSF 95%
+  intervals that exclude `data/answer-key.csv` at 36, 60 and 108 months on the
+  supplied cohort. The kit said only that point estimates would not equal the
+  key.
+- **The proof it was real.** Over 300 freshly simulated 600-person cohorts of the
+  kit's design, the lab's CSF intervals contained each cohort's answer key 86%,
+  76%, 75%, 76% and 81% of the time at 12 to 108 months. The standard errors are
+  accurate (empirical SD over mean SE 1.05 to 1.10). The miss is a bias of about
+  one standard error from the forest propensity at n = 600: the true propensity
+  gives 93-97% coverage, while tuning the forest or using 2,000 trees does not
+  help. The full table is in the development record.
+- **The fix.** `analyze_demo()` gains `propensity = c("forest", "logistic")`. The
+  default stays the forest, matching the website pipeline, so the default output
+  is unchanged. With `"logistic"` the simulated coverage is 94-97% and every CSF
+  interval on the supplied cohort contains the answer key. The kit README has a
+  new section, "Why an interval can miss the answer key", with the measured
+  numbers, why logistic regression is correct here only by construction, and
+  why the CAST band still misses on the reversal shape (45% at 36 months). The
+  study guide points to it, still in six pages. The run record now writes the
+  propensity model and the cohort size read from the file, instead of a
+  hard-coded "600". The simulation is committed as
+  `tutorial/scripts/class-lab-coverage-study.R`.
+- **The test that now pins it.** `tutorial/tests/class-lab.test.R`, run in CI by
+  entry 36: logistic covers all five horizons, the forest misses at least one
+  (so the README stays true), an unknown model is refused, and the run record
+  names the model and the cohort size. **Confirmed to fail twice**: with the
+  logistic branch silently using the forest, and with the run record hard-coding
+  700 people.
+- **The verification.** `Rscript tutorial/tests/class-lab.test.R` on 2026-09-25,
+  Windows R 4.5.1, grf 2.5.0: "PASS: logistic covers 5/5; forest covers 2/5; bad
+  model refused; run record complete." `npm test` 12 of 12, and
+  `npm run build:pages` regenerated the kit ZIP and provenance hashes.
+
+---
+
 ## 2026-09-21 (variants) · Three walkthroughs, each whole and separate
 
 **Moves published numbers: no.** `docs/tutorial_v2/`, `docs/tutorial_v3/`,

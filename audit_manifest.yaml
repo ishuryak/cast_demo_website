@@ -130,7 +130,7 @@ auditors:
       run_dir: output            # no trace emitted here yet; see justification
       inputs:
         - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
-        - {path: sim_provenance.yaml, sha256: sha256:6c7b3805925e064d97144ddf17cfd0e5244e1ada0f74f1b0ad12cfe47ae0ea2a}
+        - {path: sim_provenance.yaml, sha256: sha256:40c47a75facf55d7192f463b0dc8980366a3648510c77d917e1cd4ade1a2d70d}
 
   stale-constant-audit:
     status: RUN
@@ -138,17 +138,17 @@ auditors:
       The project performs analysis computation, so a hard-coded bound that was
       true of an earlier parameterization is exactly the failure this auditor
       exists to catch, and every other auditor is blind to it: a stale constant
-      produces a FRESH output that a freshness check then certifies. Twelve
+      produces a FRESH output that a freshness check then certifies. Thirteen
       constants are registered in constant_registry.yaml -- the horizon grid, the
-      two confounding axes, the cohort size, the censoring bound, the seed base
-      and the estimation-side thresholds -- each with what keeps it true.
-      `--strict` reports REGISTRY (12 constants) STRICT, 0 errors, 0 warnings as
-      of 2026-08-28. It runs BEFORE any freshness check, per the rule.
+      two confounding axes, the cohort size, the censoring bound, the seed base,
+      the estimation-side thresholds and the educator kit's cohort size -- each
+      with what keeps it true. `--strict --project-root .` reports REGISTRY (13
+      constants) STRICT, 0 errors, 0 warnings as of 2026-09-25. It runs BEFORE any freshness check, per the rule.
     run:
       project: "."
       registry: constant_registry.yaml
       inputs:
-        - {path: constant_registry.yaml, sha256: sha256:e08fb6dfd0080000bc63b48843f4150689711adc511d6269d33e84f563f341e3}
+        - {path: constant_registry.yaml, sha256: sha256:de42677479e2e6f399b8cc924f516255a4169d516a2189773bb18f2bccde7101}
         - {path: R/01_simulate.R, sha256: sha256:7ce49ec2e4625f419afa207fd6d2d580c66fcc82c2510abac605383cb8a19007}
         - {path: R/02_fit_methods.R, sha256: sha256:a44decb5aac3d03f9bdc0687dac37107f059dd0b40e6d4e4ade740a9a8ee9ff3}
 
