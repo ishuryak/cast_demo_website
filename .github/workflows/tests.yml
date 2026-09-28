@@ -117,3 +117,5 @@ jobs:
           set -euo pipefail
           Rscript tutorial/tests/exercise.test.R
           Rscript tutorial/tests/class-lab.test.R
+          Rscript tutorial/tests/offline.test.R
+          Rscript tutorial/tests/kit-eol.test.R

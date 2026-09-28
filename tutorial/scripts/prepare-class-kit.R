@@ -18,8 +18,15 @@ tryCatch({
   observed <- cohort$data[, setdiff(names(cohort$data), "u_hidden")]
   stopifnot(nrow(observed) == 600, all(observed$W %in% 0:1),
             all(observed$D %in% 0:1), all(is.finite(observed$Y)))
-  write.csv(observed, file.path(kit, "data/demo-cohort.csv"), row.names = FALSE)
+  # LF on every platform: a text-mode connection on Windows turns "\n" into CRLF,
+  # which changes the provenance hashes for identical content.
+  write_lf <- function(x, path) {
+    con <- file(path, "wb")
+    on.exit(close(con))
+    write.csv(x, con, row.names = FALSE, eol = "\n")
+  }
+  write_lf(observed, file.path(kit, "data/demo-cohort.csv"))
   answer <- data.frame(month = cohort$true_ate$horizon, truth = cohort$true_ate$true_ate)
-  write.csv(answer, file.path(kit, "data/answer-key.csv"), row.names = FALSE)
+  write_lf(answer, file.path(kit, "data/answer-key.csv"))
   cat("Generated 600 synthetic observed records and five oracle averages.\n")
 }, finally = setwd(original_wd))

@@ -37,7 +37,21 @@ run_cast_exercise <- function(n = 600L, seed = 20260905L,
   dir.create(run_dir)
   workspace <- tempfile("cast-source-")
   dir.create(file.path(workspace, "R"), recursive = TRUE)
-  if (!is.null(source_dir)) source_dir <- normalizePath(source_dir, mustWork = TRUE)
+  # Offline default: inside the class kit, use the bundled R/ copies, but only
+  # when they are byte-identical (MD5) to the pinned commit's files.
+  pinned_md5 <- c(cast_core.R = "08f3cc4743c5e4f36ae6c048169c434f",
+                  `01_simulate.R` = "34036111e6f379841253d826139b7fa7")
+  source_mode <- "pinned GitHub download"
+  bundled <- file.path("R", source_files)
+  if (is.null(source_dir) && all(file.exists(bundled)) &&
+      identical(unname(tools::md5sum(bundled)), unname(pinned_md5[source_files]))) {
+    source_dir <- "R"
+    source_mode <- "bundled kit copy (MD5 matches pinned commit)"
+  }
+  if (!is.null(source_dir)) {
+    source_dir <- normalizePath(source_dir, mustWork = TRUE)
+    if (source_mode == "pinned GitHub download") source_mode <- paste("local override", source_dir)
+  }
   for (name in source_files) {
     destination <- file.path(workspace, "R", name)
     if (is.null(source_dir)) {
@@ -94,7 +108,7 @@ run_cast_exercise <- function(n = 600L, seed = 20260905L,
   write.csv(d, file.path(run_dir, "synthetic-cohort.csv"), row.names = FALSE)
   write.csv(results, file.path(run_dir, "horizon-results.csv"), row.names = FALSE)
   writeLines(c(paste("Pinned reference commit:", baseline),
-               paste("Source mode:", if (is.null(source_dir)) "pinned GitHub download" else paste("local override", source_dir)),
+               paste("Source mode:", source_mode),
                paste("Actual source MD5:", source_files, unname(tools::md5sum(file.path("R", source_files)))),
                paste("n:", n, "seed:", seed, "trees:", num_trees, "shape:", shape),
                paste("Measured confounding:", measured_confounding, "hidden confounding:", hidden_confounding),
