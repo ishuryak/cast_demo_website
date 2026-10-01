@@ -128,3 +128,7 @@ The CSVs can be inspected with base R or a spreadsheet even without grf.
 
 The guide and slides include scientific references. Keep the supplied MIT notice
 with copies of Igor's code. Edit the draft teaching materials for your class.
+
+## AI assistance
+
+Parts of the text, code review and visual checks were prepared with the help of AI assistants (OpenAI Codex, Anthropic Claude and Google Gemini). The authors are responsible for the scientific content.
