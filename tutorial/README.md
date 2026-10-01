@@ -59,7 +59,7 @@ preview; edit source files, not generated `dist/` files.
 
 ## Parallel art work
 
-Read `design/COLLABORATION.md` for ownership and active handoffs. Andy's original
+Andy's original
 `assets/art/hector-counterfactual.png` is integrated in the HTML with accessible
 explanation and a full-size link. It is a conceptual drawing, not patient data.
 The optional replacement manifest currently leaves that default in place:

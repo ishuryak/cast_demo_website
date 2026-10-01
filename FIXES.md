@@ -13,6 +13,78 @@ Entries are newest first.
 
 ---
 
+## 2026-09-28 · Educator-kit portability, a dead link, and the provenance wording
+
+**Moves published numbers: no.** `docs/data/scenarios.json`, every figure and
+every file under `R/` are byte-identical to `25f1121`. The changes are one
+sentence on the landing page, the educator kit's two R scripts, one README link,
+the rebuilt kit archive and its provenance hashes, and tests. The reasoning is in
+[`development/2026_09_28_kit-portability-and-provenance.md`](development/2026_09_28_kit-portability-and-provenance.md).
+
+Verification environment for this section: Windows R 4.5.1, node v24.13.0
+(Windows) and v18.19.1 (WSL), on 2026-09-28.
+
+### 39. The class-kit exercise failed without an internet connection
+
+- **What was wrong.** `run_cast_exercise()` downloaded its two source files from
+  GitHub by default, even inside the class kit, which ships byte-identical copies
+  in `R/`. A classroom without internet failed at the first call.
+- **The proof it was real.** With `download.file` replaced by a function that
+  raises "network unavailable", the unfixed function called from the kit folder
+  halted with `network unavailable` (`Calls: offline -> download.file`).
+- **The fix.** When `source_dir` is not given and `R/cast_core.R` and
+  `R/01_simulate.R` exist with the MD5 of the pinned commit, they are used and
+  the run record says `Source mode: bundled kit copy`. A modified local copy is
+  not used, and the function falls back to the pinned download.
+- **The test that now pins it.** `tutorial/tests/offline.test.R`. **Confirmed to
+  fail against the unfixed script**, and against a mutation that drops the MD5
+  comparison (the modified-copy case then runs instead of refusing).
+- **The verification.** `Rscript tutorial/tests/offline.test.R`: PASS.
+
+### 40. Regenerating the kit's CSVs on Windows changed every provenance hash
+
+- **What was wrong.** `tutorial/scripts/prepare-class-kit.R` wrote CRLF line
+  endings on Windows, so identical content produced different bytes and hashes.
+- **The proof it was real.** Run under Windows R 4.5.1, the unfixed script wrote
+  `demo-cohort.csv` with 601 CR bytes, and it differed from the committed file.
+  Adding `eol = "\n"` alone did not fix it: a text-mode file connection on
+  Windows converts `\n` back to CRLF (same 601 CR bytes).
+- **The fix.** Both CSVs are written through a binary (`"wb"`) connection with
+  `eol = "\n"`.
+- **The test that now pins it.** `tutorial/tests/kit-eol.test.R` regenerates the
+  CSVs in a scratch copy and requires byte-identity with the committed files.
+  **Confirmed to fail against the unfixed script and against the `eol`-only
+  version under Windows R.** On Linux both versions write LF, so the test is only
+  discriminating on Windows, and it says so in its output.
+- **The verification.** `Rscript tutorial/tests/kit-eol.test.R` (Windows R):
+  PASS, byte-identical.
+
+### 41. A README link pointed at a file that does not exist
+
+- **What was wrong.** `tutorial/README.md` told readers to "Read
+  `design/COLLABORATION.md` for ownership and active handoffs". The file was
+  never in the tree.
+- **The fix.** The sentence is removed.
+- **The test that now pins it.** `tutorial/tests/readme-links.test.mjs` requires
+  every `design/*.md` the README names to exist, except gitignored `*.local.md`
+  notes. **Confirmed to fail against the unfixed README.**
+- **The verification.** `node tutorial/tests/run.mjs`: 13 pass, 0 fail.
+
+### 42. The landing page overstated where the CAST code came from
+
+- **What was wrong.** `docs/index.html` said the CAST layer "is ported from the
+  production glioma CAST pipeline", while the README says `R/cast_core.R`
+  "adapts" the approach and "the papers do not establish a verbatim code match".
+- **The fix.** The page now says the layer "is adapted from the CAST pipeline of
+  the applied glioma study" and that the versioned code, not the papers, defines
+  the exact implementation.
+- **The test that now pins it.** A fifth block in `tests/test_readme_claims.mjs`
+  locates the page's provenance paragraph and the README sentence, then requires
+  "adapted" and no "ported". **Confirmed to fail against the unfixed page.**
+- **The verification.** `./tests/run_tests.sh`: 13 suites passed, 0 failed.
+
+---
+
 ## 2026-09-25 (parity) · Claim corrections that never reached main, CI that ran no R, and the class lab's intervals
 
 **Moves published numbers: no.** `docs/data/scenarios.json`, every figure and

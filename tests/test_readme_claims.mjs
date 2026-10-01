@@ -171,5 +171,19 @@ if (mR) ok(`registry says cond_after runs ${mR[1]} to ${mR[2]}; data says ` +
 // and the threshold it justifies must still not bind
 ok(`gls_cond_max is 100 but a shipped scenario reaches ${hi}`, hi <= 100);
 
+// ---------------------------------------------------------------------------
+// 5. Method provenance: the public page and the README make the same claim.
+// 2026-09-28: the page said the CAST layer "is ported from the production glioma
+// CAST pipeline" while the README says the code "adapts" it and "the papers do
+// not establish a verbatim code match". Located first, then compared.
+// ---------------------------------------------------------------------------
+const INDEX = readFileSync(join(ROOT, "docs/index.html"), "utf8");
+const pageProv = INDEX.match(/<strong>Method provenance\.<\/strong>([\s\S]*?)<\/p>/);
+ok("docs/index.html no longer has a Method provenance paragraph", !!pageProv);
+ok("README no longer says R/cast_core.R adapts the trajectory approach",
+   /`R\/cast_core\.R` adapts/.test(README));
+if (pageProv) ok("the page's provenance paragraph says 'adapted', matching the README",
+                 /\badapted\b/.test(pageProv[1]) && !/\bported\b/.test(pageProv[1]));
+
 console.log(`README claims: ${fails === 0 ? "PASS" : "FAIL"} (${fails} failure${fails === 1 ? "" : "s"})`);
 process.exit(fails === 0 ? 0 : 1);
