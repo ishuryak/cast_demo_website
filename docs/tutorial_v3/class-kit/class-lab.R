@@ -11,7 +11,7 @@
 
 analyze_demo <- function(kit_dir = ".", num_trees = 300L, seed = 20260905L,
                          output_dir = file.path(kit_dir, "results"),
-                         propensity = c("forest", "logistic")) {
+                         propensity = c("forest", "logistic", "superlearner")) {
   propensity_model <- match.arg(propensity)
   stopifnot(length(num_trees) == 1, is.finite(num_trees), num_trees >= 100)
   for (package in c("survival", "grf")) {
@@ -41,9 +41,32 @@ analyze_demo <- function(kit_dir = ".", num_trees = 300L, seed = 20260905L,
   propensity <- if (propensity_model == "forest") {
     grf::regression_forest(X, d$W, num.trees = num_trees,
                            num.threads = 2, seed = seed)$predictions
-  } else {
+  } else if (propensity_model == "logistic") {
     stats::fitted(stats::glm(d$W ~ X, family = stats::binomial()))
+  } else {
+    for (package in c("SuperLearner", "glmnet", "ranger")) {
+      if (!requireNamespace(package, quietly = TRUE))
+        stop("Install optional Super Learner package first: ", package)
+    }
+    # Outer folds hold each person out of both base fitting and ensemble weighting.
+    # Inner folds learn ensemble weights using treatment alone, never outcomes.
+    set.seed(seed)
+    sl_X <- as.data.frame(X)
+    names(sl_X) <- make.names(names(sl_X), unique = TRUE)
+    ensemble <- SuperLearner::CV.SuperLearner(
+      Y = d$W, X = sl_X, family = stats::binomial(),
+      SL.library = c("SL.glm", "SL.glmnet", "SL.ranger"),
+      method = "method.NNloglik",
+      cvControl = list(V = 5, stratifyCV = TRUE),
+      innerCvControl = rep(list(list(V = 5, stratifyCV = TRUE)), 5),
+      parallel = "seq", env = asNamespace("SuperLearner"))
+    if (any(vapply(ensemble$AllSL, function(fit)
+        any(fit$errorsInLibrary) || any(fit$errorsInCVLibrary), logical(1))))
+      stop("A Super Learner candidate failed; inspect the fit before using it.")
+    as.numeric(ensemble$SL.predict)
   }
+  if (length(propensity) != nrow(d) || any(!is.finite(propensity)))
+    stop("Invalid propensity predictions.")
   propensity <- pmin(.99, pmax(.01, as.numeric(propensity)))
   scores <- matrix(NA_real_, nrow(d), length(horizons))
   ate <- se <- numeric(length(horizons))
@@ -80,6 +103,8 @@ analyze_demo <- function(kit_dir = ".", num_trees = 300L, seed = 20260905L,
   write.csv(results, file.path(run_dir, "horizon-results.csv"), row.names = FALSE)
   writeLines(c(paste(nrow(d), "synthetic people; baseline treatment; all times in months."),
     paste("Seed:", seed, "Trees:", num_trees, "Propensity model:", propensity_model),
+    if (propensity_model == "superlearner")
+      "Super Learner: SL.glm, SL.glmnet, SL.ranger; binomial log-loss; 5 outer and 5 inner stratified folds.",
     "CSV effects are probability differences. Multiply by 100 for percentage points.",
     "CAST bands are pointwise, not simultaneous; selection and misspecification uncertainty are not fully included.",
     capture.output(sessionInfo())), file.path(run_dir, "run-info.txt"))
