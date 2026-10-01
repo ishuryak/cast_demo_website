@@ -26,6 +26,12 @@ run <- function(pm) {
 }
 logistic <- run("logistic")
 forest <- run("forest")
+ensemble <- run("superlearner")
+stopifnot(nrow(ensemble$results) == 5L,
+          all(is.finite(as.matrix(ensemble$results))))
+ensemble_info <- readLines(file.path(ensemble$output_dir, "run-info.txt"))
+stopifnot(any(grepl("SL.glm, SL.glmnet, SL.ranger", ensemble_info, fixed = TRUE)),
+          any(grepl("5 outer and 5 inner stratified folds", ensemble_info, fixed = TRUE)))
 
 stopifnot(all(covers(logistic$results)))
 stopifnot(any(!covers(forest$results)))

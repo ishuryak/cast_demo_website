@@ -63,6 +63,31 @@ this simulator the true propensity really is a main-effects logistic model, so
 it is correctly specified here by construction. In real data neither model is
 known to be right, which is why overlap and sensitivity checks matter.
 
+### Optional Super Learner propensity
+
+The forest remains the default. The optional ensemble combines main-effects
+logistic regression (SL.glm), lasso logistic regression (SL.glmnet) and a random
+forest (SL.ranger).
+
+```r
+install.packages(c("SuperLearner", "glmnet", "ranger"))
+ensemble <- analyze_demo(propensity = "superlearner")
+ensemble$results
+```
+
+Five stratified outer folds predict each person's treatment probability without
+using that person in fitting or ensemble weighting. Five inner folds learn
+nonnegative ensemble weights with binomial log-loss. Only measured baseline
+covariates and treatment assignment enter these fits. Probabilities are clipped
+to [0.01, 0.99], as for the other options. Candidate failures stop the run rather
+than silently dropping a learner. The run record includes the seed and settings.
+
+The logistic option uses in-sample fitted probabilities; the forest uses
+out-of-bag predictions. This exercise therefore varies both the learner and
+how predictions are obtained. The 300-cohort coverage study did not include
+Super Learner, and no coverage advantage is established for this option. It
+does not fix hidden confounding, missing overlap or CAST curve misspecification.
+
 The CAST band is a separate matter. It covers the best quadratic approximation
 to the effect curve, not the curve itself. The reversal pattern in this cohort
 is not quadratic, so even with the logistic propensity the CAST band contained

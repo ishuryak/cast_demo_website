@@ -101,7 +101,7 @@ jobs:
           use-public-rspm: true
 
       - name: Install grf, survival and jsonlite
-        run: Rscript -e 'install.packages(c("grf", "survival", "jsonlite"))'
+        run: Rscript -e 'install.packages(c("grf", "survival", "jsonlite", "SuperLearner", "glmnet", "ranger"))'
 
       - name: Pipeline R suites (the same five ./tests/run_tests.sh runs)
         run: |
