@@ -131,7 +131,8 @@ analyze_demo <- function(kit_dir = ".", num_trees = 300L, seed = 20260905L,
   }, finally = grDevices::dev.off())
   print(results, digits = 3)
   message("Saved results to ", run_dir)
-  invisible(list(results = results, cohort = d, output_dir = run_dir))
+  invisible(list(results = results, cohort = d, propensity = propensity,
+                 output_dir = run_dir))
 }
 
 if (sys.nframe() == 0L) analyze_demo()

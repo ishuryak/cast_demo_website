@@ -82,6 +82,37 @@ covariates and treatment assignment enter these fits. Probabilities are clipped
 to [0.01, 0.99], as for the other options. Candidate failures stop the run rather
 than silently dropping a learner. The run record includes the seed and settings.
 
+### Understanding overlap warnings
+
+Some runs, including the Super Learner option, can warn that estimated treatment
+probabilities are close to zero or one. People with those covariates have few
+comparable observations in the other treatment group, so their contribution to
+an adjusted effect can be unstable. This is a diagnostic about support for the
+comparison, not an installation failure or proof that the ensemble is wrong.
+
+Inspect the probabilities used by the lab, including their distribution in
+each treatment group:
+
+```r
+range(ensemble$propensity)
+tapply(ensemble$propensity, ensemble$cohort$W, summary)
+```
+
+The [0.01, 0.99] clipping limits extreme weights; it does not create missing
+comparisons or establish adequate overlap. A learner that pulls probabilities
+toward the middle may emit fewer warnings without improving adjustment. Keep
+the warnings visible and discuss them alongside the known truth and interval
+coverage. Do not automatically trim observations or switch the target population
+to silence a warning: that would change the estimand and require a matching
+answer key.
+
+For a fixed seed and the same R/package environment, the test suite checks that
+repeated Super Learner runs return identical propensity vectors, even after
+unrelated random draws. The run record captures package versions; identical
+results across different versions or platforms are not promised.
+
+### Comparing the propensity options
+
 The logistic option uses in-sample fitted probabilities; the forest uses
 out-of-bag predictions. This exercise therefore varies both the learner and
 how predictions are obtained. The 300-cohort coverage study did not include

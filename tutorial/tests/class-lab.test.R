@@ -10,7 +10,9 @@
 #      behavior the README and study guide describe. If a grf upgrade changes
 #      that, this fails so the text is revisited rather than left untrue.
 # It also checks that an unknown propensity model is refused, and that the run
-# record names the model and the cohort size actually read.
+# record names the model and the cohort size actually read. The cross-fitted
+# ensemble must reproduce its propensity vector with a fixed seed, even after
+# unrelated draws have changed the caller's random-number state.
 file_arg <- grep("^--file=", commandArgs(), value = TRUE)
 test_dir <- dirname(normalizePath(sub("^--file=", "", file_arg[[1]])))
 kit <- normalizePath(file.path(test_dir, "..", "class-kit"), mustWork = TRUE)
@@ -28,7 +30,15 @@ logistic <- run("logistic")
 forest <- run("forest")
 ensemble <- run("superlearner")
 stopifnot(nrow(ensemble$results) == 5L,
-          all(is.finite(as.matrix(ensemble$results))))
+          all(is.finite(as.matrix(ensemble$results))),
+          length(ensemble$propensity) == nrow(ensemble$cohort),
+          all(is.finite(ensemble$propensity)),
+          all(ensemble$propensity >= .01 & ensemble$propensity <= .99),
+          stats::sd(ensemble$propensity) > 0)
+set.seed(742L)
+invisible(runif(100L))
+ensemble_repeat <- run("superlearner")
+stopifnot(identical(ensemble$propensity, ensemble_repeat$propensity))
 ensemble_info <- readLines(file.path(ensemble$output_dir, "run-info.txt"))
 stopifnot(any(grepl("SL.glm, SL.glmnet, SL.ranger", ensemble_info, fixed = TRUE)),
           any(grepl("5 outer and 5 inner stratified folds", ensemble_info, fixed = TRUE)))
@@ -43,5 +53,5 @@ stopifnot(inherits(err, "error"))
 info <- readLines(file.path(logistic$output_dir, "run-info.txt"))
 stopifnot(any(grepl("^600 synthetic people", info)),
           any(grepl("Propensity model: logistic", info, fixed = TRUE)))
-cat(sprintf("PASS: logistic covers %d/5; forest covers %d/5; bad model refused; run record complete.\n",
+cat(sprintf("PASS: logistic covers %d/5; forest covers %d/5; fixed-seed ensemble propensities identical; bad model refused; run record complete.\n",
             sum(covers(logistic$results)), sum(covers(forest$results))))
