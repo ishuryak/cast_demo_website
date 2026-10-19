@@ -1,7 +1,6 @@
-# Regression check (2026-09-28): regenerating the class-kit CSVs must reproduce
-# the committed bytes. On Windows, write.csv defaults to CRLF line endings, which
-# changed every provenance hash for identical content. This test is only
-# discriminating when run under Windows R; on Linux both versions write LF.
+# Regression check: kit CSVs must use LF on every platform and regenerate the
+# same data. Last-bit floating-point serialization can differ across platforms;
+# preserve the frozen files rather than changing them to match the current Mac.
 file_arg <- grep("^--file=", commandArgs(), value = TRUE)
 test_dir <- dirname(normalizePath(sub("^--file=", "", file_arg[[1]])))
 repo <- normalizePath(file.path(test_dir, "..", ".."), mustWork = TRUE)
@@ -19,8 +18,15 @@ setwd(original_wd)
 for (name in c("demo-cohort.csv", "answer-key.csv")) {
   fresh <- readBin(file.path(scratch, "tutorial", "class-kit", "data", name), "raw", 1e7)
   committed <- readBin(file.path(repo, "tutorial", "class-kit", "data", name), "raw", 1e7)
-  if (!identical(fresh, committed))
-    stop(name, " regenerated differently (", sum(fresh == as.raw(13)), " CR bytes)")
+  if (any(fresh == as.raw(13))) stop(name, " contains CR bytes; expected LF only")
+  a <- read.csv(text = rawToChar(committed), stringsAsFactors = FALSE)
+  b <- read.csv(text = rawToChar(fresh), stringsAsFactors = FALSE)
+  stopifnot(identical(names(a), names(b)), identical(dim(a), dim(b)))
+  for (column in names(a)) {
+    if (is.double(a[[column]]) && is.double(b[[column]])) {
+      stopifnot(all(is.finite(b[[column]])),
+                all(abs(a[[column]] - b[[column]]) <= 1e-12))
+    } else stopifnot(identical(a[[column]], b[[column]]))
+  }
 }
-cat("PASS: regenerated class-kit CSVs are byte-identical to the committed ones",
-      if (.Platform$OS.type == "windows") "(Windows R).\n" else "(non-Windows: not discriminating).\n")
+cat("PASS: regenerated kit CSVs use LF; discrete values are exact and numeric differences <= 1e-12.\n")

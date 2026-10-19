@@ -49,6 +49,47 @@ The bundled `R/` files are unchanged copies of Igor's pinned simulation and
 CAST source; the build checks them against the original local files. Follow
 `class-kit/README.md` to analyze that cohort or generate a different one.
 
+## Reproduce the propensity comparison
+
+From the repository root on macOS, Windows or Linux:
+
+```sh
+Rscript -e 'install.packages(c("survival", "grf", "SuperLearner", "glmnet", "ranger"), repos="https://cloud.r-project.org")'
+Rscript tutorial/scripts/class-lab-propensity-study.R output/propensity-study 300 4
+```
+
+The last two arguments are the number of independent cohorts and worker processes.
+Use `1` worker for a serial run; parallel runs use Windows-compatible PSOCK workers.
+An optional fourth argument sets the tree count (default 300); use a separate
+output directory for a quick check with `2 2 100`.
+
+The study redraws the class-lab design: 600 people, reversal effect, measured
+confounding strength 1 and no hidden confounding. Forest, logistic and Super Learner
+use the same cohort at each replicate and the actual `analyze_demo()` implementation.
+There are five horizons per arm. Cohort seeds are 20260906 through 20261205 for the
+300-cohort run; estimation uses seed 20260905. The shipped cohort is excluded.
+
+Rerun the same command after interruption. Completed cohort files are validated
+and retained; partial files never count as checkpoints. The runner rejects changes
+to the settings, source hashes, R/platform or recorded package versions. Use a new
+output directory on a different environment rather than mixing results. Changing
+the worker count is permitted. Cross-platform execution is supported; identical
+last-bit decimals across environments are not assumed.
+
+Outputs include `config.txt`, `config.rds`, `run-info.txt`, individual aggregate
+replicate checkpoints, `replicate-results.csv`, and `summary.csv`. The summary
+reports bias, RMSE, interval coverage, Monte Carlo standard errors, interval width
+and warning counts for CSF and CAST separately. All quantities are probability
+differences; multiply bias and width by 100 for percentage points. Warnings are
+captured in the replicate CSV, not discarded. No individual synthetic records
+are retained. The study uses a correctly specified logistic treatment generator;
+it does not establish performance under nonlinear or misspecified assignment.
+
+Run `Rscript tutorial/tests/propensity-study.test.R` to check serial/parallel
+agreement, interruption/resume, invalid checkpoints and summary arithmetic.
+GitHub CI runs it on Linux, macOS and Windows. The October 19 study is a new
+recreation; it must not be presented as the recovered October 1 experiment.
+
 ## Editing the tutorial
 
 Most copy is in `index.html`; dynamic chart commentary is in `app.mjs`.
