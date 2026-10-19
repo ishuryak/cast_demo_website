@@ -14,13 +14,25 @@ a personal copy while forbidding redistribution. `.gitignore` carries:
     References/*.PDF
     !References/README.md
 
-The two CAST papers below are **openly licensed** and would fall under the exemption
-(arXiv preprint; Scientific Reports is fully open access under CC BY 4.0). They
+The CAST preprint and Scientific Reports paper below are **openly licensed**
+under CC BY 4.0 and would fall under the exemption. They
 are still not committed here, because neither is needed to run or read anything
 in this repository -- the DOI and the arXiv link are sufficient, and a repository
 that ships a teaching demo has no reason to carry article PDFs.
 
 ## Sources
+
+- **Yang, E., Vasishtha, R., Hope, A., Kachnic, L. A., Wang, E., & Shuryak, I.**
+  (2026). *Estimating Continuous Chemotherapy Effect Trajectories in Head and Neck
+  Squamous Cell Carcinoma.* In *Proceedings of the 17th ACM International Conference
+  on Bioinformatics, Computational Biology and Health Informatics* (BCB '26),
+  pp. 1–6. ACM. doi:[10.1145/3807503.3819798](https://doi.org/10.1145/3807503.3819798).
+  **Preferred published citation.** Title, six-author order, proceedings, pages,
+  publisher and publication date (June 30, 2026) verified on October 19, 2026
+  against [ACM's Crossref deposit](https://api.crossref.org/works/10.1145/3807503.3819798).
+  The publisher landing page blocked automated retrieval; no full-text or licence
+  claims are inferred from its metadata. The earlier preprint below remains the
+  source for the detailed methods checks recorded here.
 
 - **Yang, E., Vasishtha, R., Dad, L. K., Kachnic, L. A., Hope, A., Wang, E.,
   Wu, X., Yuan, Y., Brenner, D. J., & Shuryak, I.** (2025).

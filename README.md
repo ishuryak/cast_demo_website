@@ -726,11 +726,15 @@ used or distributed.
 
 If you use CAST, please cite the methods paper:
 
-Yang, E., Vasishtha, R., Dad, L. K., Kachnic, L. A., Hope, A., Wang, E., Wu, X.,
-Yuan, Y., Brenner, D. J., & Shuryak, I. (2025). *CAST: Time-Varying Treatment
-Effects with Application to Chemotherapy and Radiotherapy on Head and Neck
-Squamous Cell Carcinoma*. arXiv:2505.06367.
-https://arxiv.org/abs/2505.06367
+Yang, E., Vasishtha, R., Hope, A., Kachnic, L. A., Wang, E., & Shuryak, I.
+(2026). *Estimating Continuous Chemotherapy Effect Trajectories in Head and Neck
+Squamous Cell Carcinoma*. In *Proceedings of the 17th ACM International Conference
+on Bioinformatics, Computational Biology and Health Informatics* (BCB '26),
+pp. 1–6. ACM. https://doi.org/10.1145/3807503.3819798
+
+The earlier [CAST methods preprint](https://arxiv.org/abs/2505.06367) (Yang et al.,
+2025) remains a useful open methods reference. Its title and ten-author list
+are distinct from the published six-author conference paper above.
 
 An applied CAST study informing this demonstration's trajectory approach:
 

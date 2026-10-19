@@ -13,6 +13,18 @@ Entries are newest first.
 
 ---
 
+## 2026-10-19 · Published CAST citation
+
+**Moves published numbers: no.** README and preferred CFF citation now use the
+ACM BCB 2026 paper, DOI `10.1145/3807503.3819798`, rather than only the 2025
+preprint. ACM's Crossref deposit confirms a different title and six-author list;
+the original ten-author preprint remains a separately identified methods reference.
+`References/README.md` records the source and verification limits. Validation:
+CFF schema validation, matching the citation to the publisher deposit, and
+`git diff --check`. No simulation, data, figure or downloadable-kit changes.
+
+---
+
 ## 2026-09-28 · Educator-kit portability, a dead link, and the provenance wording
 
 **Moves published numbers: no.** `docs/data/scenarios.json`, every figure and

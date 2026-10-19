@@ -29,39 +29,67 @@ keywords:
   - causal survival forest
   - simulation
 preferred-citation:
-  type: article
+  type: conference-paper
   title: >-
-    CAST: Time-Varying Treatment Effects with Application to Chemotherapy and
-    Radiotherapy on Head and Neck Squamous Cell Carcinoma
-  year: 2025
-  journal: arXiv
-  url: "https://arxiv.org/abs/2505.06367"
-  identifiers:
-    - type: other
-      value: "arXiv:2505.06367"
-      description: arXiv preprint identifier
+    Estimating Continuous Chemotherapy Effect Trajectories in Head and Neck
+    Squamous Cell Carcinoma
+  year: 2026
+  date-published: 2026-06-30
+  collection-title: >-
+    Proceedings of the 17th ACM International Conference on Bioinformatics,
+    Computational Biology and Health Informatics
+  start: 1
+  end: 6
+  publisher:
+    name: ACM
+  doi: 10.1145/3807503.3819798
+  url: "https://doi.org/10.1145/3807503.3819798"
   authors:
     - family-names: Yang
       given-names: Everest
     - family-names: Vasishtha
       given-names: Ria
-    - family-names: Dad
-      given-names: Luqman K.
-    - family-names: Kachnic
-      given-names: Lisa A.
     - family-names: Hope
       given-names: Andrew
+    - family-names: Kachnic
+      given-names: Lisa A.
     - family-names: Wang
       given-names: Eric
-    - family-names: Wu
-      given-names: Xiao
-    - family-names: Yuan
-      given-names: Yading
-    - family-names: Brenner
-      given-names: David J.
     - family-names: Shuryak
       given-names: Igor
 references:
+  - type: article
+    title: >-
+      CAST: Time-Varying Treatment Effects with Application to Chemotherapy and
+      Radiotherapy on Head and Neck Squamous Cell Carcinoma
+    year: 2025
+    journal: arXiv
+    url: "https://arxiv.org/abs/2505.06367"
+    identifiers:
+      - type: other
+        value: "arXiv:2505.06367"
+        description: arXiv preprint identifier
+    authors:
+      - family-names: Yang
+        given-names: Everest
+      - family-names: Vasishtha
+        given-names: Ria
+      - family-names: Dad
+        given-names: Luqman K.
+      - family-names: Kachnic
+        given-names: Lisa A.
+      - family-names: Hope
+        given-names: Andrew
+      - family-names: Wang
+        given-names: Eric
+      - family-names: Wu
+        given-names: Xiao
+      - family-names: Yuan
+        given-names: Yading
+      - family-names: Brenner
+        given-names: David J.
+      - family-names: Shuryak
+        given-names: Igor
   - type: article
     title: >-
       Estimating temporal treatment-effect patterns of radiotherapy and
