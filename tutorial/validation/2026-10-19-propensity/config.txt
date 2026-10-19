@@ -1,0 +1,12 @@
+list(format_version = 1L, replicates = 300L, n = 600L, shape = "reversal", 
+    confounding = 1, hidden_confounding = 0, horizons = c(12, 
+    36, 60, 84, 108), arms = c("forest", "logistic", "superlearner"
+    ), cohort_seed_base = 20260905L, fit_seed = 20260905L, trees = 300L, 
+    rng = c("Mersenne-Twister", "Inversion", "Rejection"), R = "R version 4.6.1 (2026-06-24)", 
+    platform = "aarch64-apple-darwin23", packages = c(survival = "3.8.6", 
+    grf = "2.6.1", SuperLearner = "2.0.42", glmnet = "5.1", ranger = "0.18.0"
+    ), source_md5 = c(`tutorial/class-kit/class-lab.R` = "3c5cc5f0d52fdd451d284fbcbc6c4a40", 
+    `tutorial/class-kit/R/01_simulate.R` = "34036111e6f379841253d826139b7fa7", 
+    `tutorial/class-kit/R/cast_core.R` = "08f3cc4743c5e4f36ae6c048169c434f", 
+    `tutorial/scripts/class-lab-propensity-study.R` = "90642b0cb60578021d0592f6cd8e6263"
+    ))

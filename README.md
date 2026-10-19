@@ -259,6 +259,10 @@ The methods page ships aggregate artifacts. The tutorial class kit also includes
 an explicitly synthetic teaching cohort. Per-patient simulation intermediates in
 `output/` are gitignored.
 
+The [300-cohort class-lab comparison](tutorial/validation/2026-10-19-propensity/README.md)
+reports bias and interval coverage for forest, logistic and Super Learner propensities,
+with aggregate replicate results and a resumable runner for macOS, Windows and Linux.
+
 ## For collaborators
 
 ### Pipeline (what each script produces)

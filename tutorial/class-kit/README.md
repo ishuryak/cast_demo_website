@@ -115,18 +115,26 @@ results across different versions or platforms are not promised.
 
 The logistic option uses in-sample fitted probabilities; the forest uses
 out-of-bag predictions. This exercise therefore varies both the learner and
-how predictions are obtained. The 300-cohort coverage study did not include
-Super Learner, and no coverage advantage is established for this option. It
-does not fix hidden confounding, missing overlap or CAST curve misspecification.
+how predictions are obtained. The earlier coverage study did not include
+Super Learner. A [new 300-cohort comparison](https://github.com/ishuryak/cast_demo_website/blob/main/tutorial/validation/2026-10-19-propensity/README.md)
+on October 19 reports bias and interval coverage for all three options:
+CSF coverage across the five horizons was 74.7–86.3% with forest, 94.3–96.7%
+with logistic, and 93.7–96.0% with Super Learner. CSF bias ranged from +1.58 to
++5.30 percentage points, −0.19 to +0.03, and +0.12 to +0.50, respectively.
+These are results for the correctly specified logistic treatment generator,
+not general superiority claims. Super Learner does not fix hidden confounding,
+missing overlap or CAST curve misspecification; forest remains the default.
 
 The CAST band is a separate matter. It covers the best quadratic approximation
 to the effect curve, not the curve itself. The reversal pattern in this cohort
-is not quadratic, so even with the logistic propensity the CAST band contained
-the answer key only 45% of the time at 36 months and 78% at 84 months. That is
+is not quadratic, so even with the logistic propensity the October 19 CAST band
+contained the answer key only 44.3% of the time at 36 months and 79.7% at 84 months. That is
 the smoothness-versus-accuracy trade-off the walkthrough discusses.
 
-The simulation behind these numbers is `tutorial/scripts/class-lab-coverage-study.R`
-in the source repository.
+The earlier study is `tutorial/scripts/class-lab-coverage-study.R`. The October 19
+comparison uses `tutorial/scripts/class-lab-propensity-study.R`, with replicate
+results, summaries and Monte Carlo standard errors linked above. It is a new
+run; the original October 1 comparison files were not recovered.
 
 To generate a different study using the bundled source:
 
