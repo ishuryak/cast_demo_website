@@ -1,0 +1,16 @@
+Both packages were loaded under R 4.5.2 on Windows x64.
+
+glmnet 4.1-10
+Source of installed package: existing R 4.5 user library, copied to isolated audit library.
+DESCRIPTION Built: R 4.5.1; x86_64-w64-mingw32; 2025-10-29 03:06:38 UTC; windows
+SHA256 libs/x64/glmnet.dll: 60f7c48b4e4c4d18e591d3fe7f2d74cf3b80ee16d0b0573b13ce142de5e8d782
+
+glmnet 5.1
+Binary URL: https://cran.r-project.org/bin/windows/contrib/4.5/glmnet_5.1.zip
+DESCRIPTION Built: R 4.5.3; x86_64-w64-mingw32; 2026-10-21 03:20:32 UTC; windows
+SHA256 glmnet_5.1.zip: cd6dc5c3b876c5de1fd593a95656fa78dc5a6ac533c010e32381491223c0011a
+SHA256 libs/x64/glmnet.dll: 1f2678de9832f4f1206f7a2d0102e254421da979f1870283f390453388b95d63
+
+The package binaries were built under different R 4.5 patch releases.
+Runtime R, other packages, input data and seeded analysis settings were held fixed.
+This compares these installed builds, not every possible build of either release.

@@ -150,6 +150,18 @@
       <p id="interaction-status" class="sr-only" aria-live="polite"></p>
     </div>
     <noscript><p>JavaScript is needed for the interactive chart. <a href="data/scenarios.json">Download the aggregate results</a> or use the R exercise below.</p></noscript>
+    <div class="section-lead" id="coverage-comparison">
+      <h3>Check the intervals and the smooth band separately.</h3>
+      <p>Good coverage for CSF estimates at individual horizons does not guarantee good coverage for the smoothed CAST trajectory. In a separate study of 300 simulated 600-person cohorts, the nominal 95% intervals contained each cohort's true average effect at 36 months this often:</p>
+      <div class="table-scroll"><table><caption>36-month coverage in the October 19 propensity comparison.</caption><thead><tr><th scope="col">Propensity option</th><th scope="col">CSF interval</th><th scope="col">CAST pointwise band</th></tr></thead><tbody>
+        <tr><th scope="row">Forest</th><td>76.0%</td><td>84.3%</td></tr>
+        <tr><th scope="row">Logistic</th><td>94.3%</td><td>44.3%</td></tr>
+        <tr><th scope="row">Super Learner</th><td>93.7%</td><td>47.7%</td></tr>
+      </tbody></table></div>
+      <p>These percentages describe coverage across repeated simulated studies, not the fraction of people who benefit. This comparison uses the reversal scenario, moderate measured confounding and no hidden confounding; it is separate from the chart controls above. Treatment assignment is logistic by construction, so the results do not establish a generally best propensity model.</p>
+      <p>CAST adds a quadratic approximation to the CSF estimates. A precise smooth fit can still miss a nonquadratic effect curve. Its band is pointwise, not simultaneous across time, and does not fully account for approximation or model-selection uncertainty.</p>
+      <p class="method-link"><a href="https://github.com/ishuryak/cast_demo_website/blob/main/tutorial/validation/2026-10-19-propensity/README.md">All five horizons, Monte Carlo uncertainty and reproducible results ↗</a></p>
+    </div>
   </section>
 <details class="reading story-depth"><summary>What if treatment itself changes during follow-up?</summary>  <section class="reading section" id="longitudinal">
 

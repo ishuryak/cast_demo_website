@@ -119,6 +119,10 @@ summary>span{font-size:14px}
 .cast-branch p{margin-top:7px}
 .cast-branch b{color:var(--teal);font-weight:400;padding-inline:5px}
 .section-lead{max-width:712px;margin-inline:auto}
+#coverage-comparison{margin-top:42px;padding-top:28px;border-top:1px solid var(--line)}
+#coverage-comparison h3{font-family:var(--serif);font-size:28px;font-weight:400;line-height:1.25;margin:0 0 18px}
+#coverage-comparison .table-scroll{margin-block:22px}
+#coverage-comparison th{white-space:normal;vertical-align:bottom}
 .profile-lab{max-width:950px;margin:44px auto 0;padding:40px;border-block:1px solid var(--line);background:#fafcfb}
 .profile-lab-heading{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px 20px}
 .profile-lab-heading .eyebrow{font-size:10px;margin:0}

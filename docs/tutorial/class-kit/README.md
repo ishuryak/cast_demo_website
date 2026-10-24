@@ -125,11 +125,30 @@ These are results for the correctly specified logistic treatment generator,
 not general superiority claims. Super Learner does not fix hidden confounding,
 missing overlap or CAST curve misspecification; forest remains the default.
 
-The CAST band is a separate matter. It covers the best quadratic approximation
-to the effect curve, not the curve itself. The reversal pattern in this cohort
-is not quadratic, so even with the logistic propensity the October 19 CAST band
-contained the answer key only 44.3% of the time at 36 months and 79.7% at 84 months. That is
-the smoothness-versus-accuracy trade-off the walkthrough discusses.
+The CAST band is a separate matter: uncertainty around a fitted quadratic does
+not guarantee coverage of the underlying effect curve. The band does not fully
+account for approximation or model-selection uncertainty. At 36 months in the
+October 19 comparison, the two coverage measures were:
+
+| Propensity option | CSF interval coverage | CAST pointwise band coverage |
+| --- | ---: | ---: |
+| Forest | 76.0% | 84.3% |
+| Logistic | 94.3% | 44.3% |
+| Super Learner | 93.7% | 47.7% |
+
+All intervals are nominally 95%. Coverage is the fraction of the 300 intervals
+containing the replicate-specific true average effect, not the fraction of
+people benefiting. The reversal pattern is not quadratic; the logistic CAST
+band also covered only 79.7% at 84 months. Good CSF coverage does not guarantee
+good CAST coverage. The walkthrough shows these measures side by side.
+
+The October 19 study used glmnet 5.1. A separate
+[matched version audit](https://github.com/ishuryak/cast_demo_website/blob/main/tutorial/validation/2026-10-24-glmnet/README.md)
+found identical propensity vectors and CSF/CAST estimates and interval endpoints
+with glmnet 4.1-10 and 5.1 on 20 paired cohorts under a fixed R 4.5.2 Windows
+environment. This checks the lab's binomial propensity path; it does not validate
+Cox models or reproduce the original macOS environment. Keep the original run's
+version label and the pilot's 4.1-10 pin.
 
 The earlier study is `tutorial/scripts/class-lab-coverage-study.R`. The October 19
 comparison uses `tutorial/scripts/class-lab-propensity-study.R`, with replicate

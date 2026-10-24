@@ -1,0 +1,11 @@
+list(R = "R version 4.5.2 (2025-10-31 ucrt)", platform = "x86_64-w64-mingw32",
+    packages = c(survival = "3.8.3", grf = "2.6.1", SuperLearner = "2.0.29",
+    glmnet = "5.1", ranger = "0.17.0"), reps = 20L, n = 600L,
+    shape = "reversal", confounding = 1, hidden = 0, seed_base = 20260905L,
+    fit_seed = 20260905L, trees = 300L, arms = c("forest", "logistic",
+    "superlearner"), rng = c("Mersenne-Twister", "Inversion",
+    "Rejection"), source_md5 = c(`tutorial/class-kit/class-lab.R` = "3c5cc5f0d52fdd451d284fbcbc6c4a40",
+    `tutorial/class-kit/R/01_simulate.R` = "34036111e6f379841253d826139b7fa7",
+    `tutorial/class-kit/R/cast_core.R` = "08f3cc4743c5e4f36ae6c048169c434f",
+    `tutorial/scripts/glmnet-version-audit.R` = "dea4d89573b0bfd416b90964b866acad"
+    ))
