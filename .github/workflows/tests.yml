@@ -58,7 +58,7 @@ jobs:
       - name: Viewport overflow (the page fits a phone, measured not screenshotted)
         run: node tests/test_viewport_overflow.mjs
 
-      - name: Tutorial variants (v1, v2, v3 and the /oncology/ redirect are whole, separate pages)
+      - name: Walkthrough pages (Start here through chapter 6, chapter 2, and the redirects are whole pages on one path)
         run: node tests/test_tutorial_variants.mjs docs
 
       - name: Clinical display accuracy and narrative contracts
@@ -68,7 +68,6 @@ jobs:
         run: |
           node tests/test_viewport_overflow.mjs docs/tutorial
           node tests/test_viewport_overflow.mjs docs/tutorial_v2
-          node tests/test_viewport_overflow.mjs docs/tutorial_v3
 
       - name: Shipped site is complete
         run: |

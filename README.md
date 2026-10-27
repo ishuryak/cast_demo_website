@@ -1,6 +1,6 @@
 # CAST demo website: causal survival trajectories on simulated oncology data
 
-[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/) · [Oncology version: Option A or Option B?](https://ishuryak.github.io/cast_demo_website/tutorial_v2/) · [Walkthrough, clinical edition](https://ishuryak.github.io/cast_demo_website/tutorial_v3/)
+[Start the CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Chapter 2: Option A or Option B?](https://ishuryak.github.io/cast_demo_website/tutorial_v2/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/)
 
 An interactive teaching demo that shows, on **simulated** cancer-survival
 cohorts where the true treatment effect is known:
@@ -130,8 +130,8 @@ cast_demo_website/
   docs/                              <- the published static site (GitHub Pages root)
     index.html  app.js  style.css      methods view (Plotly, no build step)
     tutorial/                          generated walkthrough; source in tutorial/
-    tutorial_v2/  tutorial_v3/         oncology version and clinical edition
-                                       (see "Publish on GitHub Pages")
+    tutorial_v2/                       chapter 2 of the walkthrough; source in clinical/oncology/
+    tutorial_v3/  clinical/  oncology/   redirects kept for links shared before 2026-10-27
     data/scenarios.json                aggregate results (safe to publish)
     figs/*.png                         600-DPI fallback figures
   run_all.sh             orchestration (simulate -> fit -> export)
@@ -239,13 +239,16 @@ then commit and push the source and generated `docs/tutorial/` together to
 `main`. The build includes all interactions, animations, illustrations and
 educator downloads. See [the editing guide](design/COPY_EDITING.md).
 
-Two further versions sit beside it and never overwrite it. `/tutorial_v2/` is a
-self-contained oncology framing (Option A versus Option B) edited directly in
-`docs/tutorial_v2/`. `/tutorial_v3/` is the walkthrough with a clinical layer,
-generated from `docs/tutorial/` by `scripts/build-tutorial-v3.mjs`, which
-`npm run build:pages` runs automatically, so edit the walkthrough source or that
-script, never `docs/tutorial_v3/` by hand. `tests/test_tutorial_variants.mjs`
-checks that all of them are whole pages whose links resolve.
+The walkthrough is one path with seven stops: Start here, then Hector and Bob,
+Option A or Option B?, Read it like a clinician, Where the method sits, Teach it,
+and Where this leaves you. Chapter 2, `/tutorial_v2/`, is a separate page with
+its own figures; its source is `clinical/oncology/`, published by
+`scripts/build-chapter-two.mjs`, which `npm run build:pages` runs automatically.
+The clinical edition that lived at `/tutorial_v3/` was folded into chapter 3 on
+2026-10-27; that URL, `/clinical/` and `/oncology/` are redirects. Edit source
+files, never `docs/tutorial/`, `docs/tutorial_v2/` or `docs/tutorial_v3/` by
+hand. `tests/test_tutorial_variants.mjs` checks that the pages are whole, that
+every link on the path resolves, and that the redirects still point into it.
 
 1. Push this repo to GitHub.
 2. Repo **Settings → Pages**.

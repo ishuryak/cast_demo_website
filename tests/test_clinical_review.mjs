@@ -22,10 +22,11 @@ for(const s of Object.values(data.scenarios)){
     assert.match(node('baseline-text').textContent,/not the whole cohort/);checks++;
   }
 }
-for(const page of ['tutorial','tutorial_v2','tutorial_v3']){
+for(const page of ['tutorial','tutorial_v2']){
   for(const file of ['index.html',page==='tutorial_v2'?'app.js':'app.mjs'])assert(!/\u2014|&mdash;|&#8212;|&#x2014;/i.test(read(`${page}/${file}`)),`${page}/${file}: no em dashes`);
   assert(!/clinical-guide|data-guide-start/.test(read(`${page}/index.html`)));checks++;
 }
+assert(!/\u2014|&mdash;/.test(read('tutorial_v3/index.html')),'tutorial_v3 redirect: no em dashes');checks++;
 const hash=s=>createHash('sha256').update(s).digest('hex');
 assert.equal(hash(read('data/scenarios.json')),'0e72f90e939f1397f02f7ac58f30743003f4bc15ef712560802d938a5989afb4');checks++;
 const s=data.scenarios['reversal_conf1.00_unmeas0.00'],plots=storyPlots(data);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Option A or Option B? A treatment effect read over time</title>
+<title>Chapter 2 · Option A or Option B? A treatment effect read over time</title>
 <meta name="description" content="An oncology walkthrough of causal survival trajectories on simulated cohorts, framed as a choice between two active treatment options rather than treatment versus nothing.">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
@@ -13,7 +13,15 @@
 </head>
 <body class="clinical-comparison">
 
-<header class="comparison-header"><a class="clinical-wordmark" href="../tutorial/">CAST</a><nav class="edition-nav" aria-label="CAST tutorials"><a href="../tutorial/" >The illustrated story</a><a href="../tutorial_v2/" aria-current="page">Compare two treatments</a><a href="../tutorial_v3/" >The clinical walkthrough</a></nav><div class="comparison-opening"><div><h1>Option A.<br><em>Option B.</em></h1><p class="sub">Patients receiving A live longer. It looks like a better treatment. But the apparent advantage hides two different problems.</p></div><figure><img src="../tutorial/assets/art/cohort-fork.svg" alt="The same cohort imagined under two alternative treatment plans."><figcaption>One target population. Two possible treatment worlds.<br>Conceptual sketch; no outcomes shown.</figcaption></figure></div></header>
+<header class="comparison-header"><a class="clinical-wordmark" href="../tutorial/">CAST</a><nav class="path-nav" aria-label="Chapters"><ol>
+  <li><a href="../tutorial/#start"><span>0</span>Start here</a></li>
+  <li><a href="../tutorial/#story"><span>1</span>Hector and Bob</a></li>
+  <li><a href="../tutorial_v2/" aria-current="page"><span>2</span>Option A or Option B?</a></li>
+  <li><a href="../tutorial/#clinic"><span>3</span>Read it like a clinician</a></li>
+  <li><a href="../tutorial/#methods"><span>4</span>Where the method sits</a></li>
+  <li><a href="../tutorial/#class-kit"><span>5</span>Teach it</a></li>
+  <li><a href="../tutorial/#end"><span>6</span>Where this leaves you</a></li>
+</ol></nav><div class="comparison-opening"><div><p class="eyebrow">Chapter 2 of the CAST walkthrough</p><h1>Option A.<br><em>Option B.</em></h1><p class="sub">Patients receiving A live longer. It looks like a better treatment. But the apparent advantage hides two different problems.</p></div><figure><img src="../tutorial/assets/art/cohort-fork.svg" alt="The same cohort imagined under two alternative treatment plans."><figcaption>One target population. Two possible treatment worlds.<br>Conceptual sketch; no outcomes shown.</figcaption></figure></div></header>
 
 <main>
 
@@ -207,71 +215,7 @@
   120 intervals or the scenario grid.</p>
 </details>
 
-</details><details class="audience-paths"><summary>Reading paths</summary><section class="reader-entry" id="choose-path" aria-labelledby="reader-heading">
-  <div class="reader-intro">
-    <h2 id="reader-heading">How would you describe yourself?</h2>
-    <p>Suggested stops for different questions.</p>
-  </div>
-  <div class="reader-choices" role="group" aria-labelledby="reader-heading">
-    <button type="button" data-reader-path="clinician" aria-pressed="false" aria-controls="path-clinician">Clinician or oncologist</button>
-    <button type="button" data-reader-path="student" aria-pressed="false" aria-controls="path-student">Statistics student</button>
-    <button type="button" data-reader-path="researcher" aria-pressed="false" aria-controls="path-researcher">Researcher</button>
-    <button type="button" data-reader-path="convert" aria-pressed="false" aria-controls="path-convert">Coming from standard statistics</button>
-    <button type="button" data-reader-path="educator" aria-pressed="false" aria-controls="path-educator">Educator</button>
-  </div>
-
-  <div class="reader-itinerary" id="path-clinician" hidden>
-    <div><h3>Start with the choice you actually make.</h3><p>Read the effect in patients per 100, then find out what it would take to overturn it.</p></div>
-    <ol aria-label="Clinician path">
-      <li><a href="#figure">See the difference between the two options over follow-up</a></li>
-      <li><a href="#headline-card">Read it as extra survivors and as a number needed to treat</a></li>
-      <li><a href="#hidden">Ask what an unrecorded factor would do to all of it</a></li>
-    </ol>
-  </div>
-  <div class="reader-itinerary" id="path-student" hidden>
-    <div><h3>Start with the estimate and its uncertainty.</h3><p>Look at what the interval claims, then at how often that claim held.</p></div>
-    <ol aria-label="Statistics student path">
-      <li><a href="#figure">Compare each estimator against the known truth</a></li>
-      <li><a href="#coverage">Grade the 95% interval instead of assuming it</a></li>
-      <li><a href="#accuracy">Rank the estimators by distance from truth</a></li>
-    </ol>
-  </div>
-  <div class="reader-itinerary" id="path-researcher" hidden>
-    <div><h3>Start with the estimand.</h3><p>Fix what is being estimated, then look at the estimators and their failure modes.</p></div>
-    <ol aria-label="Researcher path">
-      <li><a href="#tech">Read the estimand and the estimators</a></li>
-      <li><a href="#accuracy">Compare all six estimators on the same panel</a></li>
-      <li><a href="#coverage">Check interval calibration across the whole grid</a></li>
-    </ol>
-  </div>
-  <div class="reader-itinerary" id="path-convert" hidden>
-    <div><h3>Start where the arms differ.</h3><p>Begin with baseline imbalance, the familiar diagnostic, then follow it to what adjustment cannot reach.</p></div>
-    <ol aria-label="Standard statistics path">
-      <li><a href="#balance">Look at baseline imbalance between the arms</a></li>
-      <li><a href="#overlap">Ask whether both options were genuinely available</a></li>
-      <li><a href="#hidden">Meet the factor no adjustment can use</a></li>
-    </ol>
-  </div>
-  <div class="reader-itinerary" id="path-educator" hidden>
-    <div><h3>Prepare a session.</h3><p>Open with the question, demonstrate the failure live, then close on what the demo does not establish.</p></div>
-    <ol aria-label="Educator path">
-      <li><a href="#figure">Drive the confounding controls in front of a group</a></li>
-      <li><a href="#hidden">See what hidden confounding changes</a></li>
-      <li><a href="#limits">Close on what this cannot show</a></li>
-    </ol>
-  </div>
-  <button class="reader-reset" id="reader-reset" type="button" hidden>Clear my choice</button>
-  <p class="sr-only" id="reader-status" role="status" aria-atomic="true"></p>
-  <noscript>
-    <nav class="reader-fallback" aria-label="Choose a starting point">
-      <a href="#figure">Clinician or oncologist: start with the effect over follow-up</a>
-      <a href="#coverage">Statistics student: start with interval calibration</a>
-      <a href="#tech">Researcher: start with the estimand</a>
-      <a href="#balance">Coming from standard statistics: start with baseline imbalance</a>
-      <a href="#limits">Educator: start with what this cannot show</a>
-    </nav>
-  </noscript>
-</section></details><footer>
+</details><nav class="chapter-next" aria-label="Previous and next chapter"><a href="../tutorial/#story">&larr; Chapter 1: Hector and Bob</a><a href="../tutorial/#clinic">Chapter 3: Read it like a clinician &rarr;</a><span>Reading paths and the class kit are on <a href="../tutorial/#start">Start here</a>.</span></nav><footer>
   <p>Simulated data only. Source, the full method description and the R pipeline:
   <a href="https://github.com/ishuryak/cast_demo_website">github.com/ishuryak/cast_demo_website</a>.
   Method references: Yang et al., <a href="https://arxiv.org/abs/2505.06367">arXiv:2505.06367</a>;

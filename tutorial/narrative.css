@@ -171,3 +171,59 @@ summary>span{font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){.card-face.is-turning{animation:none}}
 @media print{.turn-card,.profile-controls{display:none}.card-face[hidden]{display:block!important}.profile-lab{background:white;break-inside:avoid}}
+
+/* Shared reading layer, formerly applied at build time from clinical/clinical-theme.css. */
+:root{--bg:#fff;--card:#fff;--accent:#075d65}
+.hero-opening .dek{font-size:22px;line-height:1.65;max-width:480px}
+.story-depth{font:15px/1.7 var(--sans);margin-block:28px}.story-depth>summary{font-size:14px;color:var(--teal-dark)}.story-depth p{font-size:15px}
+.story-depth .subsection{padding-block:24px}.cast-motivation>p{max-width:720px}
+.chart-options{margin:20px 0;border:0}.chart-options>summary{font-size:14px;padding:10px 0;color:var(--teal-dark)}.chart-options .experiment-controls{padding-top:20px}
+.result-caption{font:15px/1.7 var(--sans);max-width:760px;margin:24px 0;color:var(--muted)}
+.clinic-note{background:transparent;border-left:2px solid var(--rust);padding:4px 0 4px 24px;margin:36px 0;font-size:16px;line-height:1.65}
+.clinic-note h3{font:400 25px/1.2 var(--serif);margin:0 0 10px}.clinic-note details{font-size:15px;margin-top:12px}.clinic-note summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;color:var(--teal-dark)}.clinic-note details p{padding-bottom:14px}.clinic-note details p+p{margin-top:0}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--teal);outline-offset:4px}
+@media(max-width:650px){.hero-opening .dek{font-size:19px}.clinic-note{padding-left:18px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* One path: the chapter strip, chapter spacing and the start block. */
+.path-nav{border-block:1px solid var(--line);background:var(--paper);font-size:13px;line-height:1.5}
+.path-nav ol{list-style:none;margin:0 auto;padding:0 34px;max-width:1240px;display:flex;flex-wrap:wrap;gap:4px 26px}
+.path-nav a{display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:4px 0;color:var(--muted);text-decoration:none;border-bottom:2px solid transparent}
+.path-nav a span{font-variant-numeric:tabular-nums;color:var(--teal);font-weight:600}
+.path-nav a:hover{color:var(--ink)}
+.path-nav a[aria-current]{color:var(--teal-dark);border-bottom-color:var(--teal-dark)}
+@media(min-width:900px){.path-nav{position:sticky;top:0;z-index:5}}
+.chapter{padding-top:96px;padding-bottom:40px}
+.chapter>.eyebrow,.chapter>.reading>.eyebrow{margin-bottom:14px}
+.chapter h2{margin-bottom:28px}
+.hero.chapter{padding-top:48px}
+.hero h1{font-size:clamp(34px,4.2vw,54px)}
+.subsection{padding-top:56px;padding-bottom:12px}
+.chapter-sub{font-family:var(--serif);font-weight:400;font-size:33px;line-height:1.18;letter-spacing:-.025em;margin:0 0 22px}
+.section-heading .chapter-sub{margin-bottom:22px}
+.chapter p+.chapter-sub,.chapter ol+.chapter-sub,.chapter ul+.chapter-sub{margin-top:44px}
+.start-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px 40px;margin-top:40px;padding-top:36px;border-top:1px solid var(--line)}
+.start-grid h3,.start-notice h3{font-family:var(--serif);font-weight:400;font-size:24px;line-height:1.25;letter-spacing:-.02em;margin:0 0 12px}
+.start-grid p,.start-grid li,.start-notice p{font-size:16px;line-height:1.65}
+.start-grid ul{padding-left:20px;margin:0}.start-grid li{margin:8px 0}
+.start-notice{max-width:760px;margin-top:36px;border-left:2px solid var(--rust);padding:4px 0 4px 24px}
+.path-list{list-style:none;padding:0;margin:40px 0 0;border-top:1px solid var(--line)}
+.path-list li{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:6px 28px;padding:16px 0;border-bottom:1px solid var(--line);font-size:16px;line-height:1.6}
+.path-list a{display:inline-flex;align-items:baseline;gap:14px;text-decoration:none;color:var(--ink)}
+.path-list a:hover strong{text-decoration:underline;text-underline-offset:4px}
+.path-list li>span{color:var(--muted);font-size:15px}
+.path-number{font-variant-numeric:tabular-nums;color:var(--teal);font-weight:600;font-size:13px}
+.hero .reader-entry{margin-top:44px}
+.chapter-next{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 24px;margin-top:48px;padding-top:22px;border-top:1px solid var(--line);font-size:15px}
+.chapter-next>a{font-weight:500;text-decoration:none;color:var(--teal-dark)}
+.chapter-next>a:hover{text-decoration:underline;text-underline-offset:4px}
+.chapter-next>span{color:var(--muted);font-size:14px}
+.chapter-stub{padding-top:72px}
+.chapter-stub .button{margin-top:6px}
+.takeaways{padding-left:22px;margin:0 0 40px}.takeaways li{margin:16px 0;padding-left:8px}.takeaways li::marker{color:var(--teal-dark);font-weight:600}
+.next-steps{padding-left:22px;margin:0}.next-steps li{margin:12px 0}
+.session-plan{padding-left:22px;margin:0}.session-plan li{margin:12px 0;font-size:15px}
+.end-nav{margin-top:40px}
+@media(max-width:900px){.start-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.path-nav ol{padding:0 16px;gap:0 18px}.path-nav a{min-height:40px;font-size:12px;gap:7px}.start-grid{grid-template-columns:1fr;gap:28px;margin-top:32px}.path-list li{grid-template-columns:1fr}.hero h1{font-size:32px}.chapter{padding-top:72px}.subsection{padding-top:44px}.chapter-sub{font-size:28px}}
+@media print{.path-nav,.chapter-next{display:none}}
