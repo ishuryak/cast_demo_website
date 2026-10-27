@@ -1,5 +1,14 @@
 # Clinical tutorial release
 
+> **Superseded on 2026-10-27.** The clinical edition was folded into the
+> walkthrough as chapter 3, "Read it like a clinician", and the site became one
+> path. `clinical/quiet-narrative.mjs`, `scripts/build-clinical-editions.mjs`
+> and `scripts/build-tutorial-v3.mjs` no longer exist; chapter 2 is published by
+> `scripts/build-chapter-two.mjs`. The maintained sources are listed in
+> [`clinical/README.md`](../clinical/README.md); the reasoning is in
+> [`development/2026_10_27_one-path-walkthrough.md`](../development/2026_10_27_one-path-walkthrough.md).
+> The record below describes the September 2026 release as it was.
+
 The reviewed clinical narratives were committed and pushed in
 [2509599](https://github.com/ishuryak/cast_demo_website/commit/2509599).
 GitHub tests and Pages deployment passed. All three live tutorial pages and

@@ -1,10 +1,14 @@
-// The published tutorial variants are whole, separate pages.
+// The published walkthrough pages are whole, separate pages on one path.
 //
-// Pins the defects found in the 2026-09-21 review: tutorial_v3 fetched a data
+// Pins the defects found in the 2026-09-21 review: a page that fetched a data
 // file that did not exist, linked the methods page's stylesheet instead of the
-// walkthrough's, carried two <main> elements and eleven duplicated ids, and
-// tutorial_v2 linked two directories too high and to a page that never existed.
+// walkthrough's, carried two <main> elements and eleven duplicated ids, and a
+// page that linked two directories too high and to a page that never existed.
 // Every local href, src and fetch() target must resolve to a file under docs/.
+//
+// Since 2026-10-27 the site is one path: /tutorial/ (Start here, chapters 1 and
+// 3 to 6) and /tutorial_v2/ (chapter 2). /tutorial_v3/, /clinical/ and
+// /oncology/ are redirects, kept so shared links still land.
 import {existsSync,readFileSync,statSync} from 'node:fs';
 import path from 'node:path';
 
@@ -27,7 +31,7 @@ function localRefs(html,js){
   return refs.filter(r=>!/^(https?:|mailto:|data:|#|javascript:)/.test(r));
 }
 
-for(const variant of ['tutorial','tutorial_v2','tutorial_v3','oncology']){
+for(const variant of ['tutorial','tutorial_v2','tutorial_v3','clinical','oncology']){
   const dir=path.join(DOCS,variant),page=path.join(dir,'index.html');
   console.log(`== ${variant}`);
   if(!existsSync(page)){check(false,`${variant}/index.html exists`);continue;}
@@ -48,21 +52,32 @@ for(const variant of ['tutorial','tutorial_v2','tutorial_v3','oncology']){
   check(anchors.length===0,`every in-page link has a target${anchors.length?': #'+anchors.join(', #'):''}`);
 }
 
-// v3 is the walkthrough plus a clinical layer: same stylesheets, same scripts.
-const v3=path.join(DOCS,'tutorial_v3'),v1=path.join(DOCS,'tutorial');
-if(existsSync(path.join(v3,'index.html'))){
-  console.log('== tutorial_v3 keeps the walkthrough');
-  for(const f of ['style.css','narrative.css','app.mjs','narrative.mjs','core.mjs','data/scenarios.json']){
-    const same=existsSync(path.join(v3,f))&&readFileSync(path.join(v3,f),'utf8')===readFileSync(path.join(v1,f),'utf8');
-    check(same,`${f} is identical to the walkthrough's`);
-  }
-  const html=readFileSync(path.join(v3,'index.html'),'utf8');
-  const heads=s=>[...s.matchAll(/<h2[^>]*>([^<]+)/g)].map(m=>m[1]);
-  check(JSON.stringify(heads(html))===JSON.stringify(heads(readFileSync(path.join(v1,'index.html'),'utf8'))),
-    'same chapter headings, in the same order, as the walkthrough');
-  check(/data-reader-path="clinician"/.test(html)&&/id="path-clinician"/.test(html),'offers a clinician reading path');
-  check((html.match(/class="clinic-note"/g)||[]).length>=4,'carries the clinical asides');
+// Cross-page anchors on the path must exist on the page they point at.
+console.log('== the path');
+const pages=Object.fromEntries(['tutorial','tutorial_v2'].map(v=>[v,readFileSync(path.join(DOCS,v,'index.html'),'utf8')]));
+const idsOf=html=>new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]));
+const tutorialIds=idsOf(pages.tutorial);
+for(const [from,html] of Object.entries(pages)){
+  const missing=[...html.matchAll(/href="\.\.\/tutorial\/#([^"]+)"/g)].map(m=>m[1]).filter(id=>!tutorialIds.has(id));
+  check(missing.length===0,`${from}: every link into the walkthrough has a target${missing.length?': #'+missing.join(', #'):''}`);
 }
+const chapters=['start','story','puzzle','clinic','methods','class-kit','end'];
+check(chapters.every(id=>tutorialIds.has(id)),'the walkthrough carries all seven chapters, Start here through Where this leaves you');
+for(const [name,html] of Object.entries(pages)){
+  const strip=html.match(/<nav class="path-nav"[\s\S]*?<\/nav>/)?.[0]||'';
+  check((strip.match(/<li>/g)||[]).length===7,`${name}: the chapter strip lists seven chapters`);
+}
+check((pages.tutorial.match(/data-reader-path=/g)||[]).length===4&&!/data-reader-path=/.test(pages.tutorial_v2),'one audience picker, on Start here, with four audiences');
+check(/<nav class="chapter-next"/.test(pages.tutorial_v2)&&/href="\.\.\/tutorial\/#clinic"/.test(pages.tutorial_v2),'chapter 2 hands the reader on to chapter 3 at the bottom');
+check(/<aside class="clinic-note" id="clinic-(options|indication|curve|whom|registry)"/.test(pages.tutorial)&&(pages.tutorial.match(/class="clinic-note"/g)||[]).length===5,'the five clinical readings live once, in chapter 3');
+
+// The retired clinical edition redirects into chapter 3 and carries nothing else.
+console.log('== tutorial_v3 redirect');
+const v3=path.join(DOCS,'tutorial_v3');
+const v3html=readFileSync(path.join(v3,'index.html'),'utf8');
+check(/http-equiv="refresh" content="0; url=\.\.\/tutorial\/#clinic"/.test(v3html),'redirects to the walkthrough, chapter 3');
+check(!/<script/.test(v3html),'loads no script');
+check(!existsSync(path.join(v3,'app.mjs'))&&!existsSync(path.join(v3,'data')),'the duplicated walkthrough files are gone');
 
 console.log(`tutorial variants: ${failures?'FAIL':'PASS'} (${failures} failure${failures===1?'':'s'})`);
 process.exit(failures?1:0);

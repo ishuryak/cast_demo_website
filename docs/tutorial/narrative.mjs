@@ -95,3 +95,22 @@ function syncFundamentals(){
 }
 fundamentals.addEventListener('toggle',syncFundamentals);
 syncFundamentals();
+
+// The chapter strip marks the chapter in view, so a reader always knows where they are on the path.
+const chapterLinks=[...document.querySelectorAll('[data-chapter-link]')];
+const chapters=[...document.querySelectorAll('[data-chapter]')];
+function markChapter(){
+  const line=innerHeight*0.35;
+  let current=chapters[0];
+  for(const section of chapters)if(section.getBoundingClientRect().top<=line)current=section;
+  for(const link of chapterLinks){
+    if(link.dataset.chapterLink===current?.dataset.chapter)link.setAttribute('aria-current','true');
+    else link.removeAttribute('aria-current');
+  }
+}
+if(chapterLinks.length&&chapters.length){
+  let ticking=false;
+  addEventListener('scroll',()=>{if(ticking)return;ticking=true;requestAnimationFrame(()=>{markChapter();ticking=false;});},{passive:true});
+  addEventListener('resize',markChapter);
+  markChapter();
+}

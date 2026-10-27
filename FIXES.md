@@ -13,6 +13,29 @@ Entries are newest first.
 
 ---
 
+## 2026-10-27 · One path through the walkthrough
+
+**Moves published numbers: no.** After Alex Steele's October 24 review, the
+three teaching editions became one sequenced walkthrough: a Start here block
+(who it is for, what the reader will be able to do, what this is not, one
+audience picker), Hector and Bob, the Option A or Option B? page as chapter 2,
+the five clinical notes promoted to chapter 3, the methods depth as chapter 4,
+the kit as chapter 5 and a conclusion as chapter 6, with a chapter strip and a
+next link on every chapter. `tutorial/index.html` is now the single source of
+the published story page; the build-time rewriting layers
+(`clinical/quiet-narrative.mjs`, the transforms in the clinical-edition build)
+and `scripts/build-tutorial-v3.mjs` are removed, and `/tutorial_v3/`,
+`/clinical/` and `/oncology/` redirect into the path. The root methods page
+and the walkthrough now link both ways. Reasoning and the review itself:
+[`development/2026_10_27_one-path-walkthrough.md`](development/2026_10_27_one-path-walkthrough.md).
+Pinned by `tests/test_tutorial_variants.mjs` (seven chapters on both strips,
+cross-page anchors, one picker, the five clinical readings once, the redirect).
+Validation: `npm test`, `npm run test:clinical`, the variants, intro, FIXES-order
+and hygiene suites, and renders of both pages at 390 px and 1280 px. No
+simulation, data, figure, R or class-kit changes.
+
+---
+
 ## 2026-10-19 · Published CAST citation
 
 **Moves published numbers: no.** README and preferred CFF citation now use the

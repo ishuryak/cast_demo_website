@@ -63,7 +63,7 @@ function render(){
   $('selected-interval').textContent=`95% interval: ${percentagePoints(low)} to ${percentagePoints(high)} pp`;
   $('extra-values').replaceChildren();
   for(const [shown,label,value] of [[state.fit,'CAST fit',fit],[state.truth,'Known truth',truth]])if(shown){const p=document.createElement('p');p.textContent=`${label}: ${percentagePoints(value)} pp`;$('extra-values').append(p);}
-  $('interpretation').textContent=low<=0&&high>=0?'This interval includes zero. The point estimate alone does not establish a benefit or harm at this horizon.':estimate>0?'The adjusted estimate favors treatment at this horizon, under the causal assumptions.':'The adjusted estimate favors control at this horizon, under the causal assumptions.';
+  $('interpretation').textContent=state.unmeas>0?'Hidden confounding is active: this adjusted estimate should not be read as the causal effect.':low<=0&&high>=0?'This interval includes zero. The point estimate alone does not establish a benefit or harm at this horizon.':estimate>0?'The adjusted estimate favors treatment at this horizon, under the causal assumptions.':'The adjusted estimate favors control at this horizon, under the causal assumptions.';
   $('n-label').textContent=s.meta.n.toLocaleString();
   for(const b of $('horizons').children)b.setAttribute('aria-pressed',String(Number(b.dataset.horizon)===state.horizon));
   let observation='Select a horizon, then reveal the CAST trajectory to connect the snapshots.';
@@ -79,7 +79,7 @@ function render(){
 function openAnchor(){let id;try{id=decodeURIComponent(location.hash.slice(1));}catch{return;}const target=document.getElementById(id);if(!target)return;if(target.matches('details'))target.open=true;let parent=target.parentElement;while(parent){if(parent.matches('details'))parent.open=true;parent=parent.parentElement;}}
 async function loadArt(){try{const res=await fetch('assets/art/manifest.json');if(!res.ok)return;const art=await res.json();if(!art.hero?.src||!art.hero.alt)return;const root=new URL('assets/art/',location.href),url=new URL(art.hero.src,root);if(url.origin!==root.origin||!url.pathname.startsWith(root.pathname))return;const img=new Image();img.alt=art.hero.alt;img.decoding='async';img.onload=()=>{$('hero-art-fallback').replaceChildren(img);};img.src=url.href;}catch{/* The complete baseline schematic remains visible if optional artwork is absent. */}}
 async function start(){
-  try{const response=await fetch('data/scenarios.json');if(!response.ok)throw new Error(`HTTP ${response.status}`);data=validateData(await response.json());state=parseState(location.search,data);
+  try{const response=await fetch('data/scenarios.json');if(!response.ok)throw new Error(`HTTP ${response.status}`);data=validateData(await response.json());state=parseState(location.search,data);const initial=new URLSearchParams(location.search);if(!initial.has('fit'))state.fit=true;if(!initial.has('truth'))state.truth=true;
     data.horizons.forEach(t=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.dataset.horizon=t;b.setAttribute('aria-label',`${t} months`);b.addEventListener('click',()=>{stopPlay();update({horizon:t});});$('horizons').append(b);});
     for(const id of ['shape','conf','unmeas'])$(id).addEventListener('change',()=>{stopPlay();update({[id]:id==='shape'?$(id).value:Number($(id).value)});});
     for(const [id,name] of [['show-fit','fit'],['show-truth','truth'],['show-naive','naive']])$(id).addEventListener('change',()=>update({[name]:$(id).checked}));
