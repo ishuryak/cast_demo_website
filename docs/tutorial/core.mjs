@@ -1,5 +1,5 @@
 export const BASELINE = '43a00101100801eb6c048800d24788455fac0f8b';
-export const DEFAULT_STATE = Object.freeze({shape:'reversal',conf:1,unmeas:0,horizon:36,fit:false,truth:false,naive:false});
+export const DEFAULT_STATE = Object.freeze({shape:'reversal',conf:1,unmeas:0,horizon:36,fit:false,truth:false,naive:false,cox:false});
 export function scenarioKey(state) {
   return `${state.shape}_conf${Number(state.conf).toFixed(2)}_unmeas${Number(state.unmeas).toFixed(2)}`;
 }
@@ -14,7 +14,7 @@ export function parseState(search, data) {
     conf:pick('conf',data.conf_grid,DEFAULT_STATE.conf,true),
     unmeas:pick('unmeas',data.unmeas_grid,DEFAULT_STATE.unmeas,true),
     horizon:pick('horizon',data.horizons,DEFAULT_STATE.horizon,true),
-    fit:p.get('fit')==='1',truth:p.get('truth')==='1',naive:p.get('naive')==='1'
+    fit:p.get('fit')==='1',truth:p.get('truth')==='1',naive:p.get('naive')==='1',cox:p.get('cox')==='1'
   };
 }
 export function stateSearch(state) {
@@ -48,7 +48,7 @@ export function selectedValues(data,state) {
   return {scenario,index,estimate:scenario.csf.ate[index],low:scenario.csf.lo[index],high:scenario.csf.hi[index],truth:scenario.truth[index],fit:scenario.cast.fit[index]};
 }
 export function plotDomain(s) {
-  const values=[0,...s.csf.lo,...s.csf.hi,...s.truth,...s.naive,...s.cast.curve_lo,...s.cast.curve_hi];
+  const values=[0,...s.csf.lo,...s.csf.hi,...s.truth,...s.naive,...s.cast.curve_lo,...s.cast.curve_hi,...(s.cox?.ate??[])];
   const lo=Math.min(...values),hi=Math.max(...values),pad=Math.max((hi-lo)*.12,.015);
   return [lo-pad,hi+pad];
 }
