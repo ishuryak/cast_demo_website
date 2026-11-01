@@ -189,11 +189,14 @@ summary>span{font-size:14px}
 .decision-figure{max-width:1100px;margin:36px auto 0}
 .decision-figure img{background:#fff;border:1px solid var(--line);border-radius:4px;padding:10px}
 .still-figure img{border-radius:4px}
+.computed-figure{margin:44px 0}
+.computed-figure img{background:transparent}
+.reading .breakout{width:min(960px,calc(100vw - 44px));margin-inline:calc(50% - min(480px,50vw - 22px))}
 .subsection{padding-inline:0;margin-top:64px}
 .subsection h3,.section-lead>h3,#longitudinal>h3{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3vw,34px);line-height:1.15;letter-spacing:-.025em;margin:0 0 18px}
 #which-tool .section-lead+.still-figure,#slices-to-curve .still-figure{margin-top:36px}
 #why-causal .hero-art{margin-top:40px;transform:none}
-@media(max-width:600px){.tool-table{grid-template-columns:1fr;gap:22px}}
+@media(max-width:600px){.tool-table{grid-template-columns:1fr;gap:22px}.computed-figure>a{overflow-x:auto;-webkit-overflow-scrolling:touch}.computed-figure img{min-width:720px}}
 
 .chart .cox-line{fill:none;stroke:#8a6d3b;stroke-width:1.8;stroke-dasharray:2 4}
 .legend-line.cox{border-top:2px dotted #8a6d3b}

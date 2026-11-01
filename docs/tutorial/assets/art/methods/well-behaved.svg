@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 370" width="960" height="370" role="img" aria-labelledby="wb-title wb-desc" font-family="'DM Sans',Arial,sans-serif" font-size="12">
+<title id="wb-title">The well-behaved case: a constant hazard ratio shown three ways</title>
+<desc id="wb-desc">Left: survival curves for treated and control separate steadily. Middle: log(−log S) against log t gives two parallel lines whose gap is log HR at every time. Right: the survival difference that the one number implies rises and then narrows as both groups run out of survivors.</desc>
+<style>text{fill:#656c68}.t{fill:#242a29;font-size:13px;font-weight:600}.ax{stroke:#dcded5;stroke-width:1}.grid{stroke:#dcded5;stroke-width:.7}.c0{fill:none;stroke:#a65736;stroke-width:2.2}.c1{fill:none;stroke:#087e8b;stroke-width:2.2}.d{fill:none;stroke:#242a29;stroke-width:2.2}.lab1{fill:#087e8b;font-weight:600}.lab0{fill:#a65736;font-weight:600}.note{fill:#242a29}.arrow{stroke:#242a29;stroke-width:1.2;fill:none}.dot{fill:#242a29}</style>
+<text x="44.00" y="24.00" class="t">Survival curves separate steadily</text>
+<line class="grid" x1="44.00" x2="279.33" y1="324.00" y2="324.00"/>
+<text x="36.00" y="328.00" text-anchor="end">0</text>
+<line class="grid" x1="44.00" x2="279.33" y1="257.00" y2="257.00"/>
+<line class="grid" x1="44.00" x2="279.33" y1="190.00" y2="190.00"/>
+<text x="36.00" y="194.00" text-anchor="end">0.5</text>
+<line class="grid" x1="44.00" x2="279.33" y1="123.00" y2="123.00"/>
+<line class="grid" x1="44.00" x2="279.33" y1="56.00" y2="56.00"/>
+<text x="36.00" y="60.00" text-anchor="end">1</text>
+<text x="44.00" y="342.00" text-anchor="middle">0</text>
+<text x="114.60" y="342.00" text-anchor="middle">36</text>
+<text x="185.20" y="342.00" text-anchor="middle">72</text>
+<text x="255.80" y="342.00" text-anchor="middle">108</text>
+<text x="161.67" y="360.00" text-anchor="middle">months</text>
+<path class="c0" d="M44.00 56.00 L46.94 60.59 L49.88 65.75 L52.83 71.07 L55.77 76.46 L58.71 81.87 L61.65 87.27 L64.59 92.64 L67.53 97.96 L70.47 103.22 L73.42 108.42 L76.36 113.54 L79.30 118.59 L82.24 123.56 L85.18 128.44 L88.13 133.24 L91.07 137.95 L94.01 142.58 L96.95 147.11 L99.89 151.56 L102.83 155.91 L105.78 160.18 L108.72 164.36 L111.66 168.45 L114.60 172.46 L117.54 176.37 L120.48 180.20 L123.42 183.95 L126.37 187.61 L129.31 191.19 L132.25 194.68 L135.19 198.10 L138.13 201.44 L141.07 204.69 L144.02 207.87 L146.96 210.98 L149.90 214.01 L152.84 216.96 L155.78 219.85 L158.72 222.66 L161.67 225.41 L164.61 228.09 L167.55 230.70 L170.49 233.24 L173.43 235.73 L176.38 238.15 L179.32 240.50 L182.26 242.80 L185.20 245.04 L188.14 247.23 L191.08 249.35 L194.02 251.42 L196.97 253.44 L199.91 255.41 L202.85 257.32 L205.79 259.19 L208.73 261.00 L211.67 262.77 L214.62 264.49 L217.56 266.17 L220.50 267.80 L223.44 269.39 L226.38 270.93 L229.32 272.44 L232.27 273.90 L235.21 275.33 L238.15 276.71 L241.09 278.06 L244.03 279.37 L246.97 280.65 L249.92 281.89 L252.86 283.10 L255.80 284.27 L258.74 285.42 L261.68 286.53 L264.63 287.61 L267.57 288.66 L270.51 289.68 L273.45 290.67 L276.39 291.64 L279.33 292.58"/>
+<path class="c1" d="M44.00 56.00 L46.94 58.31 L49.88 60.92 L52.83 63.65 L55.77 66.44 L58.71 69.27 L61.65 72.12 L64.59 74.99 L67.53 77.87 L70.47 80.75 L73.42 83.63 L76.36 86.51 L79.30 89.37 L82.24 92.23 L85.18 95.07 L88.13 97.89 L91.07 100.70 L94.01 103.50 L96.95 106.27 L99.89 109.02 L102.83 111.76 L105.78 114.47 L108.72 117.16 L111.66 119.83 L114.60 122.47 L117.54 125.09 L120.48 127.69 L123.42 130.26 L126.37 132.81 L129.31 135.34 L132.25 137.84 L135.19 140.31 L138.13 142.76 L141.07 145.19 L144.02 147.59 L146.96 149.96 L149.90 152.31 L152.84 154.63 L155.78 156.93 L158.72 159.20 L161.67 161.45 L164.61 163.67 L167.55 165.87 L170.49 168.04 L173.43 170.19 L176.38 172.31 L179.32 174.41 L182.26 176.48 L185.20 178.53 L188.14 180.56 L191.08 182.56 L194.02 184.54 L196.97 186.49 L199.91 188.42 L202.85 190.32 L205.79 192.21 L208.73 194.07 L211.67 195.90 L214.62 197.71 L217.56 199.51 L220.50 201.27 L223.44 203.02 L226.38 204.74 L229.32 206.45 L232.27 208.13 L235.21 209.79 L238.15 211.42 L241.09 213.04 L244.03 214.64 L246.97 216.21 L249.92 217.77 L252.86 219.30 L255.80 220.82 L258.74 222.31 L261.68 223.79 L264.63 225.24 L267.57 226.68 L270.51 228.10 L273.45 229.50 L276.39 230.88 L279.33 232.24"/>
+<text x="277.33" y="224.24" class="lab1" text-anchor="end">treated</text>
+<text x="277.33" y="308.58" class="lab0" text-anchor="end">control</text>
+<text x="51.84" y="278.44" class="note" font-size="15" font-weight="600">HR = 0.5</text>
+<text x="51.84" y="294.44" class="note">one number, whole follow-up</text>
+<text x="375.33" y="24.00" class="t">log(−log S): a constant gap</text>
+<line class="grid" x1="375.33" x2="610.67" y1="297.99" y2="297.99"/>
+<text x="367.33" y="301.99" text-anchor="end">-3</text>
+<line class="grid" x1="375.33" x2="610.67" y1="236.92" y2="236.92"/>
+<text x="367.33" y="240.92" text-anchor="end">-2</text>
+<line class="grid" x1="375.33" x2="610.67" y1="175.85" y2="175.85"/>
+<text x="367.33" y="179.85" text-anchor="end">-1</text>
+<line class="grid" x1="375.33" x2="610.67" y1="114.78" y2="114.78"/>
+<text x="367.33" y="118.78" text-anchor="end">0</text>
+<text x="375.33" y="342.00" text-anchor="middle">6</text>
+<text x="429.78" y="342.00" text-anchor="middle">12</text>
+<text x="516.09" y="342.00" text-anchor="middle">36</text>
+<text x="602.39" y="342.00" text-anchor="middle">108</text>
+<text x="493.00" y="360.00" text-anchor="middle">months, log scale</text>
+<path class="c0" d="M375.33 269.46 L610.67 68.21"/>
+<path class="c1" d="M375.33 311.79 L610.67 110.54"/>
+<path class="arrow" d="M429.78 222.89L429.78 265.22"/>
+<path class="arrow" d="M425.78 227.89L429.78 222.89L433.78 227.89"/>
+<path class="arrow" d="M425.78 260.22L429.78 265.22L433.78 260.22"/>
+<path class="arrow" d="M556.22 114.78L556.22 157.11"/>
+<path class="arrow" d="M552.22 119.78L556.22 114.78L560.22 119.78"/>
+<path class="arrow" d="M552.22 152.11L556.22 157.11L560.22 152.11"/>
+<text x="610.67" y="290.41" class="note" text-anchor="end" font-weight="600">gap = log 0.5</text>
+<text x="610.67" y="306.41" class="note" text-anchor="end">the same at every t</text>
+<text x="608.67" y="126.54" class="lab1" text-anchor="end">treated</text>
+<text x="608.67" y="60.21" class="lab0" text-anchor="end">control</text>
+<text x="706.67" y="24.00" class="t">The difference one number implies</text>
+<line class="grid" x1="706.67" x2="942.00" y1="324.00" y2="324.00"/>
+<text x="698.67" y="328.00" text-anchor="end">0</text>
+<line class="grid" x1="706.67" x2="942.00" y1="234.67" y2="234.67"/>
+<text x="698.67" y="238.67" text-anchor="end">10</text>
+<line class="grid" x1="706.67" x2="942.00" y1="145.33" y2="145.33"/>
+<text x="698.67" y="149.33" text-anchor="end">20</text>
+<line class="grid" x1="706.67" x2="942.00" y1="56.00" y2="56.00"/>
+<text x="698.67" y="60.00" text-anchor="end">30</text>
+<text x="706.67" y="342.00" text-anchor="middle">0</text>
+<text x="777.27" y="342.00" text-anchor="middle">36</text>
+<text x="847.87" y="342.00" text-anchor="middle">72</text>
+<text x="918.47" y="342.00" text-anchor="middle">108</text>
+<text x="824.33" y="360.00" text-anchor="middle">months</text>
+<text x="706.67" y="42.00" font-size="11">points more alive, treated minus control</text>
+<path class="d" d="M706.67 324.00 L709.61 316.38 L712.55 307.90 L715.49 299.24 L718.43 290.57 L721.38 281.97 L724.32 273.49 L727.26 265.18 L730.20 257.04 L733.14 249.11 L736.08 241.39 L739.02 233.89 L741.97 226.61 L744.91 219.57 L747.85 212.76 L750.79 206.18 L753.73 199.84 L756.67 193.74 L759.62 187.86 L762.56 182.22 L765.50 176.81 L768.44 171.62 L771.38 166.66 L774.32 161.91 L777.27 157.38 L780.21 153.07 L783.15 148.96 L786.09 145.05 L789.03 141.34 L791.98 137.83 L794.92 134.51 L797.86 131.37 L800.80 128.42 L803.74 125.65 L806.68 123.04 L809.63 120.61 L812.57 118.34 L815.51 116.23 L818.45 114.27 L821.39 112.46 L824.33 110.80 L827.27 109.29 L830.22 107.91 L833.16 106.66 L836.10 105.55 L839.04 104.56 L841.98 103.69 L844.92 102.94 L847.87 102.30 L850.81 101.78 L853.75 101.36 L856.69 101.04 L859.63 100.82 L862.58 100.70 L865.52 100.67 L868.46 100.73 L871.40 100.87 L874.34 101.10 L877.28 101.41 L880.23 101.79 L883.17 102.25 L886.11 102.78 L889.05 103.37 L891.99 104.03 L894.93 104.75 L897.88 105.54 L900.82 106.38 L903.76 107.27 L906.70 108.22 L909.64 109.21 L912.58 110.26 L915.52 111.35 L918.47 112.48 L921.41 113.65 L924.35 114.87 L927.29 116.12 L930.23 117.40 L933.17 118.72 L936.12 120.07 L939.06 121.45 L942.00 122.85"/>
+<circle class="dot" cx="730.20" cy="257.04" r="3.5"/>
+<circle class="dot" cx="777.27" cy="157.38" r="3.5"/>
+<circle class="dot" cx="824.33" cy="110.80" r="3.5"/>
+<circle class="dot" cx="871.40" cy="100.87" r="3.5"/>
+<circle class="dot" cx="918.47" cy="112.48" r="3.5"/>
+<text x="938.08" y="207.87" text-anchor="end">narrows as both groups</text>
+<text x="938.08" y="223.87" text-anchor="end">run out of survivors</text>
+</svg>
