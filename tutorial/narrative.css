@@ -171,3 +171,27 @@ summary>span{font-size:14px}
 }
 @media(prefers-reduced-motion:reduce){.card-face.is-turning{animation:none}}
 @media print{.turn-card,.profile-controls{display:none}.card-face[hidden]{display:block!important}.profile-lab{background:white;break-inside:avoid}}
+
+/* Methods-choice edition (2026-10-31): the two-tools film, the tool comparison,
+   the three checks, figure placeholders and the relegated foundations. */
+.video-figure{margin:40px auto 0;max-width:960px}
+.video-figure video{display:block;width:100%;height:auto;border-radius:4px;background:#1c1a17}
+.video-figure figcaption{font-size:14px;line-height:1.7;color:var(--muted);margin-top:18px;text-align:center}
+.tool-table{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:40px;font-size:15px}
+.tool-table>div{border-top:2px solid var(--line);padding-top:18px}
+.tool-table h3{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.15;letter-spacing:-.02em;margin:0 0 6px}
+.tool-table dl{margin:0}
+.tool-table dt{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--teal-dark);font-weight:700;margin-top:16px}
+.tool-table dd{margin:4px 0 0;line-height:1.65}
+.check-list{list-style:none;padding:0;margin:28px 0 8px;display:grid;gap:16px}
+.check-list li{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:baseline;font-size:15px;line-height:1.65}
+.check-list li>span{font-family:var(--serif);font-size:24px;color:var(--teal);min-width:22px}
+.placeholder-figure{margin:34px 0;border:1.5px dashed var(--line);border-radius:4px;padding:26px 28px;background:var(--teal-wash);color:var(--muted);font-size:14px;line-height:1.7}
+.placeholder-figure strong{display:block;color:var(--ink);font-size:11px;text-transform:uppercase;letter-spacing:.14em;margin-bottom:8px}
+.still-figure{max-width:960px;margin-inline:auto}
+.still-figure img{border-radius:4px}
+.subsection{padding-inline:0;margin-top:64px}
+.subsection h3,.section-lead>h3,#longitudinal>h3{font-family:var(--serif);font-weight:400;font-size:clamp(26px,3vw,34px);line-height:1.15;letter-spacing:-.025em;margin:0 0 18px}
+#which-tool .section-lead+.still-figure,#slices-to-curve .still-figure{margin-top:36px}
+#why-causal .hero-art{margin-top:40px;transform:none}
+@media(max-width:600px){.tool-table{grid-template-columns:1fr;gap:22px}.video-figure{margin-top:28px}}

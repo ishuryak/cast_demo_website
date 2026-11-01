@@ -22,6 +22,9 @@ for(const item of ['index.html','style.css','narrative.css','app.mjs','narrative
 // Keep artwork sources and collaboration notes out of the public build.
 await mkdir(path.join(root,'dist/assets/art'),{recursive:true});
 for(const item of ['manifest.json','fundamentals.html','hector-counterfactual.png','cohort-fork.svg','follow-up-sketchbook.svg','hidden-thread.svg','time-slices.png','longitudinal-policy.png','methods-landscape.png','traditional-missingness.png','inference-contract.png'])await cp(path.join(root,'assets/art',item),path.join(root,'dist/assets/art',item));
+// The methods-choice edition: the two-tools film, its poster and three stills.
+await mkdir(path.join(root,'dist/assets/art/methods'),{recursive:true});
+for(const item of ['two-tools.mp4','two-tools-poster.jpg','one-ratio-many-people.jpg','scale-matters.jpg','slices-to-curve.jpg'])await cp(path.join(root,'assets/art/methods',item),path.join(root,'dist/assets/art/methods',item));
 await mkdir(path.join(root,'dist/labs'),{recursive:true});
 for(const item of ['cast-exercise.R','README.md'])await cp(path.join(root,'labs',item),path.join(root,'dist/labs',item));
 for(const item of kitFiles){const destination=path.join(root,'dist/class-kit',item);await mkdir(path.dirname(destination),{recursive:true});await cp(path.join(root,'class-kit',item),destination);}
