@@ -1,3 +1,4 @@
+import { findGuardedTerms } from "../guard_terms.mjs";
 // Rules every quiz bank must meet. Shared by build_bank.mjs and the tests, so
 // the builder cannot write a bank the tests would reject.
 
@@ -37,7 +38,7 @@ const NOT_ACRONYMS = new Set(["Gy", "II", "III", "IIIA", "IIIB", "US", "A", "B",
 // Strip tags, then decode the few entities the primer's reference list uses, so
 // the quiz (which escapes on output) never shows "&amp;amp;".
 const plain = (s) => String(s).replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
-const BANNED = ["PSPS", "Georg", "RADCURE", "pypsps", "DeStephano", "Unpublished", "highlight", "underscore", "delve", "leverage", "pivotal", "crucial"];
+const BANNED = ["Unpublished", "highlight", "underscore", "delve", "leverage", "pivotal", "crucial"];
 
 export function primerRefs(html) {
   return [...html.matchAll(/<li id="ref-(\d+)">([\s\S]*?)<\/li>/g)].map((m) => {
@@ -78,6 +79,7 @@ export function validateBank(bank, primer) {
     if (/—/.test(t)) errors.push(`${q.id}: em dash`);
     if (/[a-z0-9)]; [a-zA-Z]/.test(t)) errors.push(`${q.id}: semicolon in prose`);
     for (const b of BANNED) if (t.toLowerCase().includes(b.toLowerCase())) errors.push(`${q.id}: banned word or name "${b}"`);
+    if (findGuardedTerms(t).length) errors.push(`${q.id}: contains a guarded name or number (see guard_terms.mjs)`);
     const glossed = new Set(GLOSSARY.map(([g]) => g));
     for (const m of t.matchAll(/\b[A-Z][A-Za-z0-9]*[A-Z][A-Za-z0-9]*\b/g)) {
       const tok = m[0].replace(/s$/, "");

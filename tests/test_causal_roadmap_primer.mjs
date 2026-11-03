@@ -9,6 +9,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runSim1, runSim2, runSim3, SIM1_INDIRECT, SIM2 } from "../docs/causal-roadmap/sims.mjs";
 import { trialArgument, OPTIONS, LEANS, classifyInterval } from "../docs/causal-roadmap/trial_argument.mjs";
+import { findGuardedTerms } from "../docs/causal-roadmap/guard_terms.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = join(root, "docs", "causal-roadmap");
@@ -71,9 +72,8 @@ const sectionHtml = (id) => { const a = html.indexOf(`id="${id}"`); return html.
   const listed = [...html.matchAll(/<li id="ref-(\d+)"/g)].map((m) => +m[1]);
   check("page: citations appear in first-use order", order.every((n, i) => n === i + 1), order.join(","));
   check("page: every listed reference is cited and every cite is listed", listed.length === order.length && listed.every((n) => order.includes(n)));
-  const forbidden = ["PSPS", "Georg", "RADCURE", "pypsps", "23,0", "1.4 months", "DeStephano", "Unpublished"];
-  const hit = forbidden.filter((f) => (html + app).includes(f));
-  check("page: no unpublished project material or names", hit.length === 0, hit.join(", "));
+  const hit = findGuardedTerms(html + app + readFileSync(join(dir, "trial_argument.mjs"), "utf8"));
+  check("page: no unpublished project material or names (hashed guard list)", hit.length === 0 && !/Unpublished/.test(html + app), `${hit.length} hit(s)`);
   const hosts = [...html.matchAll(/(?:href|src)="(https?:\/\/[^/"]+)/g)].map((m) => m[1]);
   const allowed = ["https://ishuryak.github.io", "https://doi.org", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://miguelhernan.org",
     "https://www.fda.gov", "https://arxiv.org", "https://bayes.cs.ucla.edu", "https://www.fox.temple.edu", "https://hsph.harvard.edu",
