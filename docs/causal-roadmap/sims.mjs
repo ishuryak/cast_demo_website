@@ -136,8 +136,8 @@ function split(data, frac, R) {
 //
 //   X  frailty score at diagnosis (higher = frailer), standard normal
 //   T  hypofractionation; frailer patients are more likely to get it
-//   R  tumor response at 3 months; caused by T and by X
-//   Y  survival in months (continuous, no censoring)
+//   R  generic post-treatment variable, caused by T and by X
+//   Y  continuous toy outcome on a month-like scale, no censoring
 //
 //   R = M*T - 0.5*X + u          Y = 48 - 12*X + bDirect*T + G*R + e
 //
@@ -188,7 +188,7 @@ export function runSim1(seed = 20260918) {
 //       registry version of the data
 //   C1..C3  recorded covariates (age, comorbidity, stage on a standardized scale)
 //   T   hypofractionation; more likely when PS is worse
-//   Y   survival in months; worse when PS is worse
+//   Y   continuous toy outcome on a month-like scale, worse when PS is worse
 //
 // strength (0 to 1) scales both arrows out of PS together.
 // =====================================================================
@@ -238,7 +238,12 @@ function standardizeCols(Xtr) {
 // Lasso by coordinate descent on the Gram matrix, for a whole lambda path.
 // penalty[j] = 0 leaves column j unpenalized. Returns one fit per lambda with
 // coefficients on the ORIGINAL scale plus the intercept.
-export function lassoPath(Xtr, ytr, lambdas, penalty) {
+// opts.maxIter and opts.tol control coordinate descent. Every fit reports
+// whether it converged, how many sweeps it took, and its standardized KKT
+// residual (largest violation of the lasso optimality conditions), and adds
+// them to opts.stats when given, so nonconvergence can never pass silently.
+export function lassoPath(Xtr, ytr, lambdas, penalty, opts = {}) {
+  const maxIter = opts.maxIter ?? 500, tol = opts.tol ?? 1e-7, stats = opts.stats;
   const n = Xtr.length, p = Xtr[0].length;
   const { mean, sd } = standardizeCols(Xtr);
   const ym = ytr.reduce((s, v) => s + v, 0) / n;
@@ -260,7 +265,9 @@ export function lassoPath(Xtr, ytr, lambdas, penalty) {
   const grad = Float64Array.from(c); // c - G b, with b = 0
   const out = [];
   for (const lam of lambdas) {
-    for (let it = 0; it < 500; it++) {
+    let converged = false, iterations = 0;
+    for (let it = 0; it < maxIter; it++) {
+      iterations = it + 1;
       let maxDelta = 0;
       for (let j = 0; j < p; j++) {
         const rho = grad[j] + G[j][j] * b[j];
@@ -273,11 +280,23 @@ export function lassoPath(Xtr, ytr, lambdas, penalty) {
           if (Math.abs(delta) > maxDelta) maxDelta = Math.abs(delta);
         }
       }
-      if (maxDelta < 1e-7) break;
+      if (maxDelta < tol) { converged = true; break; }
+    }
+    let kkt = 0;
+    for (let j = 0; j < p; j++) {
+      const thr = lam * penalty[j];
+      const viol = b[j] !== 0 ? Math.abs(grad[j] - thr * Math.sign(b[j])) : Math.max(0, Math.abs(grad[j]) - thr);
+      if (viol > kkt) kkt = viol;
+    }
+    if (stats) {
+      stats.fits++;
+      if (!converged) stats.unconverged++;
+      stats.maxIterations = Math.max(stats.maxIterations, iterations);
+      stats.maxKKT = Math.max(stats.maxKKT, kkt);
     }
     const beta = Array.from(b, (v, j) => v / sd[j]);
     const intercept = ym - beta.reduce((s, v, j) => s + v * mean[j], 0);
-    out.push({ lambda: lam, beta, intercept });
+    out.push({ lambda: lam, beta, intercept, converged, iterations, kkt });
   }
   return out;
 }
@@ -306,13 +325,13 @@ function foldIds(n, k, R) {
   return ids;
 }
 
-function cvLambda(X, y, lambdas, penalty, folds) {
+function cvLambda(X, y, lambdas, penalty, folds, opts) {
   const mse = new Float64Array(lambdas.length);
   const k = Math.max(...folds) + 1;
   for (let f = 0; f < k; f++) {
     const trX = [], trY = [], teX = [], teY = [];
     X.forEach((r, i) => (folds[i] === f ? (teX.push(r), teY.push(y[i])) : (trX.push(r), trY.push(y[i]))));
-    const path = lassoPath(trX, trY, lambdas, penalty);
+    const path = lassoPath(trX, trY, lambdas, penalty, opts);
     path.forEach((fit, li) => {
       const pr = predictLin(teX, fit);
       for (let i = 0; i < teY.length; i++) mse[li] += (teY[i] - pr[i]) ** 2 / y.length;
@@ -323,8 +342,26 @@ function cvLambda(X, y, lambdas, penalty, folds) {
   return best;
 }
 
-export function runSim3(seed = 20260914) {
+// Partialling-out estimate from cross-fitted residuals: theta regresses outcome
+// residuals on treatment residuals, with a heteroskedasticity-robust (sandwich)
+// standard error. This targets the effect in a partially linear model, which is
+// the average effect here because the simulated effect is constant.
+export function dmlFromResiduals(resY, resT) {
+  const n = resY.length;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) { num += resT[i] * resY[i]; den += resT[i] * resT[i]; }
+  const theta = num / den;
+  let v = 0;
+  for (let i = 0; i < n; i++) v += (resT[i] * (resY[i] - theta * resT[i])) ** 2;
+  const se = Math.sqrt(v / n) / (den / n) / Math.sqrt(n);
+  return { theta, se };
+}
+
+export const SIM3_SEED = 20260914;
+export function runSim3(seed = SIM3_SEED, solver = {}) {
   const S = SIM3, R = rng(seed);
+  const stats = { fits: 0, unconverged: 0, maxIterations: 0, maxKKT: 0 };
+  const o = { ...solver, stats };
   const p = S.pStrong + S.pWeak + S.pNoise;
   const X = [], T = [], Y = [];
   for (let i = 0; i < S.n; i++) {
@@ -341,43 +378,59 @@ export function runSim3(seed = 20260914) {
   X.forEach((x, i) => (isTrain[i] ? (trX.push([T[i], ...x]), trY.push(Y[i])) : (teX.push([T[i], ...x]), teY.push(Y[i]))));
   const pen = [0, ...Array(p).fill(1)]; // treatment column unpenalized
   const lambdas = lambdaGrid(trX, trY, S.nLambda, pen);
-  const path = lassoPath(trX, trY, lambdas, pen).map((fit) => ({
+  const path = lassoPath(trX, trY, lambdas, pen, o).map((fit) => ({
     lambda: fit.lambda, estimate: fit.beta[0], r2: r2(teY, predictLin(teX, fit)),
   }));
   const folds = foldIds(trX.length, S.folds, R);
-  const cvIndex = cvLambda(trX, trY, lambdas, pen, folds);
+  const cvIndex = cvLambda(trX, trY, lambdas, pen, folds, o);
 
   // Cross-fitted partialling out (DML, linear case) on the full cohort, using
   // the same lasso for both nuisance regressions, each tuned by cross-validation.
   const penX = Array(p).fill(1);
   const allFolds = foldIds(S.n, S.folds, R);
   const lamY = lambdaGrid(X, Y, S.nLambda, penX), lamT = lambdaGrid(X, T, S.nLambda, penX);
-  const bestY = lamY[cvLambda(X, Y, lamY, penX, allFolds)];
-  const bestT = lamT[cvLambda(X, T, lamT, penX, allFolds)];
+  const bestY = lamY[cvLambda(X, Y, lamY, penX, allFolds, o)];
+  const bestT = lamT[cvLambda(X, T, lamT, penX, allFolds, o)];
   const resY = new Float64Array(S.n), resT = new Float64Array(S.n);
   for (let f = 0; f < S.folds; f++) {
     const aX = [], aY = [], aT = [], idx = [];
     X.forEach((x, i) => (allFolds[i] === f ? idx.push(i) : (aX.push(x), aY.push(Y[i]), aT.push(T[i]))));
-    const fy = lassoPath(aX, aY, [bestY], penX)[0];
-    const ft = lassoPath(aX, aT, [bestT], penX)[0];
+    const fy = lassoPath(aX, aY, [bestY], penX, o)[0];
+    const ft = lassoPath(aX, aT, [bestT], penX, o)[0];
     for (const i of idx) {
       resY[i] = Y[i] - predictLin([X[i]], fy)[0];
       resT[i] = T[i] - predictLin([X[i]], ft)[0];
     }
   }
-  let num = 0, den = 0;
-  for (let i = 0; i < S.n; i++) { num += resT[i] * resY[i]; den += resT[i] * resT[i]; }
-  const theta = num / den;
-  let v = 0;
-  for (let i = 0; i < S.n; i++) v += (resT[i] * (resY[i] - theta * resT[i])) ** 2;
-  const se = Math.sqrt(v / S.n) / (den / S.n) / Math.sqrt(S.n);
+  const { theta, se } = dmlFromResiduals(resY, resT);
 
   const bestR2 = Math.max(...path.map((q) => q.r2));
   const nearBest = path.filter((q) => q.r2 >= bestR2 - 0.002);
   return {
-    truth: S.truth, p, n: S.n, nTrain: trX.length, nTest: teX.length,
+    seed, truth: S.truth, p, n: S.n, nTrain: trX.length, nTest: teX.length, solver: stats,
     path, cvIndex, bestR2,
     nearBest: { count: nearBest.length, min: Math.min(...nearBest.map((q) => q.estimate)), max: Math.max(...nearBest.map((q) => q.estimate)) },
     dml: { estimate: theta, se, lo: theta - 1.96 * se, hi: theta + 1.96 * se },
+  };
+}
+
+// The exact object written to sim3.json. Shared by build_sim3.mjs and the tests,
+// so the test compares every saved field, not a hand-picked subset.
+const round6 = (x) => Math.round(x * 1e6) / 1e6;
+export function serializeSim3(r) {
+  return {
+    note: "Synthetic data only. Regenerate with: node docs/causal-roadmap/build_sim3.mjs",
+    seed: r.seed,
+    design: SIM3,
+    truth: r.truth, n: r.n, p: r.p, nTrain: r.nTrain, nTest: r.nTest,
+    allocation: {
+      lassoPathFit: r.nTrain, predictionHoldout: r.nTest, dmlEstimation: r.n,
+      tuning: "Lasso path: penalty by 5-fold CV within the fitting sample. DML: one penalty per nuisance model chosen by 5-fold CV on the full cohort, then 5-fold cross-fitted nuisance fits.",
+    },
+    solver: { fits: r.solver.fits, unconverged: r.solver.unconverged, maxIterations: r.solver.maxIterations, maxKKT: Number(r.solver.maxKKT.toExponential(3)) },
+    cvIndex: r.cvIndex, bestR2: round6(r.bestR2),
+    nearBest: { count: r.nearBest.count, min: round6(r.nearBest.min), max: round6(r.nearBest.max) },
+    dml: Object.fromEntries(Object.entries(r.dml).map(([k, v]) => [k, round6(v)])),
+    path: r.path.map((q) => ({ lambda: round6(q.lambda), estimate: round6(q.estimate), r2: round6(q.r2) })),
   };
 }

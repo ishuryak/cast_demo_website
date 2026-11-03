@@ -34,7 +34,9 @@ export const GLOSSARY = [
 // Capitalized tokens that are not abbreviations needing a gloss.
 const NOT_ACRONYMS = new Set(["Gy", "II", "III", "IIIA", "IIIB", "US", "A", "B", "C", "D", "E", "I", "R2", "R²"]);
 
-const plain = (s) => String(s).replace(/<[^>]+>/g, "");
+// Strip tags, then decode the few entities the primer's reference list uses, so
+// the quiz (which escapes on output) never shows "&amp;amp;".
+const plain = (s) => String(s).replace(/<[^>]+>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
 const BANNED = ["PSPS", "Georg", "RADCURE", "pypsps", "DeStephano", "Unpublished", "highlight", "underscore", "delve", "leverage", "pivotal", "crucial"];
 
 export function primerRefs(html) {

@@ -14,8 +14,8 @@
 
 <header class="bar">
   <div class="bar-inner">
-    <p class="title"><a href="../">Causal roadmap primer</a> · Self-test</p>
-    <div class="stats" aria-live="polite">
+    <h1 class="title"><a href="../">Causal roadmap primer</a> · Self-test</h1>
+    <div class="stats">
       <span>Question <b id="qnum">0</b>/<b id="qtot">0</b></span>
       <span>Score <b id="score">0</b>/<b id="attempted">0</b></span>
     </div>
@@ -26,14 +26,16 @@
 <main id="app">
   <section class="intro" id="intro">
     <p class="eyebrow">Self-test · for medical students and residents</p>
-    <h1>Thirty questions on the causal roadmap</h1>
+    <h2 class="intro-title">Thirty questions on the causal roadmap</h2>
     <p>These questions follow the <a href="../">causal roadmap primer</a>, from choosing the kind of question to arguing for or against a new randomized trial. Most are short clinical scenarios built on the primer's running example, hypofractionated versus conventional fractionation. After each answer you see why it is right, the most tempting wrong answer explained, and the source. The final report lists your misses and links each one back to the section of the primer that covers it.</p>
-    <p>Questions and answer letters are shuffled on every start. Keys A to E pick an answer, and Enter submits or moves on.</p>
+    <p>Questions and answer letters are shuffled on every start. While you are in a question, keys A to E or the arrow keys pick an answer and Enter on an answer submits it. Links and buttons work as usual: Enter on a source link opens it and never scores or skips a question.</p>
     <details class="glossary"><summary>Abbreviations used in the questions</summary><dl id="glossary"></dl></details>
     <div class="actions"><button id="start" type="button" disabled>Loading questions…</button></div>
+    <p class="load-error" id="loaderr" role="alert" hidden></p>
     <p class="note">Written by Igor Shuryak, MD, PhD, with the help of an AI assistant (Anthropic Claude). Each answer was checked against a quotation from its full-text source. No patient data are used.</p>
   </section>
 </main>
+<p class="visually-hidden" id="status" role="status" aria-live="polite" aria-atomic="true"></p>
 
 <script src="quiz.js"></script>
 </body>

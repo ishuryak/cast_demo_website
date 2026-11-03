@@ -1,0 +1,42 @@
+# Checks for the resident causal roadmap primer and its self-test
+# (docs/causal-roadmap/). Separate from tests.yml so that workflow and the
+# CAST site it covers are untouched. Runs the three Node suites only: the
+# full-text evidence check needs copyrighted sources that are not in the
+# repository, and the browser play-through needs a local Chrome, so both run
+# locally (see development/2026_11_03_resident-guide-revision.md).
+name: causal-roadmap
+
+on:
+  push:
+    branches: ["causal-roadmap-**"]
+    paths: ["docs/causal-roadmap/**", "tests/test_causal_roadmap_*.mjs", ".github/workflows/causal-roadmap.yml"]
+  pull_request:
+    paths: ["docs/causal-roadmap/**", "tests/test_causal_roadmap_*.mjs", ".github/workflows/causal-roadmap.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  primer-and-quiz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+
+      - name: Primer content, layout and trial-argument invariants
+        run: node tests/test_causal_roadmap_primer.mjs
+
+      - name: Simulation numerics (full sim3.json comparison, solver and SE references)
+        run: node tests/test_causal_roadmap_numerics.mjs
+
+      - name: Quiz bank rules, references and keyboard contract
+        run: node tests/test_causal_roadmap_quiz.mjs
+
+      - name: Quiz bank is current with its source
+        run: |
+          cp docs/causal-roadmap/quiz/bank.json /tmp/bank.saved.json
+          node docs/causal-roadmap/quiz/build_bank.mjs docs/causal-roadmap/quiz/questions_source.json
+          diff -q /tmp/bank.saved.json docs/causal-roadmap/quiz/bank.json

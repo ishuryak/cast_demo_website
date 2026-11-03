@@ -1,0 +1,1006 @@
+{
+ "site": "causal_roadmap",
+ "title": "Causal Roadmap",
+ "questions": [
+  {
+   "id": "cr-01",
+   "topic": "Kinds of question",
+   "section": "questions",
+   "stem": "A resident has a national registry of patients treated with radiotherapy for prostate cancer. Which of these questions is a cause-and-effect question, which needs counterfactual prediction rather than description or prediction?",
+   "choices": [
+    "How did the share of hypofractionated courses change from 2010 to 2022?",
+    "Which patients starting radiotherapy will die within 3 years of starting?",
+    "Would patients aged 75 or older live longer if all received hypofractionation?",
+    "Which baseline variables best rank the patients by their 5-year death risk?",
+    "What share of patients aged 75 or older received hypofractionation, by region?"
+   ],
+   "answer": 2,
+   "explanation": "Only this question asks what would have happened if the world had been different, here if every older patient had received the same schedule. The 3-year death question is tempting because it involves survival and a model, but it asks for a prediction that is eventually observed for patients followed long enough and can be scored on held-out data with censoring handled, whereas the outcome under the schedule a patient did not receive is never observed.",
+   "refs": [
+    8
+   ],
+   "evidence": [
+    {
+     "ref": 8,
+     "file": "Hernan_2019.norm.txt",
+     "quote": "Counterfactual prediction is using data to predict certain features of the world if the world had been different, which is required in causal inference applications."
+    }
+   ]
+  },
+  {
+   "id": "cr-02",
+   "topic": "Prediction is not effect",
+   "section": "questions",
+   "stem": "A resident fits an XGBoost survival model with fractionation among many inputs. It reaches a high concordance index (C-index) on held-out patients, and the SHapley Additive exPlanations (SHAP) value for hypofractionation is favorable. She wants to report it as the survival benefit of hypofractionation. What is the main problem?",
+   "choices": [
+    "High held-out accuracy does not show that the SHAP value is a causal effect",
+    "The C-index is still too low for any input's SHAP value to be interpreted",
+    "SHAP values are unstable and must first be averaged over many random seeds",
+    "XGBoost cannot model censored survival, so a Cox model must be used instead",
+    "The model must first be retrained on a larger cohort until the SHAP value settles"
+   ],
+   "answer": 0,
+   "explanation": "The C-index scores how well the model predicts outcomes that are eventually observed, and that accuracy is not in question. It does not show that the SHAP value for hypofractionation is a causal effect, because the outcome under the other schedule is never observed for the same patient, and a causal reading depends on structural knowledge: which variables were adjusted for and whether any were affected by treatment. The point is narrower than saying no held-out check of a causal model is ever possible. Ordinary predictive accuracy simply does not validate a causal interpretation. A larger cohort or more seeds would make the same number more precise without making it causal.",
+   "refs": [
+    8
+   ],
+   "evidence": [
+    {
+     "ref": 8,
+     "file": "Hernan_2019.norm.txt",
+     "quote": "its ability to map the inputs to the outputs with a known accuracy in the studied population is not in question."
+    },
+    {
+     "ref": 8,
+     "file": "Hernan_2019.norm.txt",
+     "quote": "the validity of causal inferences depends on structural knowledge, which is usually incomplete, to supplement the information in the data. As a consequence, no algorithm can quantify the accuracy of causal inferences from observational data."
+    }
+   ]
+  },
+  {
+   "id": "cr-03",
+   "topic": "Precise question",
+   "section": "question",
+   "stem": "A resident writes the study question \"Is hypofractionation better for older patients?\" Which revision best turns it into a question that two analysts would answer by computing the same number?",
+   "choices": [
+    "Choose the learner with the best held-out accuracy before writing the question",
+    "Add every recorded variable so that no possible confounder can be left out",
+    "Replace \"better\" with \"statistically significant at the 0.05 level\"",
+    "Name the population, both schedules, the outcome, a horizon and the scale",
+    "Restrict the cohort to patients with complete data on every covariate"
+   ],
+   "answer": 3,
+   "explanation": "The causal roadmap starts by stating the components of the question: who is eligible, which strategies are compared, which outcome, by when, and on which scale. These components define the hypothetical experiment that the number answers. A significance threshold is tempting because it sounds precise, but it says nothing about what is being compared, in whom, or over what time.",
+   "refs": [
+    4,
+    9
+   ],
+   "evidence": [
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "Target Trial Emulation [17,32,42,43] frameworks prompt investigators to define components of a causal question and estimand."
+    },
+    {
+     "ref": 4,
+     "file": "Petersen_2014.norm.txt",
+     "quote": "The formal language of counterfactuals forces explicit statement of a hypothetical experiment to answer the scientific question of interest."
+    }
+   ]
+  },
+  {
+   "id": "cr-04",
+   "topic": "Data gaps",
+   "section": "question",
+   "stem": "A team plans a registry study of hypofractionation and overall survival. While listing what the question needs, they find the registry lacks performance status, which clinicians use when choosing a schedule and which also predicts survival. What is the best step at this planning stage?",
+   "choices": [
+    "Proceed, because in a large registry unmeasured factors average out",
+    "Record the gap now and plan a sensitivity analysis for this factor",
+    "Impute performance status from survival time, then adjust for it",
+    "Switch the outcome to recurrence, which removes the confounding",
+    "Use a neural network, which recovers missing factors from other inputs"
+   ],
+   "answer": 1,
+   "explanation": "A factor that affects both treatment and outcome but is not measured generally prevents identification unless it is measured or further assumptions are made, so the gap has to be named and its possible impact quantified later in a sensitivity analysis. A large sample does not help, because confounding bias does not shrink as the cohort grows. A more flexible learner cannot model a variable that is absent from the data.",
+   "refs": [
+    9
+   ],
+   "evidence": [
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "If we know that a key variable affecting treatment and outcomes or censoring and outcomes is not measured, then we generally cannot identify a causal effect from the observed data without measuring that variable or making additional assumptions"
+    },
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "Sensitivity analyses in Step 6 attempt to quantify how the estimated results (Step 5) would change if the untestable causal identification assumptions from Step 3 were violated"
+    }
+   ]
+  },
+  {
+   "id": "cr-05",
+   "topic": "Time zero and delayed entry",
+   "section": "trial",
+   "stem": "A registry study starts follow-up at the last fraction of radiotherapy. A conventional course lasts several weeks longer than a hypofractionated one, and patients who die during treatment are excluded. What is the main problem with this design?",
+   "choices": [
+    "Confounding by indication that is removed by adjusting for age and stage",
+    "No bias, because both groups are followed for the same five years afterward",
+    "Selection bias that must favor the conventional group in every cohort",
+    "Overadjustment bias from controlling for a factor caused by the schedule",
+    "Selection from requiring survival to a later start, with no fixed direction"
+   ],
+   "answer": 4,
+   "explanation": "Excluding deaths during treatment and starting the clock at the end of radiotherapy keeps only patients who survived to an arm-specific start, so each arm is conditioned on surviving a different interval. Hernán and colleagues show that resetting time zero after assignment generally biases the comparison, and that requiring patients to meet a criterion at the reset time zero adds selection bias, because the analysis includes only those still under follow-up then. Its direction is not fixed. In the simplest case, in which the schedule has no effect and both arms share the same constant hazard, surviving to different start times would induce no difference between arms, whereas a hazard that changes over time can push the comparison either way. This is distinct from immortal time bias, which arises when patients are classified by a course they complete later. Starting follow-up at the first fraction, when the schedule is assigned, avoids both problems, and adjusting for baseline covariates cannot repair a defect created by the design.",
+   "refs": [
+    11
+   ],
+   "evidence": [
+    {
+     "ref": 11,
+     "file": "Hernan_2016b.norm.txt",
+     "quote": "One of those principles is the specification of time zero of follow-up as the time when the eligibility criteria are met and a treatment strategy is assigned."
+    },
+    {
+     "ref": 11,
+     "file": "Hernan_2016b.norm.txt",
+     "quote": "The resulting left truncation will generally bias the risk ratio estimate because the analysis is restricted to those who remained under follow-up at the reset time zero"
+    },
+    {
+     "ref": 11,
+     "file": "Hernan_2016b.norm.txt",
+     "quote": "the opportunities for selection bias [10,11] increase because the analysis will only include individuals who remain under follow-up at the reset time zero"
+    },
+    {
+     "ref": 11,
+     "file": "Hernan_2016b.norm.txt",
+     "quote": "More generally, the bias occurs when information on treatment after time zero is used to assign individuals to a treatment strategy."
+    }
+   ]
+  },
+  {
+   "id": "cr-06",
+   "topic": "Classifying by prescription",
+   "section": "trial",
+   "stem": "In an emulated trial of 20 versus 37 fractions, some patients prescribed 37 fractions stop early because they become too sick. An analyst proposes classifying patients by the number of fractions actually delivered. What is the problem?",
+   "choices": [
+    "Nothing, since delivered dose is closer to the biology than the prescription",
+    "It only lowers precision, because fewer patients stay in the 37-fraction group",
+    "It assigns groups using events after time zero, which biases the comparison",
+    "It biases the result only in a Cox model, not for restricted mean survival time",
+    "It is a problem only if the stopped patients are also lost to follow-up"
+   ],
+   "answer": 2,
+   "explanation": "Whether a patient completes the course happens after treatment starts and is partly an outcome of the schedule and of how sick the patient becomes. Classifying by it is the classical immortal time problem: a patient counted in the 37-fraction group must have survived long enough to receive all 37 fractions, so that group is credited with guaranteed survival time, while the sickest patients move into the group that looks like a shorter course. The schedule prescribed at time zero is the treatment strategy. The biological argument for delivered dose is tempting but does not stop the bias.",
+   "refs": [
+    11
+   ],
+   "evidence": [
+    {
+     "ref": 11,
+     "file": "Hernan_2016b.norm.txt",
+     "quote": "More generally, the bias occurs when information on treatment after time zero is used to assign individuals to a treatment strategy."
+    },
+    {
+     "ref": 11,
+     "file": "Hernan_2016b.norm.txt",
+     "quote": "Anyone who filled a third prescription of aspirin is retrospectively declared to have been immortal during the first year of follow-up."
+    }
+   ]
+  },
+  {
+   "id": "cr-07",
+   "topic": "Emulating randomization",
+   "section": "trial",
+   "stem": "A resident writes a target trial protocol for hypofractionated versus conventional fractionation and emulates it in an institutional database. Which protocol element cannot be copied from the target trial and is replaced by an assumption?",
+   "choices": [
+    "Random assignment, replaced by adjustment for baseline confounders",
+    "Time zero, replaced by the date of diagnosis for both schedule groups",
+    "Eligibility, replaced by including every patient who ever had radiotherapy",
+    "The outcome, replaced by recurrence because death is poorly recorded",
+    "Follow-up, replaced by a fixed window that starts at the end of radiotherapy"
+   ],
+   "answer": 0,
+   "explanation": "Eligibility, time zero, follow-up and outcome can usually be emulated from the records when the data are adequate, but treatment was not randomized. The emulation therefore assumes the groups are comparable after adjusting for the measured baseline confounders, and if a key confounder is missing the emulation of random assignment fails. Starting follow-up at the end of radiotherapy is not a substitute for anything. It would restrict the analysis to patients still alive and under follow-up at that later point, which creates selection bias.",
+   "refs": [
+    5,
+    11
+   ],
+   "evidence": [
+    {
+     "ref": 5,
+     "file": "Hernan_2016a.norm.txt",
+     "quote": "To emulate the random assignment of strategies at baseline, we need to adjust for all confounding factors required to ensure comparability (exchangeability) of the groups defined by initiation of the treatment strategies"
+    },
+    {
+     "ref": 5,
+     "file": "Hernan_2016a.norm.txt",
+     "quote": "If the observational database does not contain sufficient information on baseline confounders or if we fail to identify them, successful emulation of the target trial's random assignment is not possible."
+    },
+    {
+     "ref": 11,
+     "file": "Hernan_2016b.norm.txt",
+     "quote": "the opportunities for selection bias [10,11] increase because the analysis will only include individuals who remain under follow-up at the reset time zero"
+    }
+   ]
+  },
+  {
+   "id": "cr-08",
+   "topic": "Calendar year",
+   "section": "dag",
+   "stem": "In a national registry, use of hypofractionated whole-breast radiotherapy after lumpectomy for invasive breast cancer rose from 0.7% in 2004 to 15.6% in 2013. Suppose supportive care and systemic therapy also improved over those years. How should calendar year of treatment be handled when estimating the effect of hypofractionation on survival?",
+   "choices": [
+    "Leave it out, since time is not a patient characteristic and cannot confound",
+    "Leave it out, since it lies on the causal path from schedule to survival",
+    "Adjust for it only if it raises the concordance index of the survival model",
+    "Adjust for it, as a common cause of the schedule chosen and of survival",
+    "Use it as the outcome, since it is what changed most over the study period"
+   ],
+   "answer": 3,
+   "explanation": "Calendar year pushes toward one schedule (uptake grew over time) and is also associated with survival through other improvements in care, so it is a shared cause of treatment and outcome, which is the definition of a confounder. It is not on the path from schedule to survival, because the schedule cannot change the year of treatment. Whether a variable improves prediction accuracy is not the criterion for adjusting for it.",
+   "refs": [
+    12,
+    1
+   ],
+   "evidence": [
+    {
+     "ref": 12,
+     "file": "Hasan_2017.norm.txt",
+     "quote": "The usage of HF-WBI among invasive cancer patients increased from 0.7% in 2004 to 15.6% in 2013"
+    },
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "We refer to the bias caused by shared causes of treatment and outcome as confounding"
+    }
+   ]
+  },
+  {
+   "id": "cr-09",
+   "topic": "Overadjustment",
+   "section": "dag",
+   "stem": "A simulated cohort has a continuous toy outcome on a month-like scale, with no censoring. Hypofractionation changes a post-treatment variable, and that variable affects the outcome. Adding the post-treatment variable to a regression of the outcome on frailty and schedule raises held-out R². What happens to the estimated total effect of hypofractionation?",
+   "choices": [
+    "It improves, because the model with the higher R² estimates effects better",
+    "It is biased, since adjusting for that variable removes part of the effect",
+    "It is unchanged, because the variable is measured after treatment starts",
+    "It is unbiased but less precise, as with any unnecessary adjustment",
+    "It is biased only if the post-treatment variable is measured with error"
+   ],
+   "answer": 1,
+   "explanation": "The post-treatment variable lies on the causal path from schedule to outcome, so controlling for it blocks part of the effect being estimated. This is overadjustment bias, which is a different structure from confounding and does not go away in large samples. The higher R² is the tempting answer, but the richer model is a retrospective prediction that uses information arising after treatment starts, not a predictor available at baseline, and better prediction says nothing about whether the coefficient on schedule is the total effect.",
+   "refs": [
+    13
+   ],
+   "evidence": [
+    {
+     "ref": 13,
+     "file": "Schisterman_2009.norm.txt",
+     "quote": "We define overadjustment bias as control for an intermediate variable (or a descending proxy for an intermediate variable) on a causal path from exposure to outcome."
+    },
+    {
+     "ref": 13,
+     "file": "Schisterman_2009.norm.txt",
+     "quote": "Overadjustment bias is not a finite sample bias, while inefficiencies due to control for unnecessary variables are a function of sample size."
+    }
+   ]
+  },
+  {
+   "id": "cr-10",
+   "topic": "RMST interpretation",
+   "section": "estimand",
+   "stem": "An analysis reports that hypofractionation increases restricted mean survival time (RMST) at 5 years by 2 months compared with conventional fractionation. What does this mean?",
+   "choices": [
+    "Median survival is 2 months longer with hypofractionation than without",
+    "Survival at exactly 5 years is 2 percentage points higher with hypofractionation",
+    "The hazard of death is lower by 2 months at each time during follow-up",
+    "Patients surviving 5 years then live 2 months longer on average after that",
+    "Patients would live on average 2 months longer within the first 5 years"
+   ],
+   "answer": 4,
+   "explanation": "RMST up to 5 years is the area under the survival curve from time zero to 5 years, which is the average time lived within that window, a restricted life expectancy. A difference of 2 months is therefore a gain in mean survival time up to the horizon. It is not a median, not a survival probability at one time point, and it says nothing about time lived after 5 years.",
+   "refs": [
+    14
+   ],
+   "evidence": [
+    {
+     "ref": 14,
+     "file": "Royston_2013.norm.txt",
+     "quote": "Furthermore, it is readily interpretable as the 'life expectancy' between randomization (t = 0) and a particular time horizon (t = t∗)."
+    }
+   ]
+  },
+  {
+   "id": "cr-11",
+   "topic": "Hazard ratio pitfalls",
+   "section": "estimand",
+   "stem": "In a cohort, hypofractionation lowers early deaths among frail patients. A Cox model then shows a hazard ratio (HR) for years 3 to 5 that favors conventional fractionation. Why is that late HR hard to read as a causal effect?",
+   "choices": [
+    "Survivors by year 3 differ between groups in more than their schedule",
+    "The HR is on a relative scale, so it cannot change during follow-up",
+    "A Cox model cannot estimate any hazard ratio after year 3 of follow-up",
+    "Late HRs are unbiased but have intervals too wide to interpret",
+    "The HR ignores censoring, unlike a Kaplan-Meier survival curve"
+   ],
+   "answer": 0,
+   "explanation": "The hazard in a later period is computed only among patients still alive, and if one schedule prevented early deaths among frail patients, the survivors in the two groups are no longer comparable. This differential depletion of susceptible patients is the built-in selection bias of period-specific HRs, and it can make a late HR favor one arm even if that arm has no protective effect at that time. Survival curves or restricted mean survival time differences at stated times avoid the problem.",
+   "refs": [
+    15
+   ],
+   "evidence": [
+    {
+     "ref": 15,
+     "file": "Hernan_2010.norm.txt",
+     "quote": "Endowing a HR with a causal interpretation is risky for 2 key reasons: the HR may change over time, and the HR has a built-in selection bias."
+    },
+    {
+     "ref": 15,
+     "file": "Hernan_2010.norm.txt",
+     "quote": "The bias due to the differential selection of less susceptible women over time, because of differential depletion of susceptibles, is the built-in selection bias of period-specific HRs."
+    }
+   ]
+  },
+  {
+   "id": "cr-12",
+   "topic": "ATE versus ATT",
+   "section": "estimand",
+   "stem": "A department head asks: \"Did hypofractionation help the patients we actually gave it to?\" Which estimand answers this question?",
+   "choices": [
+    "The average treatment effect (ATE) in all eligible patients",
+    "The conditional average treatment effect (CATE) for age 75 or older",
+    "The average treatment effect in the treated (ATT) population",
+    "The hazard ratio (HR) from a Cox model with a schedule term",
+    "The per-protocol effect among patients completing their course"
+   ],
+   "answer": 2,
+   "explanation": "The average treatment effect in the treated is the average effect among those who actually received the treatment, which is exactly the department head's question. The average treatment effect in all eligible patients answers a different question, what would happen if practice changed for everyone, and the two can differ in observational data when treated and untreated patients differ in factors that modify the effect. In a simple randomized trial in which every patient has the same probability of assignment, the two coincide for the assigned arms, because randomization makes the treated representative of the whole population. They need not coincide when allocation probabilities depend on covariates, or when the analysis uses the treatment actually received rather than the arm assigned.",
+   "refs": [
+    2
+   ],
+   "evidence": [
+    {
+     "ref": 2,
+     "file": "Austin_2011.norm.txt",
+     "quote": "The ATT is the average effect of treatment on those subjects who ultimately received the treatment. In an RCT these two measures of treatment effects coincide because, due to randomization"
+    }
+   ]
+  },
+  {
+   "id": "cr-13",
+   "topic": "Positivity",
+   "section": "identify",
+   "stem": "An institutional rule allows only hypofractionation for patients aged 85 or older, so conventional fractionation is never given at those ages. The analysis estimates the average effect of hypofractionation versus conventional fractionation in all adults. Which assumption fails, and what is a reasonable response?",
+   "choices": [
+    "Consistency fails, so define hypofractionation by dose per fraction",
+    "Positivity fails, so restrict to ages where both schedules can occur",
+    "Exchangeability fails, so add more covariates to the propensity model",
+    "Positivity fails, so extrapolate with a flexible outcome model instead",
+    "No assumption fails, since age is measured and can be adjusted for"
+   ],
+   "answer": 1,
+   "explanation": "Positivity requires a nonzero probability of each schedule in every covariate group of the target population. Here the rule makes conventional fractionation impossible at age 85 or older, a structural violation, so the data say nothing about that schedule at that age. Restricting the target population to the ages where both schedules can occur removes the requirement for the excluded group, but it changes the estimand, which should be stated. Without such a rule, an empty cell in a finite sample may be a random zero, and the first step would be to investigate sparsity and overlap across the joint covariates, not age alone, before redefining the population. A flexible outcome model only extrapolates from younger patients and does not create information that is not there.",
+   "refs": [
+    1
+   ],
+   "evidence": [
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "Actually, this definition of positivity is incomplete because, if our study population were restricted to the group L = 1, then there would be no need to require positivity in the group L = 0."
+    },
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "Individuals with certain values of L cannot possibly be treated (or untreated)."
+    },
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "In the presence of structural violations, causal inferences cannot be made about the entire population using IP weighting or standardization. The inference needs to be restricted to strata in which structural positivity holds."
+    },
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "Our sample is finite so, if we stratify on several confounders, we will start finding zero cells at some places even if the probability of treatment is not really zero in the target population."
+    }
+   ]
+  },
+  {
+   "id": "cr-14",
+   "topic": "Consistency",
+   "section": "identify",
+   "stem": "In a registry, the \"hypofractionation\" group includes 60 Gy in 20 fractions, five-fraction stereotactic courses and any course shorter than usual. Which identification assumption is most threatened by this definition?",
+   "choices": [
+    "Positivity, which needs both schedules in each patient group",
+    "Exchangeability, which needs no unmeasured confounding",
+    "Proportional hazards, which needs a constant hazard ratio",
+    "Noninformative censoring, which needs random loss to follow-up",
+    "Consistency, which needs a well-defined treatment strategy"
+   ],
+   "answer": 4,
+   "explanation": "Consistency requires that the treatment be defined well enough to correspond to an action that could be written into a trial protocol. A label that pools very different dose-per-fraction schedules, and anything shorter than usual, does not describe one intervention, so the estimated effect depends on the unstated mix of versions. Exchangeability is tempting because the mix may also differ by patient type, but the first problem is that the treatment itself is not defined.",
+   "refs": [
+    1
+   ],
+   "evidence": [
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "Interventions are well-defined when they correspond to actions that can be described as part of the protocol of an experiment."
+    }
+   ]
+  },
+  {
+   "id": "cr-15",
+   "topic": "Exchangeability",
+   "section": "identify",
+   "stem": "Frail patients with poor performance status are steered toward the shorter course, and performance status is not recorded. A resident proposes doubling the cohort and switching to a deep neural network for the adjustment. What will this achieve?",
+   "choices": [
+    "It removes the bias, since a large enough cohort balances unmeasured factors",
+    "It removes the bias, since a neural network can learn performance status",
+    "It narrows the interval, and a narrower interval means less bias",
+    "Little, since more data and a better learner cannot fix a missing confounder",
+    "It helps only if performance status is first imputed from the other inputs"
+   ],
+   "answer": 3,
+   "explanation": "Exchangeability is a property of the data and the design, not of the estimator. If a common cause of schedule and survival is unrecorded, the association stays confounded however large the study and however flexible the model. More data narrow the interval around a biased estimate, and the right next step is a sensitivity analysis for the missing confounder.",
+   "refs": [
+    1,
+    5
+   ],
+   "evidence": [
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "In the presence of confounding, the old adage \"association is not causation\" holds even if the study population is arbitrarily large."
+    },
+    {
+     "ref": 5,
+     "file": "Hernan_2016a.norm.txt",
+     "quote": "If the observational database does not contain sufficient information on baseline confounders or if we fail to identify them, successful emulation of the target trial's random assignment is not possible."
+    }
+   ]
+  },
+  {
+   "id": "cr-16",
+   "topic": "Dynamic strategy",
+   "section": "policies",
+   "stem": "A department proposes: hypofractionation if age is 70 or older or travel time exceeds one hour, conventional fractionation otherwise. In causal terms, what kind of treatment strategy is this?",
+   "choices": [
+    "A dynamic strategy, a rule that assigns treatment from patient history",
+    "A static strategy, since each patient gets one fixed schedule in the end",
+    "A modified treatment policy, since it shifts each course by some fractions",
+    "An instrumental variable, since travel time affects the choice of schedule",
+    "A per-protocol strategy, since it applies only to patients who adhere"
+   ],
+   "answer": 0,
+   "explanation": "The rule assigns treatment based on each patient's characteristics, so different patients get different schedules under the same strategy, which defines a dynamic strategy. A static strategy gives everyone the same treatment, such as everyone receiving hypofractionation. A modified treatment policy is tempting, but it changes each patient's own treatment by some amount relative to what they would otherwise have received rather than mapping characteristics to a schedule.",
+   "refs": [
+    1
+   ],
+   "evidence": [
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "This is an example of a dynamic treatment strategy, a rule in which the treatment ak at time k depends on the evolution of an individual's"
+    }
+   ]
+  },
+  {
+   "id": "cr-17",
+   "topic": "Modified treatment policy",
+   "section": "policies",
+   "stem": "A team asks: \"What if each patient's prescribed total dose were delivered in five fewer fractions, with fraction size raised to match?\" They will check that such shifted courses occur for similar patients. Which framework defines this effect directly?",
+   "choices": [
+    "A static comparison of everyone receiving the shortest schedule in the data",
+    "A Cox model with number of fractions entered as a continuous covariate",
+    "A modified treatment policy that maps each patient's own prescribed course",
+    "A conditional average treatment effect (CATE) for each number of fractions",
+    "An as-treated analysis comparing short courses with long courses"
+   ],
+   "answer": 2,
+   "explanation": "A modified treatment policy defines the intervention as a fully specified change to the treatment each patient would otherwise have received, here the same total dose in five fewer, larger fractions, which matches a realistic shift in practice. Checking that such shifted courses occur for similar patients addresses positivity. Because this policy acts once, at the start of treatment, it is a single time point policy, and the longitudinal modified treatment policy (LMTP) framework extends the same idea to decisions made during treatment. Setting everyone to the shortest schedule is tempting, but it is a different and less realistic question, and for many patients that schedule may never occur in the data.",
+   "refs": [
+    17
+   ],
+   "evidence": [
+    {
+     "ref": 17,
+     "file": "Diaz_2023.norm.txt",
+     "quote": "Longitudinal modified treatment policies (LMTPs) are a recently developed non-parametric alternative that yield effects of immediate practical relevance with an interpretation in terms of meaningful interventions such as reducing or increasing the exposure by a given amount. LMTPs also have the advantage that they can be designed to satisfy the positivity assumption"
+    },
+    {
+     "ref": 17,
+     "file": "Diaz_2023.norm.txt",
+     "quote": "the interventions in this work are a natural extension of the definition of Haneuse and Rotnitzky (2013) for single time point studies."
+    }
+   ]
+  },
+  {
+   "id": "cr-18",
+   "topic": "Double robustness",
+   "section": "estimators",
+   "stem": "An augmented inverse probability of treatment weighting (AIPW) estimator uses an outcome model and a propensity score model. Suppose the propensity model is correct but the outcome model is misspecified, with no unmeasured confounding. What happens to the estimated average effect?",
+   "choices": [
+    "It is biased, because both models must be correct for any validity",
+    "It is biased, because the outcome model carries the main estimate",
+    "It is consistent only if the propensity model is a logistic regression",
+    "It becomes a plain unweighted difference between the two groups",
+    "It stays consistent, because one of the two models is correct"
+   ],
+   "answer": 4,
+   "explanation": "A doubly robust estimator such as AIPW is consistent if either the treatment model or the outcome model is correct, given exchangeability and positivity, without needing to know which one. That gives two chances to get the answer right. Doubly robust does not mean that both must be right, and it does not remove the need for the identification assumptions. Consistency is also not the same as a trustworthy confidence interval, which further depends on adequate overlap and on how well the models are learned.",
+   "refs": [
+    1,
+    6
+   ],
+   "evidence": [
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "Under exchangeability and positivity given L, a doubly robust estimator consistently estimates the average causal effect if either the model for the treatment or the model for the outcome is correct, without knowing which of the two models is the correct one."
+    },
+    {
+     "ref": 6,
+     "file": "Chernozhukov_2018.norm.txt",
+     "quote": "The conditions in Assumption 3.2 embody refined requirements on the quality of nuisance parameter estimators."
+    }
+   ]
+  },
+  {
+   "id": "cr-19",
+   "topic": "Regularization bias and DML",
+   "section": "estimators",
+   "stem": "All confounders are measured, and the outcome is a continuous toy outcome with no censoring. Many confounders affect the choice of schedule strongly but the outcome only weakly. A lasso of the outcome on schedule and covariates, with the schedule term unpenalized and the penalty tuned for held-out accuracy, shrinks those covariates toward zero. Why does reading the schedule coefficient as the effect go wrong, and which method is designed to reduce the problem?",
+   "choices": [
+    "The lasso drops the schedule term, and a random forest is designed to correct it",
+    "Confounding shifts onto the schedule term, a bias double machine learning (DML) is designed to reduce",
+    "Accuracy is too low, and a smaller penalty chosen by accuracy corrects it",
+    "Censoring biases the lasso, and switching to a Cox model corrects it",
+    "Too many covariates were included, and stepwise selection by p value corrects it"
+   ],
+   "answer": 1,
+   "explanation": "Covariates that mostly predict treatment add little to predicting the outcome, so a penalty tuned for accuracy shrinks them first and hands their share of the confounding to the schedule term, while accuracy barely changes. Double machine learning models both the outcome and the treatment, uses orthogonal scores chosen for the target estimand so that nuisance errors enter only at second order, and uses cross-fitting to avoid overfitting bias. It is designed to reduce this regularization bias, not guaranteed to remove it: it still needs overlap, nuisance models learned well enough, and a score that matches the estimand. Choosing the penalty by prediction accuracy is the tempting fix, but accuracy cannot see this bias.",
+   "refs": [
+    6
+   ],
+   "evidence": [
+    {
+     "ref": 6,
+     "file": "Chernozhukov_2018.norm.txt",
+     "quote": "both regularization bias and overfitting in estimating η0 cause a heavy bias in estimators of θ0 that are obtained by naively plugging ML estimators of η0 into estimating equations for θ0."
+    },
+    {
+     "ref": 6,
+     "file": "Chernozhukov_2018.norm.txt",
+     "quote": "(1) using Neyman-orthogonal moments/scores that have reduced sensitivity with respect to nuisance parameters to estimate θ0, and (2) making use of cross-fitting which provides an efficient form of data-splitting."
+    },
+    {
+     "ref": 6,
+     "file": "Chernozhukov_2018.norm.txt",
+     "quote": "The conditions in Assumption 3.2 embody refined requirements on the quality of nuisance parameter estimators."
+    }
+   ]
+  },
+  {
+   "id": "cr-20",
+   "topic": "Causal survival forest",
+   "section": "estimators",
+   "stem": "A resident wants to know which patients gain the most restricted mean survival time from hypofractionation in an observational cohort with right-censored follow-up. Which estimator is designed for this?",
+   "choices": [
+    "A random survival forest, reading the effect from variable importance scores",
+    "A Cox model with a schedule term, reading effects from one hazard ratio",
+    "Inverse probability weighting with one marginal average effect estimate",
+    "A causal survival forest (CSF), with doubly robust censoring adjustment",
+    "Propensity score matching followed by one overall log-rank test"
+   ],
+   "answer": 3,
+   "explanation": "The question is about who benefits, a conditional average treatment effect, with censored outcomes. Causal survival forests adapt causal forests to right-censored data and adjust for both censoring and treatment selection with doubly robust estimating equations. They still rely on censoring being independent of survival given treatment and covariates, and on enough patients remaining under follow-up through the chosen horizon. Variable importance from a random survival forest describes how a prediction model uses its inputs, not how the treatment effect varies across patients.",
+   "refs": [
+    16,
+    7
+   ],
+   "evidence": [
+    {
+     "ref": 16,
+     "file": "Cui_2023.norm.txt",
+     "quote": "we introduce causal survival forests, which can be used to estimate heterogeneous treatment effects in a survival and observational setting where outcomes may be right-censored. Our approach relies on orthogonal estimating equations to robustly adjust for both censoring and selection effects under unconfoundedness."
+    },
+    {
+     "ref": 16,
+     "file": "Cui_2023.norm.txt",
+     "quote": "an adaptation of the causal forest algorithm of Athey, Tibshirani, and Wager [2019] that adjusts for censoring using doubly robust estimating equations"
+    },
+    {
+     "ref": 16,
+     "file": "Cui_2023.norm.txt",
+     "quote": "Censoring is independent of survival time conditionally on treatment and covariates"
+    },
+    {
+     "ref": 16,
+     "file": "Cui_2023.norm.txt",
+     "quote": "Assumptions 5 and 6 play a fundamental role for identification."
+    }
+   ]
+  },
+  {
+   "id": "cr-21",
+   "topic": "Overlap check",
+   "section": "checks",
+   "stem": "Before running a doubly robust estimator, a resident plots the estimated propensity score for hypofractionation in each group. Most hypofractionated patients have scores close to 1 and most conventional patients close to 0, with few in between. What should she do?",
+   "choices": [
+    "Restrict to overlapping scores, or conclude the groups are not comparable",
+    "Proceed, since a doubly robust estimator does not need overlap between groups",
+    "Proceed, since extreme scores show the propensity model predicts very well",
+    "Drop the propensity model and rely only on a flexible outcome model instead",
+    "Add the 3-month tumor response to the propensity model to improve overlap"
+   ],
+   "answer": 0,
+   "explanation": "The propensity score is the probability of treatment given baseline characteristics, and scores near 0 and 1 mean the two groups barely overlap, so comparable patients are rare. The options are to restrict the analysis to patients with similar covariate patterns, which changes the target population and the estimand, or to conclude that a meaningful comparison is not possible. A model that separates the groups well is tempting as a sign of quality, but for causal estimation it signals a positivity problem, and an outcome model alone would simply extrapolate across the gap. For a survival outcome, support through the horizon is also needed: a group with almost no patients still under follow-up there cannot support an effect at that time.",
+   "refs": [
+    2,
+    16
+   ],
+   "evidence": [
+    {
+     "ref": 2,
+     "file": "Austin_2011.norm.txt",
+     "quote": "The propensity score is the probability of treatment assignment conditional on observed baseline characteristics."
+    },
+    {
+     "ref": 2,
+     "file": "Austin_2011.norm.txt",
+     "quote": "first, to restrict the analysis to comparing outcomes between the minority of treated and untreated subjects who have similar covariate patterns, and second, to discontinue the analysis, concluding that treated and untreated subjects are so different"
+    },
+    {
+     "ref": 16,
+     "file": "Cui_2023.norm.txt",
+     "quote": "we need assumptions to guarantee that censoring due to Ci does not break identification results for treatment effects"
+    }
+   ]
+  },
+  {
+   "id": "cr-22",
+   "topic": "Negative control",
+   "section": "checks",
+   "stem": "As a check, a team applies its full adjusted pipeline to an outcome that the schedule cannot affect and that is not among the adjustment variables: emergency admissions in the year before the first fraction. It finds a large adjusted \"effect\" of hypofractionation. What is the most likely interpretation?",
+   "choices": [
+    "Hypofractionation changed admissions that occurred before it began",
+    "The check is invalid because a negative control must be a survival outcome",
+    "The main estimate is confirmed, because the pipeline detected an effect",
+    "The adjusted estimator is too precise, so the main interval should widen",
+    "A sign of residual bias, which calls for investigating the main analysis"
+   ],
+   "answer": 4,
+   "explanation": "A negative control outcome is chosen to share the suspected confounding structure of the main analysis but cannot be caused by the treatment, so a properly adjusted estimate for it should be near zero. A large estimate signals that the adjusted groups still differ in ways the model did not capture, and that is a problem to investigate. If the same unmeasured factors, such as frailty, also drive survival, the main estimate may be biased too, but the control's estimate does not give the size or direction of any bias in the main estimate. Treatment cannot act on events that happened before it began, so the causal reading is impossible.",
+   "refs": [
+    1,
+    9
+   ],
+   "evidence": [
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "Alternatively, investigators may assess for causal bias using negative control variables"
+    },
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "We refer to this pre-treatment outcome C as a negative outcome control (also referred to as negative control outcome)."
+    },
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "treatment A is obviously not a cause of the pre-treatment C"
+    }
+   ]
+  },
+  {
+   "id": "cr-23",
+   "topic": "E-value",
+   "section": "checks",
+   "stem": "An observational study of stopping breastfeeding before 6 months and being overweight or obese at age 20 adjusted for maternal and family factors but not for maternal smoking. Its odds ratio, converted to an approximate risk ratio, is 1.21 (95% interval 1.06 to 1.39), with an E-value of 1.71 for the estimate and 1.31 for the lower limit. What does the E-value of 1.71 mean?",
+   "choices": [
+    "The estimate is 1.71 times more likely to be causal than due to confounding",
+    "The risk ratio would be 1.71 if all measured confounders had been adjusted for",
+    "A confounder associated 1.71-fold with each could fully explain it away",
+    "Any unmeasured confounder, however weak, could fully explain away the estimate",
+    "No unmeasured confounder stronger than 1.71 can exist in this study"
+   ],
+   "answer": 2,
+   "explanation": "The E-value is the minimum strength of association, on the risk ratio scale, that an unmeasured confounder would need with both treatment and outcome, beyond the measured covariates, to fully explain away the estimate. Here a confounder associated about 1.71-fold with each could do so. The value 1.71 is the bound when the two associations are equal. Unequal associations can also explain the estimate away, as long as a weaker association with one is offset by a stronger association with the other. It is not a probability of causation, and a modest value such as this one means relatively modest unmeasured confounding would suffice.",
+   "refs": [
+    19
+   ],
+   "evidence": [
+    {
+     "ref": 19,
+     "file": "VanderWeele_2017.norm.txt",
+     "quote": "The E-value is defined as the minimum strength of association on the risk ratio scale that an unmeasured confounder would need to have with both the treatment and the outcome to fully explain away a specific treatment-outcome association, conditional on the measured covariates."
+    },
+    {
+     "ref": 19,
+     "file": "VanderWeele_2017.norm.txt",
+     "quote": "The approximate E-value for the estimate is thus 1.71 and the approximate E-value for the confidence interval is 1.31."
+    },
+    {
+     "ref": 19,
+     "file": "VanderWeele_2017.norm.txt",
+     "quote": "Using logistic regression, they obtain an estimated odds ratio of OR=1.47 (95% CI: 1.12, 1.93, p=0.005)."
+    },
+    {
+     "ref": 19,
+     "file": "VanderWeele_2017.norm.txt",
+     "quote": "The E-value essentially sets the two parameters, RRUD and RREU, equal to each other to see the minimum that they would both need"
+    },
+    {
+     "ref": 19,
+     "file": "VanderWeele_2017.norm.txt",
+     "quote": "If one of the two parameters were smaller than the E-value, then the other would have to be larger."
+    }
+   ]
+  },
+  {
+   "id": "cr-24",
+   "topic": "Covariate adjustment in a trial",
+   "section": "rct",
+   "stem": "In a randomized trial of hypofractionated versus conventional radiotherapy, the propensity score is known by design. The statistician plans an adjusted analysis of the intention-to-treat effect. Which plan follows regulatory guidance on covariate adjustment?",
+   "choices": [
+    "Skip adjustment, since randomization already makes any adjustment useless",
+    "Prespecify prognostic baseline covariates and avoid post-randomization ones",
+    "Choose covariates after unblinding, keeping those that most narrow the interval",
+    "Adjust for acute toxicity during treatment, since it predicts survival",
+    "Adjust only for covariates that are imbalanced between arms at baseline"
+   ],
+   "answer": 1,
+   "explanation": "Randomization makes the arms exchangeable, so adjustment is not needed to remove confounding, but adjusting for prognostic baseline covariates can improve precision, with minimal impact on bias or type I error, under an analysis suited to the estimand. That is an expected gain, not a promise that every realized interval narrows, and with nonlinear models adjustment can change the effect being estimated. The procedure must be specified before unblinding, and covariates measured after randomization must be avoided because the treatment may affect them. Acute toxicity during treatment is tempting because it predicts survival, but it is a consequence of the assigned schedule. Randomization also does not fix informative loss to follow-up, which needs its own handling.",
+   "refs": [
+    21,
+    2,
+    9
+   ],
+   "evidence": [
+    {
+     "ref": 2,
+     "file": "Austin_2011.norm.txt",
+     "quote": "In randomized experiments the true propensity score is known and is defined by the study design."
+    },
+    {
+     "ref": 21,
+     "file": "FDA_2023_covariate_adjustment.norm.txt",
+     "quote": "this can be done with minimal impact on bias or the Type I error rate. ... The ICH E9 guidance also cautions against adjusting for \"covariates measured after randomization because they could be affected by the treatments.\""
+    },
+    {
+     "ref": 21,
+     "file": "FDA_2023_covariate_adjustment.norm.txt",
+     "quote": "Sponsors should prospectively specify the detailed procedures for executing covariateadjusted analysis before any unblinding of comparative data."
+    },
+    {
+     "ref": 21,
+     "file": "FDA_2023_covariate_adjustment.norm.txt",
+     "quote": "In linear models, adjustment for prognostic baseline covariates often leads to improved precision by reducing residual variance."
+    },
+    {
+     "ref": 21,
+     "file": "FDA_2023_covariate_adjustment.norm.txt",
+     "quote": "inclusion of baseline covariates in a regression model can change the treatment effect that is being estimated"
+    },
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "or even in many traditional randomized trials that do not utilize RWD due to issues such as informative missingness"
+    }
+   ]
+  },
+  {
+   "id": "cr-25",
+   "topic": "Heterogeneity in a trial",
+   "section": "rct",
+   "stem": "A trial found no difference in overall survival between two schedules. A data-driven effect model on the trial data then flags a subgroup with apparent benefit and another with apparent harm. How should these findings be treated?",
+   "choices": [
+    "As confirmed, because randomization protects subgroup effects from all bias",
+    "As confirmed, because finding benefit and harm explains the null overall result",
+    "As artifacts, because effect heterogeneity cannot exist when the average is null",
+    "As exploratory, since flexible effect models can overfit and flag false subgroups",
+    "As valid only on the relative scale, since absolute effects vary with risk"
+   ],
+   "answer": 3,
+   "explanation": "Trials are powered for the average effect, and data-driven effect modeling is vulnerable to overfitting and false discovery of subgroup effects, so these signals generate hypotheses rather than settle them. Overfitting can produce apparent benefit and harm even for an intervention that has no effect at all, so the signals need confirmation in independent data. Randomization protects the comparison between arms, not the search across many subgroups. Heterogeneity can exist under a null average, so the signals are not impossible, only unconfirmed, and the clinically relevant scale for them is the absolute risk difference.",
+   "refs": [
+    22
+   ],
+   "evidence": [
+    {
+     "ref": 22,
+     "file": "Kent_2020.norm.txt",
+     "quote": "data-driven effect models are prone to bias due to false or exaggerated interaction effects"
+    },
+    {
+     "ref": 22,
+     "file": "Kent_2020.norm.txt",
+     "quote": "these more flexible approaches are vulnerable to overfitting and to false discovery of promising subgroup effects (or require very large databases well powered for the detection of interaction effects)"
+    },
+    {
+     "ref": 22,
+     "file": "Kent_2020.norm.txt",
+     "quote": "Both approaches can be used to predict differential absolute treatment effects, the most relevant scale for clinical decision-making."
+    },
+    {
+     "ref": 22,
+     "file": "Kent_2020.norm.txt",
+     "quote": "overfitting that can lead to signals of treatment benefit and harm even for interventions that are completely ineffective and innocuous"
+    }
+   ]
+  },
+  {
+   "id": "cr-26",
+   "topic": "Per-protocol effect",
+   "section": "rct",
+   "stem": "In a fractionation trial, some patients in the conventional arm switch to a shorter course, more often if they are frail. The investigators want the effect of actually following each schedule. Which approach is appropriate?",
+   "choices": [
+    "Treat adherence as nonrandomized and adjust using g-methods",
+    "Compare patients by the schedule received, since the arms were randomized",
+    "Analyze only adherent patients, since randomization still protects them",
+    "Report the intention-to-treat estimate, since it equals the per-protocol one",
+    "Exclude the arm with switching, and compare the other arm with history"
+   ],
+   "answer": 0,
+   "explanation": "Randomization protects the comparison of assigned arms, not the comparison of patients by what they actually received. Because frail patients switch more often, adherence is related to prognosis, so as-treated and adherent-only comparisons are observational analyses of a trial and need adjustment for confounding and selection, generally with g-methods for time-varying factors. Those methods assume the measured history explains switching, and loss to follow-up related to prognosis needs its own adjustment, which randomization does not provide. The intention-to-treat effect is valid for assignment but answers a different question.",
+   "refs": [
+    1,
+    9
+   ],
+   "evidence": [
+    {
+     "ref": 1,
+     "file": "Hernan_2020_WhatIf.norm.txt",
+     "quote": "as-treated and per-protocol analyses are observational analyses of a randomized experiment and, like any observational analysis, require appropriate adjustment for confounding and selection bias to obtain valid estimates of the per-protocol effect."
+    },
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "or even in many traditional randomized trials that do not utilize RWD due to issues such as informative missingness"
+    }
+   ]
+  },
+  {
+   "id": "cr-27",
+   "topic": "Transporting a trial result",
+   "section": "trial-argument",
+   "stem": "The CHHiP trial found 60 Gy in 20 fractions noninferior to 74 Gy in 37 fractions for localized prostate cancer, with time to biochemical or clinical failure as its primary endpoint. A department wants to know whether this holds for its much older and frailer patients. What is the first question in the argument for or against a new trial?",
+   "choices": [
+    "Whether a new trial is needed, since any change of population voids the old result",
+    "Whether the trial's hazard ratio can be applied unchanged to every older patient",
+    "Whether a neural network trained on trial data predicts survival in older patients",
+    "Whether the registry alone can replace the trial result in all prostate cancer",
+    "Whether and how the existing trial result transports to this population"
+   ],
+   "answer": 4,
+   "explanation": "Existing randomized evidence comes first: the question is whether it generalizes or transports to the target population, which depends on whether the populations differ in factors that modify the effect. The answer is endpoint-specific. CHHiP showed noninferiority for biochemical or clinical failure, not for overall survival, so a question about survival or toxicity in older patients is a related but different question. Methods for generalizability and transportability make those assumptions explicit and can combine trial and observational data. Applying the trial estimate unchanged is tempting, but trial samples are often not representative of the target population.",
+   "refs": [
+    10,
+    23
+   ],
+   "evidence": [
+    {
+     "ref": 10,
+     "file": "Dearnaley_2016.norm.txt",
+     "quote": "Hypofractionated radiotherapy using 60 Gy in 20 fractions is non-inferior to conventional fractionation using 74 Gy in 37 fractions"
+    },
+    {
+     "ref": 23,
+     "file": "Degtiar_2023_arXiv.norm.txt",
+     "quote": "Estimates from randomized data may have internal validity but are often not representative of the target population. Observational data may better reflect the target population, and hence be more likely to have external validity"
+    },
+    {
+     "ref": 10,
+     "file": "Dearnaley_2016.norm.txt",
+     "quote": "The primary endpoint was time to biochemical or clinical failure"
+    }
+   ]
+  },
+  {
+   "id": "cr-28",
+   "topic": "Benchmarking against a trial",
+   "section": "trial-argument",
+   "stem": "Observational studies suggested postmenopausal hormone therapy lowered coronary heart disease risk, but the Women's Health Initiative (WHI) randomized trial did not. When Nurses' Health Study data were analyzed as an emulation of the WHI trial's design and intention-to-treat analysis, what largely explained the remaining discrepancy?",
+   "choices": [
+    "Unmeasured confounding that no emulated design could address",
+    "Differences in time since menopause and in length of follow-up",
+    "Random error, since both studies had wide confidence intervals",
+    "Different outcome definitions for coronary heart disease events",
+    "Use of a Cox model instead of a logistic model for the outcome"
+   ],
+   "answer": 1,
+   "explanation": "Emulating the trial's eligibility, start of follow-up and intention-to-treat comparison brought the observational estimates close to the trial's, and the remaining discrepancy could be largely explained by different distributions of time since menopause and length of follow-up. Reproducing an existing trial is therefore a strong check on an emulation before it is used where no trial exists. Unmeasured confounding is the tempting answer, but the design changes, not a new confounder, closed most of the gap.",
+   "refs": [
+    24
+   ],
+   "evidence": [
+    {
+     "ref": 24,
+     "file": "Hernan_2008.norm.txt",
+     "quote": "Our findings suggest that the discrepancies between the Women's Health Initiative and Nurses' Health Study ITT estimates could be largely explained by differences in the distribution of time since menopause and length of follow-up."
+    }
+   ]
+  },
+  {
+   "id": "cr-29",
+   "topic": "RTOG 0617",
+   "section": "trial-argument",
+   "stem": "Phase 1 and 2 trials of 74 Gy with concurrent chemotherapy for stage III non-small cell lung cancer reported a median overall survival of roughly 24 months, compared with about 17.1 months for 60 Gy in an earlier trial. What did the randomized RTOG 0617 trial show, and what is the lesson?",
+   "choices": [
+    "74 Gy improved survival by about 7 months, as nonrandomized studies predicted",
+    "74 Gy and 60 Gy gave identical survival, so dose escalation was harmless",
+    "74 Gy was not better and possibly harmful, so nonrandomized gains can mislead",
+    "74 Gy was better only in patients who completed the full course",
+    "The trial was stopped early for benefit, confirming the earlier studies"
+   ],
+   "answer": 2,
+   "explanation": "In RTOG 0617, median overall survival was 28.7 months with 60 Gy and 20.3 months with 74 Gy, so the higher dose was not better and might be harmful. The earlier comparison set phase 1 and 2 results against a different, earlier trial (RTOG 9410), so patient selection and era could not be separated from the dose. When a randomized trial is feasible, randomization generally gives more certainty that an estimate has a causal interpretation.",
+   "refs": [
+    25,
+    9
+   ],
+   "evidence": [
+    {
+     "ref": 25,
+     "file": "Bradley_2015.norm.txt",
+     "quote": "Median overall survival was 28.7 months (95% CI 24.1–36.9) for patients who received standard-dose radiotherapy and 20.3 months (17.7–25.0) for those who received high-dose radiotherapy"
+    },
+    {
+     "ref": 25,
+     "file": "Bradley_2015.norm.txt",
+     "quote": "74 Gy radiation given in 2 Gy fractions with concurrent chemotherapy was not better than 60 Gy plus concurrent chemotherapy for patients with stage III non-small-cell lung cancer, and might be potentially harmful."
+    },
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "If conducting a randomized trial is feasible, baseline randomization of an intervention (as part of either a traditional or pragmatic trial [93]) still generally affords a higher degree of certainty that the estimated effect has a causal interpretation"
+    }
+   ]
+  },
+  {
+   "id": "cr-30",
+   "topic": "Arguing for a trial",
+   "section": "trial-argument",
+   "stem": "A careful emulation for a tumor site with no relevant trial finds a 5-year restricted mean survival time (RMST) difference whose interval includes both a clinically meaningful benefit and a meaningful harm. A bias analysis on the RMST scale shows that plausible confounding by a factor that cannot be measured in existing data could move the estimate across either threshold. What is the most defensible conclusion?",
+   "choices": [
+    "Report the point estimate as the effect, since the emulation followed a protocol",
+    "Keep refining the machine learning until the interval excludes harm",
+    "Conclude that the two schedules are equivalent, since the interval includes zero",
+    "Consider a randomized trial, designed around a clinically justified target or margin",
+    "Drop RMST and report the hazard ratio, which is more stable in small samples"
+   ],
+   "answer": 3,
+   "explanation": "Uncertainty that cannot be reduced with existing data is a reason to consider prospective data collection, and when a trial is feasible and clinicians are in equipoise, randomization removes confounding of the assigned comparison. The emulation is not wasted: its target trial protocol and RMST endpoint can shape the design, and RMST can be used to design trials as well as to analyze them. The sample size should come from a clinically relevant target difference or, for a shorter schedule judged by noninferiority, a prespecified endpoint and margin, together with assumptions about control survival and accrual, not from the observational interval alone. An interval spanning benefit and harm does not show equivalence, and no estimator can remove confounding by a variable that was never measured.",
+   "refs": [
+    9,
+    14,
+    10
+   ],
+   "evidence": [
+    {
+     "ref": 9,
+     "file": "Dang_2023.norm.txt",
+     "quote": "if a retrospective study was initially proposed but the causal identification assumptions are highly implausible and cannot be improved using existing data, then investigators should consider prospective data collection to better evaluate the effect of interest."
+    },
+    {
+     "ref": 14,
+     "file": "Royston_2013.norm.txt",
+     "quote": "we describe the use of the restricted mean survival time as a possible alternative tool in the design and analysis of these trials."
+    },
+    {
+     "ref": 14,
+     "file": "Royston_2013.norm.txt",
+     "quote": "We illustrate the required sample size under proportional and non-proportional hazards"
+    },
+    {
+     "ref": 10,
+     "file": "Dearnaley_2016.norm.txt",
+     "quote": "the critical hazard ratio (HR) for non-inferiority was 1·208"
+    }
+   ]
+  }
+ ]
+}

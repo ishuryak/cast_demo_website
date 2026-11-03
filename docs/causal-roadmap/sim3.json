@@ -1,5 +1,6 @@
 {
  "note": "Synthetic data only. Regenerate with: node docs/causal-roadmap/build_sim3.mjs",
+ "seed": 20260914,
  "design": {
   "n": 10000,
   "pStrong": 4,
@@ -19,6 +20,18 @@
  "p": 84,
  "nTrain": 7061,
  "nTest": 2939,
+ "allocation": {
+  "lassoPathFit": 7061,
+  "predictionHoldout": 2939,
+  "dmlEstimation": 10000,
+  "tuning": "Lasso path: penalty by 5-fold CV within the fitting sample. DML: one penalty per nuisance model chosen by 5-fold CV on the full cohort, then 5-fold cross-fitted nuisance fits."
+ },
+ "solver": {
+  "fits": 426,
+  "unconverged": 0,
+  "maxIterations": 13,
+  "maxKKT": 3.008e-8
+ },
  "cvIndex": 20,
  "bestR2": 0.700051,
  "nearBest": {
