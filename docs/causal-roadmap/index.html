@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Causal Roadmap Primer</title>
+<meta name="description" content="A walk-through for medical students and oncology residents: from a clinical question to a causal analysis plan, using hypofractionated versus conventional radiotherapy as the running example.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,500&family=Source+Sans+3:wght@400;600&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Causal roadmap primer · for medical students and residents</p>
+    <h1>From a clinical question to a causal answer</h1>
+    <p class="dek">You have a clinical question, a dataset, and some programming skills. You know Cox regression, random forests and XGBoost, and perhaps you are wondering whether a neural network would do better. This page shows a different starting point: decide which question you are asking, design the study you wish you could run, and only then choose an estimator. The running example compares hypofractionated with conventionally fractionated radiotherapy.</p>
+    <p class="byline">Igor Shuryak, MD, PhD · <span>is144@cumc.columbia.edu</span> · Center for Radiological Research, Columbia University Irving Medical Center</p>
+    <p class="companion">Companion to the <a href="https://ishuryak.github.io/cast_demo_website/tutorial/">Causal Analysis for Survival Trajectories (CAST) demo</a> by Andy Wilson, Aimee Harrison and Igor Shuryak. This page covers the general causal roadmap. Where the question becomes specifically about survival over time, it hands you over to that site. All examples here are simulated or come from published trials. No patient data are used.</p>
+  </div>
+</header>
+
+<nav class="roadmap wide" aria-label="The roadmap at a glance">
+  <p class="eyebrow">The roadmap at a glance</p>
+  <ol>
+    <li><a href="#questions"><span class="n">0</span><span class="t">Which question?</span><span class="s">Description, prediction, or cause and effect</span></a></li>
+    <li><a href="#question"><span class="n">1</span><span class="t">The question and the data</span><span class="s">Contrast, population, outcome, horizon</span></a></li>
+    <li><a href="#trial"><span class="n">2</span><span class="t">The target trial</span><span class="s">The randomized trial you would run</span></a></li>
+    <li><a href="#dag"><span class="n">3</span><span class="t">The causal model</span><span class="s">A diagram of what causes what</span></a></li>
+    <li><a href="#estimand"><span class="n">4</span><span class="t">The estimand</span><span class="s">The exact number you want, and why not a hazard ratio</span></a></li>
+    <li><a href="#identify"><span class="n">5</span><span class="t">Identification</span><span class="s">When can these data answer it at all?</span></a></li>
+    <li><a href="#policies"><span class="n">6</span><span class="t">Treatment policies</span><span class="s">Static, dynamic and modified strategies</span></a></li>
+    <li><a href="#estimators"><span class="n">7</span><span class="t">The estimator</span><span class="s">From weighting to doubly robust machine learning and causal forests</span></a></li>
+    <li><a href="#checks"><span class="n">8</span><span class="t">Checks and sensitivity</span><span class="s">Building confidence with no answer key</span></a></li>
+    <li><a href="#worksheet"><span class="n">9</span><span class="t">Your plan</span><span class="s">A worksheet that becomes a protocol draft</span></a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- 0 -->
+<section class="part" id="questions">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">0</span> · Before anything else</p>
+    <h2>Three questions that look alike</h2>
+    <p>The same registry can answer three different kinds of question, and each needs different tools.<a class="cite" href="#ref-1">1</a></p>
+  </div>
+  <div class="wide table-scroll">
+    <table>
+      <thead><tr><th>Kind of question</th><th>Example on hypofractionation</th><th>Typical tools</th><th>How you know the answer is right</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Description</strong></td><td>How did the share of hypofractionated courses change between 2010 and 2022, by age group?</td><td>Counts, proportions, Kaplan-Meier curves by group</td><td>Check the counts against the source</td></tr>
+        <tr><td><strong>Prediction</strong></td><td>Which patients starting radiotherapy will die within 3 years?</td><td>Cox regression, random survival forest, XGBoost, neural networks</td><td>Held-out data: concordance index (C-index), calibration. The outcome is eventually observed, so you can score it.</td></tr>
+        <tr><td><strong>Cause and effect</strong></td><td>Would patients aged 75 or older live longer, on average, if they all received hypofractionation instead of conventional fractionation?</td><td>Target trial emulation plus a causal estimator (this page)</td><td>No held-out score exists. The outcome under the schedule a patient did <em>not</em> receive is never observed for anyone.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="wrap">
+    <p>Prediction models are useful, and nothing on this page argues against them. The problem starts when a prediction model is asked a cause-and-effect question. A survival model with fractionation as one of its inputs will give fractionation a coefficient, a hazard ratio or a SHapley Additive exPlanations (SHAP) value. That number describes the model. It is the effect of hypofractionation only under conditions that the model never checks: the right variables adjusted for, none adjusted for that should not be, and comparable patients in both groups. Section 7 shows three simulated cases where the model that predicts better reports the wrong effect.</p>
+    <div class="key"><strong>The core difference</strong><p>A causal effect compares two outcomes for the same patients: one under hypofractionation and one under conventional fractionation. Each patient shows us only one of them. No cohort size and no better learner can fill in the other, so a causal analysis cannot be checked the way a prediction is. It has to be built on a design and on stated assumptions, and then challenged from several directions.</p></div>
+    <h3>Try it: which kind of question is this?</h3>
+    <ul class="quiz" id="quiz"></ul>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="part" id="question">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">1</span> · Roadmap step 1</p>
+    <h2>Start with the clinical question, then find data that can answer it</h2>
+    <p>The causal roadmap is a sequence of steps that moves from a scientific question to an estimate and its interpretation.<a class="cite" href="#ref-2">2</a><a class="cite" href="#ref-3">,3</a> This page follows an adapted version of it. The first step is to write the question so precisely that two people would compute the same number from it.</p>
+    <p>A vague version is “Is hypofractionation better?”. A precise version names five things:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Element</th><th>Running example</th></tr></thead>
+        <tbody>
+          <tr><td>Population</td><td>Adults starting curative-intent radiotherapy for a given tumor site, for whom both schedules are clinically reasonable</td></tr>
+          <tr><td>Strategies compared</td><td>Moderate hypofractionation (larger doses per fraction over fewer fractions) versus conventional fractionation (about 1.8 to 2 Gy per fraction), each defined by the schedule prescribed at the start</td></tr>
+          <tr><td>Outcome</td><td>Death from any cause</td></tr>
+          <tr><td>Time horizon</td><td>5 years from the first fraction</td></tr>
+          <tr><td>Scale</td><td>Difference in restricted mean survival time (RMST) at 5 years, in months, plus the difference in 5-year survival probability</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Why ask this with observational data at all?</h3>
+    <p>For some tumor sites, randomized trials have already compared the two approaches. In prostate cancer, for example, the CHHiP trial found 60 Gy in 20 fractions non-inferior to 74 Gy in 37 fractions.<a class="cite" href="#ref-4">4</a> Trials enroll selected patients, though. Registries and institutional records include older and frailer patients, other tumor sites, and later years. Consequently, a well-designed observational analysis can ask whether a trial result carries over to the patients a trial left out, or address a site where no trial exists. It cannot replace a trial where one is feasible.</p>
+    <h3>Which data, and what they lack</h3>
+    <p>Before any modeling, list what the question needs and check whether the data have it:</p>
+    <ul>
+      <li><strong>The treatment, defined at the start.</strong> The prescribed dose per fraction and number of fractions, not only the total dose.</li>
+      <li><strong>Time zero and follow-up.</strong> The date of the first fraction, the date of death or last contact.</li>
+      <li><strong>Everything that drove the choice of schedule and also affects survival.</strong> Age, comorbidity, stage, tumor size, performance status, distance to the treating center, facility, insurance, calendar year.</li>
+      <li><strong>The outcome.</strong> Death from any cause is usually recorded well. Recurrence, toxicity and cause of death often are not.</li>
+    </ul>
+    <p>National registries such as the National Cancer Database (NCDB) and Surveillance, Epidemiology, and End Results (SEER) are large but may lack performance status, toxicity and recurrence. An institutional electronic health record (EHR) may have them but covers fewer patients. Write down the gaps now. They become the sensitivity analyses of step 8.</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="part" id="trial">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">2</span> · Target trial emulation</p>
+    <h2>Write the trial you would run, then imitate it</h2>
+    <p>Target trial emulation means writing the protocol of the randomized trial that would answer your question, and then making the observational analysis follow that protocol as closely as the data allow.<a class="cite" href="#ref-5">5</a> It sounds like paperwork. In practice it removes several biases that no estimator can fix later.</p>
+  </div>
+  <div class="wide table-scroll">
+    <table>
+      <thead><tr><th>Protocol element</th><th>The target trial</th><th>The emulation in registry or EHR data</th></tr></thead>
+      <tbody>
+        <tr><td>Eligibility</td><td>Adults with a newly diagnosed tumor of the chosen site, curative intent, no prior radiotherapy to the region, both schedules acceptable</td><td>The same criteria from diagnosis codes and treatment fields. Exclude palliative courses and schedules that fit neither strategy.</td></tr>
+        <tr><td>Strategies</td><td>Conventional versus moderate hypofractionation, as prescribed</td><td>Classify by the prescribed schedule at the start, not by what was eventually delivered</td></tr>
+        <tr><td>Assignment</td><td>Random</td><td>Not random. Assume the groups are comparable after adjusting for the measured baseline factors (step 5).</td></tr>
+        <tr><td>Time zero</td><td>Randomization, immediately before the first fraction</td><td>The first day of radiotherapy, for both groups</td></tr>
+        <tr><td>Follow-up</td><td>From time zero to death, loss to follow-up, or 5 years</td><td>The same, with censoring at last contact</td></tr>
+        <tr><td>Outcome</td><td>Death from any cause</td><td>Vital status and date of death</td></tr>
+        <tr><td>Causal contrast</td><td>Effect of being assigned to a schedule (intention to treat), and of following it (per protocol)</td><td>Usually the analog of intention to treat. A per-protocol analog needs data on interruptions and switching.</td></tr>
+        <tr><td>Analysis plan</td><td>Compare survival between randomized arms</td><td>Adjusted estimator chosen in step 7, prespecified, with the checks of step 8</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="wrap">
+    <div class="trap"><strong>Trap: time zero and immortal time</strong><p>A conventional course takes several weeks longer than a hypofractionated one. Suppose follow-up starts at the end of radiotherapy, or patients are classified by the course they completed. Then a patient in the conventional group has to survive those extra weeks to be counted in it, while early deaths drop out or move to another group. The conventional group looks healthier than it is. This is immortal time bias, and it comes from misaligning eligibility, assignment and the start of follow-up.<a class="cite" href="#ref-6">6</a> Starting the clock at the first fraction and classifying by the prescription avoids it.</p></div>
+    <div class="trap"><strong>Trap: classifying by the dose received</strong><p>A patient who becomes too sick to continue receives fewer fractions than prescribed. Classifying by delivered fractions moves the sickest patients into whichever group looks like a shorter course. The prescribed schedule is the treatment strategy. What happened during the course is an outcome of that strategy.</p></div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="part" id="dag">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">3</span> · Roadmap step 2: the causal model</p>
+    <h2>Draw what causes what before choosing what to adjust for</h2>
+    <p>A directed acyclic graph (DAG) is a diagram where an arrow means “affects”. It is the cheapest tool on this page and the one most often skipped. It decides which variables belong in the model, and that decision matters more than the choice between Cox, a random forest and a neural network.</p>
+  </div>
+  <figure class="wide dag">
+    <div class="dag-scroll" id="dag-figure"></div>
+    <figcaption>A simplified causal diagram for the running example. Factors on the left are recorded before the schedule is chosen and can affect both the choice and survival: these are confounders, and the analysis adjusts for them. Performance status and patient preference are often not recorded (dashed). Factors on the right happen after treatment starts and are partly caused by it, so adjusting for them removes part of the effect being estimated.</figcaption>
+  </figure>
+  <div class="wrap">
+    <p>Three rules follow from the diagram:</p>
+    <ul>
+      <li><strong>Adjust for common causes measured before treatment.</strong> Age, comorbidity, stage, facility and calendar year can each push toward one schedule and also change survival. If uptake of hypofractionation changed over the years while other care also improved, calendar year is a confounder. These factors do drive the choice in practice: in a US registry study of breast cancer, older patients were much more likely to receive hypofractionation, and so were patients living 50 miles or more from the treating facility.<a class="cite" href="#ref-7">7</a></li>
+      <li><strong>Do not adjust for anything the treatment itself affects.</strong> Treatment interruptions, acute toxicity, early tumor response and later systemic therapy lie on the path from schedule to survival. Adjusting for them removes part of the effect and can add new bias.<a class="cite" href="#ref-8">8</a> A prediction workflow puts them in because they raise accuracy. A causal workflow leaves them out for exactly that reason.</li>
+      <li><strong>Name what is missing.</strong> If frailer patients with poor performance status are steered toward the shorter course, and performance status is not recorded, the comparison is confounded by indication. No estimator fixes this. Step 8 asks how strong it would have to be to change the conclusion.</li>
+    </ul>
+    <div class="sim" id="sim1">
+      <h3>Simulation 1: better prediction, wrong effect</h3>
+      <p>A simulated cohort where frailty pushes patients toward hypofractionation and also shortens survival. Hypofractionation changes the tumor response measured at 3 months, and that response affects survival. Two least-squares models are fitted to the same patients. The <span style="color:var(--causal);font-weight:600">causal model</span> adjusts for frailty only. The <span style="color:var(--predictive);font-weight:600">predictive model</span> also adds the 3-month response, because it improves accuracy on held-out patients.</p>
+      <div class="sim-controls">
+        <button class="btn" id="sim1-reseed" type="button">Draw a new simulated cohort</button>
+        <span class="num" id="sim1-n"></span>
+      </div>
+      <div class="charts">
+        <div class="chart"><h4>Held-out R² (higher predicts better)</h4><div id="sim1-r2"></div></div>
+        <div class="chart"><h4>Estimated effect, months (bar = truth, whiskers = 95% interval)</h4><div id="sim1-est"></div></div>
+      </div>
+      <div class="legend"><span style="--c:var(--truth)">True total effect</span><span style="--c:var(--causal)">Causal model: frailty + schedule</span><span style="--c:var(--predictive)">Predictive model: frailty + schedule + 3-month response</span></div>
+      <div class="readout" id="sim1-readout" aria-live="polite"></div>
+      <details><summary>How this cohort is simulated</summary><div><p>Frailty is a standard normal score. The probability of hypofractionation rises with frailty. The 3-month response equals 1 × schedule − 0.5 × frailty plus noise. Survival in months equals 48 − 12 × frailty + a direct effect of the schedule + 6 × response, plus noise, with no censoring. The total effect of hypofractionation is the direct effect plus 6, and three scenarios set that total to 0, +4 and −4 months. Half the patients are used for fitting and half are held out. The design is taken from the author's October 2026 talk at the University of Hawaiʻi Cancer Center and recoded to run in your browser.</p></div></details>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="part" id="estimand">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">4</span> · Roadmap step 3: the estimand</p>
+    <h2>Decide the exact number you want</h2>
+    <p>An estimand is the quantity your analysis is supposed to estimate, written before any data are touched. For the running example: the average 5-year RMST if every eligible patient received hypofractionation, minus the same quantity if every eligible patient received conventional fractionation. RMST is the area under the survival curve up to 5 years, in other words the average number of months lived within those 5 years.<a class="cite" href="#ref-9">9</a> A difference of 2 months is something a patient and a clinician can weigh against convenience and toxicity.</p>
+    <h3>For whom?</h3>
+    <ul>
+      <li><strong>Average treatment effect (ATE):</strong> everyone eligible. Answers “what if we changed practice for this whole population?”.</li>
+      <li><strong>Average treatment effect in the treated (ATT):</strong> the patients who actually received hypofractionation. Answers “did it help the patients we gave it to?”.</li>
+      <li><strong>Conditional average treatment effect (CATE):</strong> patients with given characteristics, such as age 75 or older. Answers “who benefits more?”. This is harder to estimate reliably and needs its own checks.</li>
+    </ul>
+    <h3>Why not a hazard ratio?</h3>
+    <p>The hazard ratio (HR) from a Cox model compares death rates among patients still alive at each moment. If the treatment helps early, the patients still alive later in the two groups differ in more than their treatment, so a hazard ratio has selection built into it. It also changes over time whenever hazards are not proportional, and a single HR then averages over an effect that is moving.<a class="cite" href="#ref-10">10</a> A Cox model remains a good description tool and a reasonable outcome model inside some causal estimators. However, the number to report for a causal question is usually a difference in survival probability or RMST at stated times.</p>
+    <div class="key"><strong>Go deeper on survival effects</strong><p>How an effect can rise, peak and even reverse over follow-up, why one hazard ratio cannot show that, and how a causal survival forest and CAST estimate the whole trajectory are worked through with simulated data on the <a href="https://ishuryak.github.io/cast_demo_website/tutorial/">CAST walkthrough</a>. The <a href="https://ishuryak.github.io/cast_demo_website/">methods and diagnostics page</a> lets you change the strength of confounding and watch each method respond.</p></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="part" id="identify">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">5</span> · Roadmap step 4: identification</p>
+    <h2>Can these data answer the question at all?</h2>
+    <p>Identification asks whether the estimand could be computed from the observed data if you had unlimited patients. It depends on three assumptions, each with a plain clinical reading.<a class="cite" href="#ref-11">11</a></p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Assumption</th><th>Plain meaning in the example</th><th>How to probe it</th></tr></thead>
+        <tbody>
+          <tr><td>Exchangeability (no unmeasured confounding)</td><td>After adjusting for the measured baseline factors, the schedule a patient got is unrelated to how long they would have lived under either schedule</td><td>The DAG. Balance checks. Sensitivity analysis for what is missing.</td></tr>
+          <tr><td>Positivity (overlap)</td><td>Every kind of patient could plausibly have received either schedule. If every patient over 85 gets hypofractionation, the data say nothing about conventional fractionation at that age.</td><td>Plot the estimated probability of hypofractionation in each group. Restrict the population where overlap fails.</td></tr>
+          <tr><td>Consistency (a well-defined treatment)</td><td>“Hypofractionation” means a specific family of schedules, not anything shorter than usual</td><td>Define the strategies by dose per fraction and number of fractions. Check that the effect does not depend on which schedule within the family was used.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="key"><strong>Two layers</strong><p>A causal analysis has two layers. Identification (this step) decides whether the data can answer the question. Estimation (step 7) decides how well you compute the answer. Better models, including neural networks, help the second layer. They cannot fix a failure of the first.</p></div>
+    <div class="sim" id="sim2">
+      <h3>Simulation 2: when the confounder is not in the data</h3>
+      <p>Performance status is worse in some patients. Those patients are more likely to receive hypofractionation and live shorter. Three other covariates are recorded. The true effect of hypofractionation is <span data-bind="sim2-truth"></span> month. Two least-squares models use the same simulated patients and differ only in whether performance status is among the covariates. Move the slider to change how strongly performance status drives both the schedule and survival.</p>
+      <div class="sim-controls">
+        <label for="sim2-strength">Strength of the unrecorded factor <input type="range" id="sim2-strength" min="0" max="10" step="1" value="6"></label>
+        <span class="num" id="sim2-strength-label"></span>
+      </div>
+      <div class="chart"><h4>Estimated effect of hypofractionation, months (95% interval)</h4><div id="sim2-est"></div></div>
+      <div class="legend"><span style="--c:var(--truth)">Truth</span><span style="--c:var(--causal)">Performance status recorded</span><span style="--c:var(--predictive)">Performance status not recorded</span></div>
+      <div class="readout" id="sim2-readout" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="part" id="policies">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">6</span> · Treatment policies</p>
+    <h2>Compare the rules clinicians actually use</h2>
+    <p>“Everyone gets hypofractionation” versus “everyone gets conventional fractionation” is a static comparison. Clinicians rarely act that way. They follow rules, and a causal analysis can compare rules directly.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Kind of strategy</th><th>Example</th><th>Question it answers</th></tr></thead>
+        <tbody>
+          <tr><td>Static</td><td>All eligible patients receive hypofractionation</td><td>What if practice switched completely?</td></tr>
+          <tr><td>Dynamic</td><td>Hypofractionation if age is 70 or older or travel time exceeds one hour, conventional otherwise</td><td>Is this triage rule better than current practice, or than treating everyone the same way?</td></tr>
+          <tr><td>Modified treatment policy</td><td>Shorten each patient's prescribed course by five fractions where the dose constraints still allow it</td><td>What if we shifted practice a step, instead of all the way?</td></tr>
+          <tr><td>Time-varying</td><td>Replan the course if weight loss during treatment exceeds 10%</td><td>Decisions made during treatment, based on how the patient is doing</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A dynamic strategy is a rule that assigns treatment at each decision point from the patient's history up to that point.<a class="cite" href="#ref-11">11</a> Longitudinal modified treatment policies (LMTP) go further: they define the effect of changing each patient's treatment as a function of the treatment the patient would otherwise have received and of their history, with treatment and confounders that change over time.<a class="cite" href="#ref-12">12</a></p>
+    <div class="trap"><strong>Trap: time-varying confounding</strong><p>Weight loss during treatment can be caused by the earlier fractions and can also trigger a change of plan. When earlier treatment affects a factor that then drives later treatment, traditional adjustment, such as entering weight loss as a time-varying covariate in a Cox model, can introduce bias even when every confounder is measured.<a class="cite" href="#ref-11">11</a> The g-methods, which include the LMTP estimators, are built for this setting.<a class="cite" href="#ref-12">12</a></p></div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="part" id="estimators">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">7</span> · Roadmap step 5: estimation</p>
+    <h2>Choose the estimator last, and put your machine learning inside it</h2>
+    <p>Once the estimand is identified, several estimators can compute it. They differ in what they model and what must be right for the answer to be right. Most need two prediction tasks, called nuisance models: a model of the outcome given baseline factors, and a model of the probability of receiving each schedule given baseline factors (the propensity score).<a class="cite" href="#ref-13">13</a> This is where your random forests, XGBoost and neural networks go. They stop being the analysis and become components of it. For example, targeted maximum likelihood estimation (TMLE) is often paired with super learning, which combines machine-learning algorithms so that the estimate depends less on any one modeling assumption being right.<a class="cite" href="#ref-3">3</a></p>
+  </div>
+  <div class="wide table-scroll">
+    <table>
+      <thead><tr><th>Estimator</th><th>What it models</th><th>What must be right</th><th>What it gives you</th></tr></thead>
+      <tbody>
+        <tr><td>Cox model with a treatment term (for contrast)</td><td>Hazard given treatment and covariates</td><td>Proportional hazards, the right covariates, a correct form</td><td>One conditional hazard ratio</td></tr>
+        <tr><td>Outcome regression (g-computation)</td><td>Outcome given treatment and covariates</td><td>The outcome model</td><td>Average outcomes under each strategy, for example adjusted survival curves</td></tr>
+        <tr><td>Inverse probability of treatment weighting (IPTW)</td><td>Propensity score</td><td>The propensity model, and enough overlap</td><td>Weighted outcomes or survival curves under each strategy</td></tr>
+        <tr><td>Augmented IPTW (AIPW)</td><td>Both</td><td>Either model (doubly robust)</td><td>Average effect. Flexible machine learning can be used for both models when combined with cross-fitting.<a class="cite" href="#ref-14">14</a></td></tr>
+        <tr><td>TMLE</td><td>Both, then a targeting step</td><td>Either model (doubly robust)</td><td>Average effect. Often paired with super learning.<a class="cite" href="#ref-3">3</a></td></tr>
+        <tr><td>Double machine learning (DML)</td><td>Both, with cross-fitting</td><td>Both models good enough. Their errors affect the estimate only at second order.</td><td>Average effect, with random forests, lasso, boosting or neural networks for the nuisance models<a class="cite" href="#ref-14">14</a></td></tr>
+        <tr><td>LMTP estimators (TMLE and sequential doubly robust)</td><td>Both, at each time point</td><td>Either model at each time point</td><td>Effects of modified and rule-based policies, including treatments that change over time<a class="cite" href="#ref-12">12</a></td></tr>
+        <tr><td>Causal forest and causal survival forest (CSF)</td><td>Treatment effect as a function of covariates, with doubly robust corrections</td><td>Overlap, enough data for subgroups</td><td>Who benefits more (CATE) and the average effect. CSF handles censored outcomes, targeting RMST or survival probability.<a class="cite" href="#ref-15">15</a><a class="cite" href="#ref-16">,16</a></td></tr>
+        <tr><td>CAST</td><td>CSF estimates at several horizons, combined</td><td>Same as CSF</td><td>A smooth effect trajectory over follow-up, built from CSF estimates at several horizons.<a class="cite" href="#ref-17">17</a> See the <a href="https://ishuryak.github.io/cast_demo_website/tutorial/">CAST walkthrough</a>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="wrap">
+    <p>“Doubly robust” means the estimate stays consistent if either the outcome model or the propensity model is correct, given the identification assumptions of step 5.<a class="cite" href="#ref-11">11</a> Its larger practical benefit is that flexible machine learning can be used for both while the confidence interval still means what it says. Running two or three estimators that depend on different models is also one of the checks in step 8.</p>
+    <div class="sim" id="sim3">
+      <h3>Simulation 3: every confounder measured, but the model is tuned for prediction</h3>
+      <p>Here nothing is missing. A simulated cohort of <span data-bind="sim3-n"></span> patients has <span data-bind="sim3-p"></span> recorded covariates. A few strongly affect survival. Many affect the choice of schedule strongly and survival only weakly. The rest affect neither. The true effect is <span data-bind="sim3-truth"></span> months. A lasso, a regression with a penalty that shrinks coefficients, is fitted at <span data-bind="sim3-nlam"></span> penalty strengths, always keeping the schedule term unpenalized. Move the slider to change the penalty.</p>
+      <div class="sim-controls">
+        <label for="sim3-lambda">Penalty strength <input type="range" id="sim3-lambda" min="0" max="25" step="1" value="10"></label>
+        <span class="num" id="sim3-lambda-label"></span>
+      </div>
+      <div class="charts">
+        <div class="chart"><h4>Held-out R²</h4><div id="sim3-r2"></div></div>
+        <div class="chart"><h4>Estimated effect, months</h4><div id="sim3-est"></div></div>
+      </div>
+      <div class="legend"><span style="--c:var(--predictive)">Lasso, read as an effect</span><span style="--c:var(--causal)">DML with the same lasso inside (95% interval)</span><span style="--c:var(--truth)">Truth</span></div>
+      <div class="readout" id="sim3-readout" aria-live="polite"></div>
+      <details><summary>Why this happens</summary><div><p>The covariates that mostly predict who receives hypofractionation add little to predicting survival, so the penalty shrinks them first. Shrinking them hands their share of the confounding to the schedule term. Prediction accuracy barely changes, so a model chosen for accuracy cannot see the problem. Double machine learning uses the lasso twice, once to predict survival and once to predict the schedule, each on held-out folds, and then relates the two sets of residuals. Errors in either prediction then affect the effect estimate only at second order. Here unpenalized least squares would also work, because the model is linear and the sample is large. The lesson is not to read an effect off a model tuned for prediction.</p></div></details>
+    </div>
+    <h3>Which estimator should I start with?</h3>
+    <div class="chooser" id="chooser">
+      <fieldset><legend>Is the treatment decided once, at the start?</legend>
+        <label><input type="radio" name="c-time" value="once" checked> Yes, the schedule is fixed at the start</label>
+        <label><input type="radio" name="c-time" value="varying"> No, decisions are made during treatment, or I want to compare rules</label>
+      </fieldset>
+      <fieldset><legend>What do you want to learn?</legend>
+        <label><input type="radio" name="c-goal" value="average" checked> The average effect in the population</label>
+        <label><input type="radio" name="c-goal" value="who"> Who benefits more or less</label>
+      </fieldset>
+      <fieldset><legend>At which times?</legend>
+        <label><input type="radio" name="c-when" value="one" checked> At one or two prespecified horizons, for example 2 and 5 years</label>
+        <label><input type="radio" name="c-when" value="trajectory"> How the effect changes over the whole follow-up</label>
+      </fieldset>
+      <div class="answer" id="chooser-answer" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="part" id="checks">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">8</span> · Roadmap steps 6 and 7: checks and interpretation</p>
+    <h2>Build confidence without an answer key</h2>
+    <p>A prediction is validated on held-out data. A causal estimate cannot be, so confidence comes from how much it withstands. A practical sequence:</p>
+    <ol>
+      <li><strong>Overlap and balance.</strong> Plot the propensity scores by group, and check that the adjusted groups are similar on every baseline factor.</li>
+      <li><strong>Agreement across estimators.</strong> If TMLE, IPTW and a causal survival forest, which rely on different models, give similar answers, the result does not hinge on one modeling choice.</li>
+      <li><strong>A known truth is recovered.</strong> Simulate data with a planted effect that resembles your cohort, run the same pipeline, and confirm it returns the planted effect.</li>
+      <li><strong>A known falsehood gives nothing.</strong> Shuffle the treatment labels, or use an outcome the treatment cannot affect (a negative control). The estimate should be near zero.</li>
+      <li><strong>How wrong could it be?</strong> Ask how strong an unmeasured confounder would need to be to explain the result away. The E-value expresses this on the risk ratio scale.<a class="cite" href="#ref-18">18</a> For regression-based estimates, another approach expresses it as the share of variation in treatment and outcome a hidden factor would need, compared against measured covariates such as age or stage.<a class="cite" href="#ref-19">19</a></li>
+    </ol>
+    <p>None of these proves the answer is right. Together they show which conclusions survive and which depend on a single assumption. The <a href="https://ishuryak.github.io/cast_demo_website/">CAST methods page</a> shows step 5 for survival data: a simulated unmeasured confounder moves every method at once while the visible diagnostics still look healthy.</p>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section class="part" id="compare">
+  <div class="wrap">
+    <p class="eyebrow">Summary</p>
+    <h2>What each approach tells you about the same question</h2>
+  </div>
+  <div class="wide table-scroll">
+    <table>
+      <thead><tr><th></th><th>Cox model with a treatment term</th><th>Prediction model (random survival forest, XGBoost, neural network)</th><th>Causal roadmap with a causal estimator</th></tr></thead>
+      <tbody>
+        <tr><td>Question answered</td><td>How is the hazard associated with the schedule, given the covariates in the model?</td><td>What will happen to this patient?</td><td>What would happen if these patients received one schedule rather than the other?</td></tr>
+        <tr><td>Main output</td><td>One hazard ratio</td><td>Predicted risk or survival curve per patient</td><td>Differences in survival probability or RMST under each strategy, at stated times, with intervals</td></tr>
+        <tr><td>How it is checked</td><td>Model fit, proportional-hazards test</td><td>Held-out C-index and calibration</td><td>Design (target trial, DAG), overlap, balance, estimator agreement, planted-effect and placebo checks, sensitivity analysis</td></tr>
+        <tr><td>Confounding by indication</td><td>Handled only for the covariates included and in the form assumed</td><td>Not addressed. Accuracy can rise while the implied effect gets worse.</td><td>Addressed for measured confounders, and stated openly for unmeasured ones</td></tr>
+        <tr><td>Variables measured after treatment</td><td>Often included by habit, which biases the effect</td><td>Included whenever they help prediction</td><td>Excluded from adjustment by design</td></tr>
+        <tr><td>Effects that change over time</td><td>Averaged into one number</td><td>Not the target</td><td>Estimated at each horizon, or as a trajectory (CAST)</td></tr>
+        <tr><td>Treatment rules</td><td>No</td><td>No</td><td>Static, dynamic and modified policies (LMTP)</td></tr>
+        <tr><td>Where machine learning fits</td><td>Rarely</td><td>It is the whole model</td><td>Inside the nuisance models, via Super Learner or cross-fitting</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="wrap">
+    <h3>Habits worth changing</h3>
+    <ul>
+      <li><strong>Putting every available variable into the model.</strong> Adjust for baseline common causes from the DAG, and leave out what the treatment affects.</li>
+      <li><strong>Reading the treatment effect from feature importance or SHAP.</strong> These describe how the model uses its inputs. They are not treatment effects.</li>
+      <li><strong>Reporting a hazard ratio as “the effect”.</strong> Report survival or RMST differences at prespecified times.</li>
+      <li><strong>Starting follow-up at the end of treatment.</strong> Start it where the target trial would randomize.</li>
+      <li><strong>Choosing the model with the best C-index for an effect question.</strong> Choose the estimator for the estimand, then check it as in step 8.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="part" id="worksheet">
+  <div class="wrap">
+    <p class="eyebrow"><span class="stepnum">9</span> · Your turn</p>
+    <h2>Turn your question into a one-page plan</h2>
+    <p>Fill in each step for your own question. The fields start with the running example so you can see the level of detail that helps. When you are done, copy the plan and take it to your mentor or a statistician before writing any analysis code.</p>
+    <form class="sheet" id="sheet"></form>
+    <div class="sheet-actions">
+      <button class="btn primary" type="button" id="sheet-copy">Copy plan as text</button>
+      <button class="btn" type="button" id="sheet-example">Restore the example</button>
+      <button class="btn" type="button" id="sheet-clear">Clear all fields</button>
+      <span class="status" id="sheet-status" aria-live="polite"></span>
+    </div>
+    <h3>Your plan as text</h3>
+    <pre class="sheet-out" id="sheet-out"></pre>
+  </div>
+</section>
+
+<!-- References -->
+<section class="part" id="references">
+  <div class="wrap">
+    <h2>References and further reading</h2>
+    <ol class="refs" id="refs">
+      <li id="ref-1">Hernán MA, Hsu J, Healy B. A second chance to get causal inference right: a classification of data science tasks. <em>CHANCE</em>. 2019;32(1):42-49. <a href="https://doi.org/10.1080/09332480.2019.1579578">doi:10.1080/09332480.2019.1579578</a></li>
+      <li id="ref-2">Petersen ML, van der Laan MJ. Causal models and learning from data: integrating causal modeling and statistical estimation. <em>Epidemiology</em>. 2014;25(3):418-426. <a href="https://doi.org/10.1097/EDE.0000000000000078">doi:10.1097/EDE.0000000000000078</a></li>
+      <li id="ref-3">Dang LE, Gruber S, Lee H, et al. A causal roadmap for generating high-quality real-world evidence. <em>J Clin Transl Sci</em>. 2023;7(1):e212. <a href="https://doi.org/10.1017/cts.2023.635">doi:10.1017/cts.2023.635</a></li>
+      <li id="ref-4">Dearnaley D, Syndikus I, Mossop H, et al. Conventional versus hypofractionated high-dose intensity-modulated radiotherapy for prostate cancer: 5-year outcomes of the randomised, non-inferiority, phase 3 CHHiP trial. <em>Lancet Oncol</em>. 2016;17(8):1047-1060. <a href="https://doi.org/10.1016/S1470-2045(16)30102-4">doi:10.1016/S1470-2045(16)30102-4</a></li>
+      <li id="ref-5">Hernán MA, Robins JM. Using big data to emulate a target trial when a randomized trial is not available. <em>Am J Epidemiol</em>. 2016;183(8):758-764. <a href="https://doi.org/10.1093/aje/kwv254">doi:10.1093/aje/kwv254</a></li>
+      <li id="ref-6">Hernán MA, Sauer BC, Hernández-Díaz S, Platt R, Shrier I. Specifying a target trial prevents immortal time bias and other self-inflicted injuries in observational analyses. <em>J Clin Epidemiol</em>. 2016;79:70-75. <a href="https://doi.org/10.1016/j.jclinepi.2016.04.014">doi:10.1016/j.jclinepi.2016.04.014</a></li>
+      <li id="ref-7">Hasan Y, Waller J, Yao K, Chmura SJ, Huo D. Utilization trend and regimens of hypofractionated whole breast radiation therapy in the United States. <em>Breast Cancer Res Treat</em>. 2017;162(2):317-328. <a href="https://doi.org/10.1007/s10549-017-4120-0">doi:10.1007/s10549-017-4120-0</a></li>
+      <li id="ref-8">Schisterman EF, Cole SR, Platt RW. Overadjustment bias and unnecessary adjustment in epidemiologic studies. <em>Epidemiology</em>. 2009;20(4):488-495. <a href="https://doi.org/10.1097/EDE.0b013e3181a819a1">doi:10.1097/EDE.0b013e3181a819a1</a></li>
+      <li id="ref-9">Royston P, Parmar MKB. Restricted mean survival time: an alternative to the hazard ratio for the design and analysis of randomized trials with a time-to-event outcome. <em>BMC Med Res Methodol</em>. 2013;13:152. <a href="https://doi.org/10.1186/1471-2288-13-152">doi:10.1186/1471-2288-13-152</a></li>
+      <li id="ref-10">Hernán MA. The hazards of hazard ratios. <em>Epidemiology</em>. 2010;21(1):13-15. <a href="https://doi.org/10.1097/EDE.0b013e3181c1ea43">doi:10.1097/EDE.0b013e3181c1ea43</a></li>
+      <li id="ref-11">Hernán MA, Robins JM. <em>Causal Inference: What If</em>. Boca Raton: Chapman &amp; Hall/CRC; 2020. Free online, and the best single place to go deeper on every topic on this page. <a href="https://miguelhernan.org/whatifbook">https://miguelhernan.org/whatifbook</a></li>
+      <li id="ref-12">Díaz I, Williams N, Hoffman KL, Schenck EJ. Nonparametric causal effects based on longitudinal modified treatment policies. <em>J Am Stat Assoc</em>. 2023;118(542):846-857. <a href="https://doi.org/10.1080/01621459.2021.1955691">doi:10.1080/01621459.2021.1955691</a></li>
+      <li id="ref-13">Austin PC. An introduction to propensity score methods for reducing the effects of confounding in observational studies. <em>Multivariate Behav Res</em>. 2011;46(3):399-424. <a href="https://doi.org/10.1080/00273171.2011.568786">doi:10.1080/00273171.2011.568786</a></li>
+      <li id="ref-14">Chernozhukov V, Chetverikov D, Demirer M, et al. Double/debiased machine learning for treatment and structural parameters. <em>Econom J</em>. 2018;21(1):C1-C68. <a href="https://doi.org/10.1111/ectj.12097">doi:10.1111/ectj.12097</a></li>
+      <li id="ref-15">Wager S, Athey S. Estimation and inference of heterogeneous treatment effects using random forests. <em>J Am Stat Assoc</em>. 2018;113(523):1228-1242. <a href="https://doi.org/10.1080/01621459.2017.1319839">doi:10.1080/01621459.2017.1319839</a></li>
+      <li id="ref-16">Cui Y, Kosorok MR, Sverdrup E, Wager S, Zhu R. Estimating heterogeneous treatment effects with right-censored data via causal survival forests. <em>J R Stat Soc Series B Stat Methodol</em>. 2023;85(2):179-211. <a href="https://doi.org/10.1093/jrsssb/qkac001">doi:10.1093/jrsssb/qkac001</a></li>
+      <li id="ref-17">Yang E, Vasishtha R, Hope A, Kachnic LA, Wang E, Shuryak I. Estimating continuous chemotherapy effect trajectories in head and neck squamous cell carcinoma. In: <em>Proceedings of the 17th ACM International Conference on Bioinformatics, Computational Biology and Health Informatics (BCB ’26)</em>. ACM; 2026:1-6. This paper introduces CAST. <a href="https://doi.org/10.1145/3807503.3819798">doi:10.1145/3807503.3819798</a></li>
+      <li id="ref-18">VanderWeele TJ, Ding P. Sensitivity analysis in observational research: introducing the E-value. <em>Ann Intern Med</em>. 2017;167(4):268-274. <a href="https://doi.org/10.7326/M16-2607">doi:10.7326/M16-2607</a></li>
+      <li id="ref-19">Cinelli C, Hazlett C. Making sense of sensitivity: extending omitted variable bias. <em>J R Stat Soc Series B Stat Methodol</em>. 2020;82(1):39-67. <a href="https://doi.org/10.1111/rssb.12348">doi:10.1111/rssb.12348</a></li>
+    </ol>
+  </div>
+</section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <p>Written by Igor Shuryak as a companion to the CAST demo site by Andy Wilson, Aimee Harrison and Igor Shuryak. Every number in the three simulations is computed from synthetic data. No patient data are used anywhere on this page. Parts of the text, code and checks were prepared with the help of an AI assistant (Anthropic Claude). The author is responsible for the scientific content.</p>
+  </div>
+</footer>
+
+<div class="tip" id="tip" hidden></div>
+<script type="module" src="app.mjs"></script>
+</body>
+</html>
