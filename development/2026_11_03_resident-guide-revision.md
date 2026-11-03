@@ -154,3 +154,10 @@ Andy's suites give the same results as on `main`:
 - tutorial-variants fails 4 checks, pre-existing
 - clinical-review needs Node 20, and this machine has Node 18
 - all others pass
+
+## Push and hosted CI
+
+- **Commit and push.** `ab375cc` was pushed on 2026-11-03 as a new branch, `causal-roadmap-resident-guide`, on `origin`. `origin/main` (36a57c0) is an ancestor, and the branch adds 22 new files and modifies none, so nothing of the CAST site was changed or overwritten.
+- **Hosted CI.** The workflow `causal-roadmap` ran on the push and succeeded (GitHub Actions run 41597754219).
+- **Not triggered.** The existing `tests.yml` runs only on `main` and on pull requests, so it did not run here.
+- **Hosting.** GitHub Pages publishes from `main` only. The branch is therefore not yet at a public URL. Hosting it needs either a merge decision with Andy or a separate small repository.
