@@ -1,4 +1,5 @@
 import { runSim1, runSim2, SIM1_INDIRECT, SIM2 } from "./sims.mjs";
+import { trialArgument } from "./trial_argument.mjs";
 
 const $ = (s) => document.querySelector(s);
 const fmt = (x, d = 1) => {
@@ -294,6 +295,18 @@ $("#chooser").addEventListener("change", choose);
 choose();
 
 // =====================================================================
+// Trial argument builder (section 10)
+// =====================================================================
+function argue() {
+  const v = (n) => document.querySelector(`input[name="a-${n}"]:checked`).value;
+  const r = trialArgument({ prior: v("prior"), bench: v("bench"), ci: v("ci"), robust: v("robust"), gaps: v("gaps"), hte: v("hte") });
+  const list = (items) => (items.length ? `<ul>${items.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>` : "");
+  $("#argue-answer").innerHTML = `<p><strong>${esc(r.verdict)}.</strong></p>${r.reasons.map((t) => `<p>${esc(t)}</p>`).join("")}${list(r.extras)}${r.design.length ? `<p>If you argue for a trial, your analysis already supplies:</p>${list(r.design)}` : ""}`;
+}
+$("#argue").addEventListener("change", argue);
+argue();
+
+// =====================================================================
 // Worksheet
 // =====================================================================
 const FIELDS = [
@@ -307,6 +320,7 @@ const FIELDS = [
   ["gaps", "Data source and known gaps", "What is missing, and how you will probe it", "[Registry or EHR]. No performance status, toxicity or recurrence. Plan a sensitivity analysis for unrecorded performance status."],
   ["est", "Estimators", "Primary, and the ones you run as checks", "Primary: TMLE with super learning. Checks: IPTW and outcome regression. Effect over follow-up: causal survival forest at prespecified horizons, then CAST."],
   ["checks", "Diagnostics and sensitivity", "How you will challenge the result", "Overlap and balance plots. Agreement across estimators. A planted-effect simulation. Shuffled treatment labels and a negative-control outcome. E-value for unmeasured confounding."],
+  ["trial", "The argument about a new trial", "What each possible result would mean for the next randomized trial (section 10)", "If the interval includes both a meaningful benefit and a meaningful harm, or unrecorded performance status of plausible strength could explain the result away, argue for a randomized trial in patients aged 75 or older, with 5-year RMST as the primary endpoint, stratified by stage and comorbidity. If the emulation reproduces [existing trial] in its own population and the result survives the sensitivity analysis, argue that the trial evidence applies and a new trial of the same comparison is not a priority."],
 ];
 const KEY = "causal-roadmap-worksheet-v1";
 const sheet = $("#sheet");

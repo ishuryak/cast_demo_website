@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runSim1, runSim2, runSim3, SIM1_INDIRECT, SIM2 } from "../docs/causal-roadmap/sims.mjs";
+import { trialArgument, OPTIONS } from "../docs/causal-roadmap/trial_argument.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = join(root, "docs", "causal-roadmap");
@@ -81,19 +82,59 @@ const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
   const hit = forbidden.filter((f) => (html + app).includes(f));
   check("page: no unpublished project material or names", hit.length === 0, hit.join(", "));
   const hosts = [...html.matchAll(/(?:href|src)="(https?:\/\/[^/"]+)/g)].map((m) => m[1]);
-  const allowed = ["https://ishuryak.github.io", "https://doi.org", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://miguelhernan.org"];
+  const allowed = ["https://ishuryak.github.io", "https://doi.org", "https://fonts.googleapis.com", "https://fonts.gstatic.com", "https://miguelhernan.org", "https://www.fda.gov", "https://arxiv.org"];
   const bad = hosts.filter((h) => !allowed.includes(h));
-  check("page: external links only to the CAST site, DOIs, fonts and the What If book", bad.length === 0, bad.join(", "));
+  check("page: external links only to the CAST site, DOIs, fonts, the What If book, the FDA guidance and arXiv", bad.length === 0, bad.join(", "));
   // Acronyms: first bare use must come at or after the "(ACR)" definition.
   const text = body.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   const missing = [];
-  for (const a of ["RMST", "HR", "DAG", "ATE", "ATT", "CATE", "IPTW", "AIPW", "TMLE", "DML", "LMTP", "CSF", "CAST", "NCDB", "SEER", "EHR", "SHAP", "C-index"]) {
+  for (const a of ["RMST", "HR", "DAG", "ATE", "ATT", "CATE", "IPTW", "AIPW", "TMLE", "DML", "LMTP", "CSF", "CAST", "NCDB", "SEER", "EHR", "SHAP", "C-index", "RCT", "FDA", "PATH"]) {
     const def = text.indexOf(`(${a})`);
     const first = text.search(new RegExp(`(^|[^A-Za-z(-])${a.replace("-", "\\-")}(?![A-Za-z)])`));
     if (def < 0 || (first >= 0 && first < def)) missing.push(a);
   }
   check("page: every acronym is defined at or before its first use", missing.length === 0, missing.join(", "));
   check("page: no bare ML abbreviation", !/\bML\b/.test(text.replace(/Petersen ML/g, "")));
+}
+
+// ---------- Sections 9 and 10: trial data and the argument about a new trial ----------
+{
+  const html = readFileSync(join(dir, "index.html"), "utf8");
+  const app = readFileSync(join(dir, "app.mjs"), "utf8");
+  const ids = ["rct", "trial-argument", "worksheet"];
+  check("page: sections 9, 10 and 11 exist and are linked from the roadmap", ids.every((id) => html.includes(`id="${id}"`) && html.includes(`href="#${id}"`)));
+  const nav = html.slice(html.indexOf('class="roadmap'), html.indexOf("</nav>"));
+  const nums = [...nav.matchAll(/class="n">(\d+)</g)].map((m) => +m[1]);
+  check("page: roadmap steps are numbered 0 to 11 in order", nums.join(",") === Array.from({ length: 12 }, (_, i) => i).join(","), nums.join(","));
+  check("page: the end goal is stated in the masthead", /end goal is an argument/.test(html.slice(0, html.indexOf("</header>"))));
+  check("page: randomized trial use is flagged before section 9", html.indexOf('href="#rct"') < html.indexOf('id="rct"') && /randomized controlled trial \(RCT\) data/.test(html));
+  // Every radio button in the builder must be a value the logic accepts, and every value must have a button.
+  const radios = [...html.matchAll(/name="a-(\w+)" value="(\w+)"/g)].map((m) => [m[1], m[2]]);
+  const want = Object.entries(OPTIONS).flatMap(([k, vs]) => vs.map((v) => [k, v]));
+  const key = (x) => x.map(([k, v]) => `${k}=${v}`).sort().join(" ");
+  check("builder: page radios match the logic's options exactly", key(radios) === key(want), key(radios));
+  check("builder: page script wires the builder and the worksheet has the trial field", /trialArgument\(/.test(app) && /\["trial", "The argument about a new trial"/.test(app));
+  // Exhaustive: every combination yields a verdict, and the rules that must hold do hold.
+  const combos = Object.entries(OPTIONS).reduce((acc, [k, vs]) => acc.flatMap((c) => vs.map((v) => ({ ...c, [k]: v }))), [{}]);
+  const res = combos.map((c) => [c, trialArgument(c)]);
+  check("builder: all 324 combinations give a verdict and reasons", res.length === 324 && res.every(([, r]) => r.verdict && r.reasons.length > 0));
+  check("builder: a transportable trial that the emulation does not contradict always wins",
+    res.filter(([c]) => c.prior === "transports" && c.bench !== "no").every(([, r]) => r.key === "existing"));
+  check("builder: a failed benchmark is always resolved first (unless a trial already answers it)",
+    res.filter(([c]) => c.bench === "no").every(([, r]) => r.key === "disagree"));
+  check("builder: an interval spanning benefit and harm argues for a trial whatever the robustness",
+    res.filter(([c]) => c.ci === "both" && c.bench !== "no" && c.prior !== "transports").every(([, r]) => r.key === "uncertain"));
+  check("builder: a clear but fragile effect argues for a trial, a clear robust one is a hypothesis, unknown robustness is not ready",
+    res.filter(([c]) => c.ci === "benefit" && c.bench !== "no" && c.prior !== "transports").every(([c, r]) =>
+      r.key === { fragile: "confounding", robust: "hypothesis", unknown: "notready" }[c.robust]));
+  check("builder: no trial design inputs are offered when the argument is against a trial",
+    res.every(([, r]) => (r.key === "existing" || r.key === "lowpriority") === (r.design.length === 0)));
+  check("builder: positivity gaps and heterogeneity always add their note",
+    res.every(([c, r]) => (c.gaps === "yes") === r.extras.some((t) => /positivity/.test(t)) && (c.hte === "yes") === r.extras.some((t) => /stratified randomization/.test(t))));
+  check("builder: text has no em dash or semicolon", res.every(([, r]) => !/[—;]/.test([r.verdict, ...r.reasons, ...r.extras, ...r.design].join(" "))));
+  let threw = false;
+  try { trialArgument({ ...combos[0], ci: "maybe" }); } catch { threw = true; }
+  check("builder: an unknown input value is rejected, not silently mapped", threw);
 }
 
 console.log(`\n${passes} passed, ${fails} failed`);
