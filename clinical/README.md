@@ -4,14 +4,13 @@ Run npm run build:pages from the repository root to regenerate the published
 walkthroughs in docs/. Run npm test, npm run test:clinical and
 node tests/test_tutorial_variants.mjs docs to check them.
 
-The build first stages tutorial/ and derives the clinical notes with
-scripts/build-tutorial-v3.mjs. Then scripts/build-clinical-editions.mjs applies
-the reviewed clinical wording and shared presentation. Its exact anchors fail
-explicitly if the underlying walkthrough changes.
+The build stages the canonical Susan walkthrough from tutorial/.
+scripts/build-tutorial-v3.mjs preserves older clinical links with a redirect
+and anchor aliases. scripts/build-clinical-editions.mjs stages the separate
+oncology diagnostics and its shared assets.
 
-Edit quiet-narrative.mjs for the flowing article structure and
-scripts/build-clinical-editions.mjs for clinical notes and shared walkthrough
-behavior. Edit oncology/index.html and oncology/app.js for the active-treatment
+Edit tutorial/index.html and tutorial/narrative.css for the walkthrough.
+Edit oncology/index.html and oncology/app.js for the active-treatment
 comparison. Shared styling, narrative figures and disclosure navigation live
 in this folder. The build copies these public assets to docs/.
 

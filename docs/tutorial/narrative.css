@@ -20,25 +20,6 @@ p+p{margin-top:1.2em}
 .hero-art{transform:none;max-width:900px;margin:44px auto 0}
 .hero-art>a,.hero-art #hero-art-fallback>a{display:block}
 .hero-art figcaption{text-align:center;font-size:14px;margin-top:20px}
-.reader-entry{margin-top:48px;padding-top:32px;border-top:1px solid var(--line)}
-.reader-intro{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px 24px}
-.reader-intro h2{font-size:25px;line-height:1.25;letter-spacing:-.02em;margin:0}
-.reader-intro p{font-size:14px;line-height:1.7;color:var(--muted);margin:0}
-.reader-choices{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
-.reader-choices button{min-height:48px;padding:12px 22px;background:var(--paper);border:1px solid var(--line);border-radius:3px;font-size:14px;line-height:1.5}
-.reader-choices button:hover{border-color:var(--teal)}
-.reader-choices button[aria-pressed=true]{background:var(--teal-wash);border-color:var(--teal-dark);color:var(--teal-dark)}
-.reader-itinerary{display:grid;grid-template-columns:1fr 1.2fr;gap:28px 40px;margin-top:28px;padding:28px 32px;background:#fafcfb;border-left:2px solid var(--teal)}
-.reader-itinerary h3{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.2;letter-spacing:-.02em;margin:0 0 12px}
-.reader-itinerary p{font-size:15px;line-height:1.75;max-width:38em}
-.reader-itinerary ol{padding-left:22px;margin:0;font-size:14px;line-height:1.7;align-self:center}
-.reader-itinerary li{padding-left:7px}
-.reader-itinerary li::marker{color:var(--teal-dark);font-size:11px}
-.reader-itinerary li a{display:inline-block;padding:10px 0;min-height:44px}
-.reader-reset{display:block;min-height:44px;padding:8px 0;background:transparent;border:0;color:var(--teal-dark);font-size:12px;margin-top:6px;text-decoration:underline;text-underline-offset:4px}
-.reader-fallback{display:grid;gap:12px;margin-top:18px;font-size:14px}
-@media(max-width:600px){.reader-entry{margin-top:36px;padding-top:28px}.reader-intro h2{font-size:25px}.reader-intro{gap:12px}.reader-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}.reader-choices button{padding-inline:8px}.reader-itinerary{grid-template-columns:1fr;gap:20px;padding:24px 20px}.reader-itinerary h3{font-size:27px}}
-@media print{.reader-entry{display:none}}
 .text-link{display:inline-block;padding-block:14px;font-size:15px}
 .chapter-nav{gap:30px;font-size:14px;flex-wrap:wrap;padding-block:24px}
 details{margin-top:28px;font-size:16px}
@@ -201,3 +182,17 @@ summary>span{font-size:14px}
 .chart .cox-line{fill:none;stroke:#8a6d3b;stroke-width:1.8;stroke-dasharray:2 4}
 .legend-line.cox{border-top:2px dotted #8a6d3b}
 #cox-summary{margin-top:10px}
+
+/* Susan's single reading path. */
+.hero-opening>p:not(.dek){font-size:16px;margin-top:20px}
+.chapter-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px;position:static}
+.susan-fork{max-width:780px;margin:32px auto}.susan-fork img{width:100%;height:auto}
+.method-comparison{margin:30px 0}.method-comparison th,.method-comparison td{white-space:normal;min-width:150px;vertical-align:top;padding:16px;font-size:14px;line-height:1.65;text-align:left}
+.method-comparison th:first-child{min-width:160px}.method-comparison th{font-weight:600}
+.lab-prompts{font-size:15px;line-height:1.75;padding-left:22px;margin:22px 0 30px}.lab-prompts li{padding:5px 0}
+.next-step{font-size:14px;margin-top:32px!important}.conclusion-question{font-family:var(--serif);font-size:28px;line-height:1.4;padding-top:24px;border-top:1px solid var(--line)}
+.source-disclosure .source-section{padding:15px 0}.source-disclosure .source-section h2{display:none}.source-disclosure{margin-top:40px;margin-bottom:0}
+.experiment-controls{flex-wrap:wrap}.experiment-controls select{max-width:100%}
+#coverage-comparison{padding:0;margin:0}#coverage-comparison h3{font-size:20px}
+@media(max-width:700px){.chapter-nav{grid-template-columns:1fr 1fr;font-size:12px}.hero-copy{grid-template-columns:1fr;gap:28px}.hero h1{font-size:46px}.hero .dek{font-size:19px}.method-comparison th,.method-comparison td{min-width:160px}.method-comparison{margin-inline:0}.susan-fork{margin-block:26px}}
+@media(max-width:420px){.experiment-controls label:first-child{flex-basis:100%}}

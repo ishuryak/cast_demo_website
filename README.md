@@ -1,6 +1,11 @@
 # CAST demo website: causal survival trajectories on simulated oncology data
 
-[Open the illustrated CAST walkthrough](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/) · [Oncology version: Option A or Option B?](https://ishuryak.github.io/cast_demo_website/tutorial_v2/) · [Walkthrough, clinical edition](https://ishuryak.github.io/cast_demo_website/tutorial_v3/)
+[Follow Susan’s study](https://ishuryak.github.io/cast_demo_website/tutorial/) · [Methods and diagnostics](https://ishuryak.github.io/cast_demo_website/) · [Teaching materials](https://ishuryak.github.io/cast_demo_website/tutorial/#class-kit)
+
+The walkthrough moves from a causal question through concepts and methods to
+the interactive lab. The legacy `/tutorial_v3/` link redirects there. The
+[oncology comparison](https://ishuryak.github.io/cast_demo_website/tutorial_v2/)
+remains available as a separate diagnostics view.
 
 An interactive teaching demo that shows, on **simulated** cancer-survival
 cohorts where the true treatment effect is known:

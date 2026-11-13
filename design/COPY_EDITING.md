@@ -7,21 +7,18 @@ save and refresh for HTML/CSS/JavaScript changes. If stopped, run
 | What to change | Source | Find |
 | --- | --- | --- |
 | Opening story, section copy, source links and credits | `tutorial/index.html` | `hero-copy`, `question`, `comparison`, `for-whom`, `site-footer` |
-| Audience choices and the four suggested reading paths | `tutorial/index.html` | `choose-path`, `path-student`, `path-researcher`, `path-convert`, `path-educator` |
-| Original sketch and caption | `tutorial/index.html` | `hero-art`; preserve the source PNG |
+| Susan’s single reading path | `tutorial/index.html` | `story`, `why-causal`, `one-number`, `two-tools`, `explore`, `conclusion` |
+| Independent roadmap | `tutorial/index.html`, `tutorial/roadmap-flow.css` | `causal-roadmap`; editable SVG and draw.io in `design/roadmap-flow/` |
 | Opening header, longitudinal comparison and method connections | `tutorial/index.html` | `opening-thesis`, `longitudinal`, `method-family` |
 | CAST expansion and navy trajectory accents | `tutorial/index.html`, `tutorial/narrative.css` | `cast-brand`, `trajectory-accent`, `--navy` |
-| Hand-drawn illustration captions and explanatory notes | `tutorial/index.html` | `notebook-figure`, `missingness`, `snapshot-sketch`, `causal-roadmap` |
-| Dose/time/profile story and metaphor | `tutorial/index.html` | `for-whom`, `profile-lab`, `profile-target` |
-| Invented profile curves and changing readouts | `tutorial/profile-illustration.mjs` | `illustrativeEffect`, `message`, `profile-status`; these are not CAST estimates |
-| Flip-card button wording | `tutorial/narrative.mjs` | `showProblem` |
+| Illustration captions and explanatory notes | `tutorial/index.html` | `notebook-figure`, `well-behaved`, `slices-to-curve` |
+| Limits of subgroup effects | `tutorial/index.html` | `for-whom` |
 | Counterfactual exercise | `tutorial/index.html` | `counterfactual-lab`, `data-completion-result` |
 | Chart readouts and changing guidance | `tutorial/app.mjs` | `observation`, `interpretation`, `selected-interval` |
 | Exact-values table and hidden-confounding control | `tutorial/index.html` | `data-table`, `unmeas` |
 | Class-kit download and PDF links | `tutorial/index.html` | `header-link`, `class-kit` |
-| Animation text, legends and responsive geometry | `tutorial/assets/art/fundamentals.html` | `SCENES`, `scene1` through `scene5` |
+| Coverage evidence | `tutorial/index.html` | `coverage-details`; preserve its link to the repeated-simulation results |
 | Page layout and typography | `tutorial/narrative.css` | Overrides on top of `style.css` |
-| Current taxonomy image | `hand-drawn/taxonomy of methods.png` | Copy to `tutorial/assets/art/methods-landscape.png` after a revision; update its caption and alt text in `index.html` |
 | Guide, vocabulary, equations and exercises | `tutorial/class-kit/study-guide.tex` | Six-page LaTeX source |
 | Draft slides and speaker notes | `tutorial/class-kit/slides.tex` | Beamer frames and `\note` blocks |
 | Provided-cohort analysis | `tutorial/class-kit/class-lab.R` | `analyze_demo()` |
@@ -31,6 +28,11 @@ save and refresh for HTML/CSS/JavaScript changes. If stopped, run
 This is Igor Shuryak's CAST demo. For deeper detail, link to its GitHub
 repository, methods or R implementation; avoid describing a separate page as
 the original demo.
+
+The main path is concepts, methods, then lab. Keep longer explanations in the
+existing disclosures and avoid parallel audience routes or repeated methods
+comparisons. The earlier clinical walkthrough redirects to this path; legacy
+anchor mappings live in `scripts/build-tutorial-v3.mjs`.
 
 Keep HTML IDs and `data-*` attributes intact when editing prose. The two
 counterfactual completions encode numerical examples; their counts, outcomes
@@ -45,6 +47,8 @@ replacing the final PDFs. Then run:
 ```powershell
 npm --prefix tutorial test
 npm run build:pages
+npm run test:clinical
+node tests/test_tutorial_variants.mjs docs
 ```
 
 The build refreshes the class-kit ZIP and the public allowlist in

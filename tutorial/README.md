@@ -18,19 +18,25 @@ No npm dependencies or installation step are required. Node 20+ serves and build
 
 For manual wording changes, see [the editing guide](../design/COPY_EDITING.md). Edit `tutorial/index.html`, then run `npm test` and `npm run build:pages` from the repository root. Commit the source and generated `docs/tutorial/` changes together and push `main`. GitHub's checks rebuild the walkthrough and reject stale published files. Local notes and lab outputs are excluded from the build.
 
-## This milestone
+## The teaching path
 
-- Andy's original Hector sketch, Igor's simulation attribution, a white background and compact chapter navigation.
+- Susan’s question leads through a fair comparison, effects over time, methods, the lab and a bounded conclusion.
+- A responsive seven-step roadmap starts with Dang and Balzer’s target-trial protocol. Editable diagram sources live in `design/roadmap-flow/`.
 - A missing-counterfactual lesson and an optional thought experiment with two completions of identical observed records.
 - A guided narrative and five selectable follow-up horizons, with deeper methods linked to the CAST repository.
 - All 24 existing scenarios with measured/hidden confounding controls.
 - Optional CAST fit and pointwise band, known-truth diamonds, and unadjusted comparison.
 - Play/pause with reduced-motion support, shareable query-state links and an accessible value table.
-- Five responsive animated scenes with readable labels separated from the drawings.
+- Three main illustrations; assumptions, counterfactual completions, implementation details and coverage evidence open on demand.
 - An educator class kit: runnable code, a 600-person synthetic cohort, an answer key, frozen aggregate CSVs, a study guide and 12 draft slides. Documents include editable LaTeX and compiled PDFs.
 - Data provenance and source links pinned to the baseline commit.
 
-The story progresses from a missing individual counterfactual to averages at one horizon, changes over time and differences across profiles, then estimation within the causal roadmap. The frozen export has no subgroup estimates. The class guide develops the estimands, assumptions, equations and vocabulary.
+The story makes confounding visible before introducing estimators. The frozen
+export has no subgroup estimates; their limits are discussed after the lab.
+The class guide develops the estimands, assumptions, equations and vocabulary.
+The earlier audience picker, profile illustration and animated detours are no
+longer part of the main path. `/tutorial_v3/` redirects to this walkthrough,
+preserving query settings and mapping older clinical anchors.
 
 ## Updating the class kit
 

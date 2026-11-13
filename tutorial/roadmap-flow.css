@@ -1,0 +1,13 @@
+/* A responsive, software-independent diagram. Numbers carry the reading order. */
+.independent-roadmap{margin:30px 0 36px;font-family:inherit}
+.roadmap-flow{list-style:none!important;padding:0!important;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:16px;margin:0 0 16px!important}
+.roadmap-flow li{position:relative;min-width:0;border-top:2px solid var(--teal);padding:0!important}
+.roadmap-flow li:not(:last-child)::after{content:'→';position:absolute;right:-14px;top:20px;color:var(--muted);font-size:14px}
+.roadmap-flow a{display:block;text-decoration:none;padding:12px 4px 12px 0;color:var(--ink);height:100%}
+.roadmap-flow a:hover strong{text-decoration:underline}
+.roadmap-flow .flow-number{display:block;color:var(--teal);font-size:11px;letter-spacing:.1em;margin-bottom:8px}
+.roadmap-flow strong{display:block;font-size:14px;line-height:1.45;font-weight:600}
+.roadmap-flow small{display:block;font-size:12px;line-height:1.55;color:var(--muted);margin-top:9px}
+.independent-roadmap figcaption{font-size:12px;line-height:1.65;max-width:58rem;margin-top:12px}
+@media(max-width:900px){.roadmap-flow{grid-template-columns:1fr;gap:0}.roadmap-flow li{border-top:0;border-left:2px solid var(--line);margin-left:14px;padding-left:24px!important}.roadmap-flow a{padding:11px 0}.roadmap-flow .flow-number{position:absolute;left:-15px;top:13px;background:var(--paper);width:28px;text-align:center;padding:2px 0}.roadmap-flow li:not(:last-child)::after{content:none}.roadmap-flow small{margin-top:3px}.roadmap-flow strong{font-size:15px}}
+@media print{.roadmap-flow{grid-template-columns:repeat(7,minmax(0,1fr))}.roadmap-flow li{break-inside:avoid}.independent-roadmap{break-inside:avoid}}

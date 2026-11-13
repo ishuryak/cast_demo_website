@@ -18,7 +18,7 @@ const existing=await lstat(output).catch(error=>{
 if(path.dirname(output)!==path.resolve(root)||path.basename(output)!=='dist'||existing?.isSymbolicLink())throw new Error('Unsafe tutorial output directory.');
 await rm(output,{recursive:true,force:true});
 await mkdir(path.join(output,'data'),{recursive:true});
-for(const item of ['index.html','style.css','narrative.css','app.mjs','narrative.mjs','profile-illustration.mjs','core.mjs','data/scenarios.json','data/provenance.json','LICENSE'])await cp(path.join(root,item),path.join(output,item));
+for(const item of ['index.html','style.css','narrative.css','roadmap-flow.css','app.mjs','narrative.mjs','profile-illustration.mjs','core.mjs','data/scenarios.json','data/provenance.json','LICENSE'])await cp(path.join(root,item),path.join(output,item));
 // Keep artwork sources and collaboration notes out of the public build.
 await mkdir(path.join(root,'dist/assets/art'),{recursive:true});
 for(const item of ['manifest.json','fundamentals.html','hector-counterfactual.png','cohort-fork.svg','follow-up-sketchbook.svg','hidden-thread.svg','time-slices.png','longitudinal-policy.png','methods-landscape.png','traditional-missingness.png','inference-contract.png'])await cp(path.join(root,'assets/art',item),path.join(root,'dist/assets/art',item));

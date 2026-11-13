@@ -48,21 +48,11 @@ for(const variant of ['tutorial','tutorial_v2','tutorial_v3','oncology']){
   check(anchors.length===0,`every in-page link has a target${anchors.length?': #'+anchors.join(', #'):''}`);
 }
 
-// v3 is the walkthrough plus a clinical layer: same stylesheets, same scripts.
-const v3=path.join(DOCS,'tutorial_v3'),v1=path.join(DOCS,'tutorial');
-if(existsSync(path.join(v3,'index.html'))){
-  console.log('== tutorial_v3 keeps the walkthrough');
-  for(const f of ['style.css','narrative.css','app.mjs','narrative.mjs','core.mjs','data/scenarios.json']){
-    const same=existsSync(path.join(v3,f))&&readFileSync(path.join(v3,f),'utf8')===readFileSync(path.join(v1,f),'utf8');
-    check(same,`${f} is identical to the walkthrough's`);
-  }
-  const html=readFileSync(path.join(v3,'index.html'),'utf8');
-  const heads=s=>[...s.matchAll(/<h2[^>]*>([^<]+)/g)].map(m=>m[1]);
-  check(JSON.stringify(heads(html))===JSON.stringify(heads(readFileSync(path.join(v1,'index.html'),'utf8'))),
-    'same chapter headings, in the same order, as the walkthrough');
-  check(/data-reader-path="clinician"/.test(html)&&/id="path-clinician"/.test(html),'offers a clinician reading path');
-  check((html.match(/class="clinic-note"/g)||[]).length>=4,'carries the clinical asides');
-}
+// The former duplicate clinical walkthrough now preserves deep links to one story.
+const redirect=readFileSync(path.join(DOCS,'tutorial_v3/index.html'),'utf8');
+check(redirect.includes('location.replace(')&&redirect.includes('location.search'),'legacy clinical URL redirects with query state preserved');
+check(redirect.includes("'clinic-curve':'explore'")&&redirect.includes('aliases[hash]||hash'),'legacy section links retain useful destinations');
+check(redirect.includes('href="../tutorial/"'),'a no-script link reaches the canonical story');
 
 console.log(`tutorial variants: ${failures?'FAIL':'PASS'} (${failures} failure${failures===1?'':'s'})`);
 process.exit(failures?1:0);

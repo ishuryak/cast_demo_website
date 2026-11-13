@@ -13,8 +13,10 @@
 // scrollWidth === clientWidth at every width below. The defect was in the
 // instrument.
 //
-// WHAT IT ASSERTS. At each width: no element's right edge passes the viewport's,
-// and the document does not scroll sideways.
+// WHAT IT ASSERTS. At each width: no visible right edge passes the viewport's,
+// and the document does not scroll sideways. A wide figure or table inside an
+// explicit horizontal scroll container is clipped by that container; measure
+// its visible edge, while still checking the container itself.
 //
 // THE NEGATIVE CONTROL RUNS EVERY TIME. A check that has only ever been seen
 // passing is not known to be a check, and this one is measuring the absence of
@@ -30,7 +32,7 @@
 
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { readFileSync, existsSync, writeFileSync, mkdtempSync } from "node:fs";
+import { readFileSync, existsSync, statSync, writeFileSync, mkdtempSync } from "node:fs";
 import { join, extname, resolve, dirname, basename } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -74,9 +76,15 @@ function measure(frame) {
   let n = 0, worst = "";
   for (const el of d.querySelectorAll("*")) {
     const r = el.getBoundingClientRect();
-    if (r.width > 0 && r.right > vw + 1) {
+    let visibleRight = r.right;
+    for (let parent = el.parentElement; parent && parent !== d.body; parent = parent.parentElement) {
+      if (/^(auto|scroll|hidden|clip)$/.test(d.defaultView.getComputedStyle(parent).overflowX)) {
+        visibleRight = Math.min(visibleRight, parent.getBoundingClientRect().right);
+      }
+    }
+    if (r.width > 0 && visibleRight > vw + 1) {
       n++;
-      if (!worst) worst = Math.round(r.right) + "px " + el.tagName +
+      if (!worst) worst = Math.round(visibleRight) + "px " + el.tagName +
         (el.id ? "#" + el.id : "") +
         (typeof el.className === "string" && el.className.trim()
           ? "." + el.className.trim().split(/\\s+/).join(".") : "");
@@ -88,6 +96,13 @@ function measure(frame) {
   const f = document.getElementById("f"), neg = document.getElementById("neg");
   const rows = [];
   await sleep(2500);                       // first load + Plotly's first draw
+  // A legacy URL may redirect away from the injected control document.
+  if (!neg.contentDocument.getElementById('deliberate-overflow')) {
+    const injected = neg.contentDocument.createElement('div');
+    injected.id = 'deliberate-overflow';
+    injected.style.cssText = 'width:1600px;height:8px';
+    neg.contentDocument.body.append(injected);
+  }
   for (const w of WIDTHS) {
     f.style.width = w + "px";
     await sleep(700);                      // reflow, and Plotly's resize handler
@@ -125,8 +140,10 @@ const server = createServer((req, res) => {
     res.writeHead(200, { "content-type": "text/html" });
     return res.end(HARNESS(WIDTHS));
   }
-  const file = join(SERVE_ROOT, url === "/" ? "index.html" : url.replace(/^\/+/, ""));
+  let file = join(SERVE_ROOT, url === "/" ? "index.html" : url.replace(/^\/+/, ""));
   if (!file.startsWith(SERVE_ROOT) || !existsSync(file)) { res.writeHead(404); return res.end("nope"); }
+  if (statSync(file).isDirectory()) file = join(file, 'index.html');
+  if (!existsSync(file)) { res.writeHead(404); return res.end("nope"); }
   res.writeHead(200, { "content-type": MIME[extname(file)] || "application/octet-stream" });
   res.end(readFileSync(file));
 });
