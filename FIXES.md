@@ -13,6 +13,19 @@ Entries are newest first.
 
 ---
 
+## 2026-11-23 · Tutorial source note wording
+
+**Moves published numbers: no.** The CAST repository entry under Sources in
+`tutorial/index.html` (and its staged copy `docs/tutorial/index.html`) described
+the repository as "Simulation, methods, audit history, and MIT license." The
+phrase "audit history" referred to internal development records and was unclear
+to outside readers. It now reads "Simulation code, methods and MIT license."
+Text only: no script, data, figure or download changed. Verification:
+`npm test` (0 failed) before and after, the two files are identical, and
+`grep -rn "audit history" tutorial docs` returns nothing.
+
+---
+
 ## 2026-10-19 · Published CAST citation
 
 **Moves published numbers: no.** README and preferred CFF citation now use the
